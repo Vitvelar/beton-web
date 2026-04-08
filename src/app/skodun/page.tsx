@@ -4,9 +4,10 @@ import { HeroSection } from "@/components/HeroSection";
 import { COMPANY } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Bóka skoðun",
+  title: "Bóka ástandsskoðun í Reykjavík og nágrenni",
   description:
-    "Bókaðu ástandsskoðun hjá Beton ehf. Allar tímabókanir fara í gegnum tímabókunarkerfið okkar.",
+    "Bókaðu ástandsskoðun fasteigna hjá Beton ehf. á höfuðborgarsvæðinu. Fagleg skoðun með ítarlegri skýrslu.",
+  alternates: { canonical: "https://betonehf.is/skodun" },
 };
 
 export default function Skodun() {

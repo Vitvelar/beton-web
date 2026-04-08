@@ -6,9 +6,10 @@ import { Button } from "@/components/Button";
 import { PRICING } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "Verðskrá",
+  title: "Verðskrá — ástandsskoðun frá 129.900 kr.",
   description:
-    "Verðskrá Beton ehf. fyrir ástandsskoðun fasteigna. Gagnsæ verðlagning með virðisaukaskatti.",
+    "Verðskrá Beton ehf. fyrir ástandsskoðun fasteigna á höfuðborgarsvæðinu. Gagnsæ verðlagning með virðisaukaskatti, akstur innifalinn.",
+  alternates: { canonical: "https://betonehf.is/verdskra" },
 };
 
 export default function Verdskra() {

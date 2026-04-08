@@ -6,7 +6,8 @@ import { COMPANY } from "@/lib/constants";
 export const metadata: Metadata = {
   title: "Hafa samband",
   description:
-    "Hafðu samband við Beton ehf. fyrir ástandsskoðun fasteigna. Sendu okkur fyrirspurn eða hafðu samband á beton@betonehf.is.",
+    "Hafðu samband við Beton ehf. fyrir ástandsskoðun fasteigna á höfuðborgarsvæðinu. Sendu fyrirspurn eða hafðu samband á beton@betonehf.is.",
+  alternates: { canonical: "https://betonehf.is/samband" },
 };
 
 export default function Samband() {

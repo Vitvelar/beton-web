@@ -3,9 +3,10 @@ import { HeroSection } from "@/components/HeroSection";
 import { SectionHeading } from "@/components/SectionHeading";
 
 export const metadata: Metadata = {
-  title: "Um okkur",
+  title: "Um okkur — Bragi Michaelsson, húsaskoðunarmaður",
   description:
-    "Kynntu þér Beton ehf. og stofnanda fyrirtækisins, Braga Michaelsson. Áratuga reynsla í byggingaiðnaði á Íslandi og í Danmörku.",
+    "Kynntu þér Beton ehf. og stofnanda fyrirtækisins, Braga Michaelsson. Húsasmíðameistari með áratuga reynslu í byggingaiðnaði á Íslandi og í Danmörku.",
+  alternates: { canonical: "https://betonehf.is/umokkur" },
 };
 
 const education = [
@@ -40,9 +41,45 @@ const courses = [
   "Svansvottaðar byggingar — Iðan fræðslusetur",
 ];
 
+const personJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "Bragi Michaelsson",
+  jobTitle: "Húsaskoðunarmaður",
+  worksFor: {
+    "@type": "Organization",
+    name: "Beton ehf.",
+    url: "https://betonehf.is",
+  },
+  hasCredential: [
+    {
+      "@type": "EducationalOccupationalCredential",
+      name: "Húsasmíðameistari — Iðnskólinn í Hafnarfirði",
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      name: "BSc. í Byggingafræði — KEA Copenhagen",
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      name: "MCF í Fjármálum fyrirtækja — Háskólinn í Reykjavík",
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      name: "BSc. í Viðskiptafræði — Háskóli Íslands",
+    },
+  ],
+};
+
 export default function UmOkkur() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(personJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <HeroSection
         title="Um okkur"
         subtitle="Fagmennska, reynsla og traust í öndvegi."
