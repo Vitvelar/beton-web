@@ -17,7 +17,7 @@ export default function Verdskra() {
       <HeroSection
         title="Verðskrá"
         subtitle="Gagnsæ og sanngjörn verðlagning sem gerir þér kleift að bera saman þjónustu."
-        imageSrc="/images/pricing-building.webp"
+        imageSrc="/images/pricing.jpg"
         imageAlt="Nútímaleg íbúðarhús"
       />
 

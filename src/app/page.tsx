@@ -13,7 +13,7 @@ export default function Home() {
         subtitle="Fagleg og hlutlaus skoðun sem veitir þér öryggi og yfirsýn yfir ástand eignar."
         ctaText="Bóka skoðun"
         ctaHref="/skodun"
-        imageSrc="/images/hero-building.jpg"
+        imageSrc="/images/hero.jpg"
         imageAlt="Nútímaleg bygging í Reykjavík"
       />
 
@@ -80,7 +80,7 @@ export default function Home() {
       {/* Image divider */}
       <section className="relative h-[40vh] min-h-[300px]">
         <Image
-          src="/images/concrete-texture.jpg"
+          src="/images/concrete.jpg"
           alt="Steypt bygging að næstu"
           fill
           className="object-cover"

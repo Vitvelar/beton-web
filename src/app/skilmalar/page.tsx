@@ -12,7 +12,7 @@ export default function Skilmalar() {
       <HeroSection
         title="Skilmálar"
         subtitle="Skilmálar Beton ehf. fyrir ástandsskoðun fasteigna."
-        imageSrc="/images/hero-building.jpg"
+        imageSrc="/images/hero.jpg"
         imageAlt="Beton ehf. skilmálar"
       />
 

@@ -69,7 +69,7 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-8">
           <div className="text-center mb-8">
             <Image
-              src="/images/beton-logo.png"
+              src="/images/beton-logo.webp"
               alt="Beton ehf. merki"
               width={120}
               height={40}

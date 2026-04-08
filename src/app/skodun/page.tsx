@@ -15,7 +15,7 @@ export default function Skodun() {
       <HeroSection
         title="Bóka ástandsskoðun"
         subtitle="Allar tímabókanir fara í gegnum tímabókunarkerfið okkar hér fyrir neðan."
-        imageSrc="/images/inspection-building.jpg"
+        imageSrc="/images/inspection.jpg"
         imageAlt="Húsaskoðun á fasteignum"
       />
 

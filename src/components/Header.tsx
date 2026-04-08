@@ -14,7 +14,7 @@ export function Header() {
         <div className="flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/images/beton-logo.png"
+              src="/images/beton-logo.webp"
               alt="Beton ehf. merki"
               width={140}
               height={48}

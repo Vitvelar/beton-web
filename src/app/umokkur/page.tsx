@@ -46,7 +46,7 @@ export default function UmOkkur() {
       <HeroSection
         title="Um okkur"
         subtitle="Fagmennska, reynsla og traust í öndvegi."
-        imageSrc="/images/about-building.jpg"
+        imageSrc="/images/about.jpg"
         imageAlt="Fagleg byggingarverkefni"
       />
 

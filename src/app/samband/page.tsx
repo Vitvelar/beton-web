@@ -15,7 +15,7 @@ export default function Samband() {
       <HeroSection
         title="Hafðu samband"
         subtitle="Ef þú hefur einhverjar spurningar, ekki hika við að hafa samband."
-        imageSrc="/images/contact-building.jpg"
+        imageSrc="/images/contact.jpg"
         imageAlt="Hafðu samband við Beton ehf."
       />
 
