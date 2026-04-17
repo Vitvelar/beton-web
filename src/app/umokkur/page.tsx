@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Um okkur — Bragi Michaelsson, húsaskoðunarmaður",
   description:
     "Kynntu þér Beton ehf. og stofnanda fyrirtækisins, Braga Michaelsson. Húsasmíðameistari með áratuga reynslu í byggingaiðnaði á Íslandi og í Danmörku.",
-  alternates: { canonical: "https://betonehf.is/umokkur" },
+  alternates: { canonical: "https://beton.is/umokkur" },
 };
 
 const education = [
@@ -49,7 +49,7 @@ const personJsonLd = {
   worksFor: {
     "@type": "Organization",
     name: "Beton ehf.",
-    url: "https://betonehf.is",
+    url: "https://beton.is",
   },
   hasCredential: [
     {

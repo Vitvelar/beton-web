@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Skilmálar",
   description:
     "Skilmálar og fyrirvarar ástandsskoðunar Beton ehf. Lestu um umfang skoðunar, takmarkanir ábyrgðar og greiðsluskilmála.",
-  alternates: { canonical: "https://betonehf.is/skilmalar" },
+  alternates: { canonical: "https://beton.is/skilmalar" },
 };
 
 export default function Skilmalar() {

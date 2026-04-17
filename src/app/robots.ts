@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/", "/login/"],
     },
-    sitemap: "https://betonehf.is/sitemap.xml",
+    sitemap: "https://beton.is/sitemap.xml",
   };
 }

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Bóka ástandsskoðun í Reykjavík og nágrenni",
   description:
     "Bókaðu ástandsskoðun fasteigna hjá Beton ehf. á höfuðborgarsvæðinu. Fagleg skoðun með ítarlegri skýrslu.",
-  alternates: { canonical: "https://betonehf.is/skodun" },
+  alternates: { canonical: "https://beton.is/skodun" },
 };
 
 export default function Skodun() {

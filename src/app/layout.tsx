@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://betonehf.is"),
+  metadataBase: new URL("https://beton.is"),
   title: {
     default: "Ástandsskoðun fasteigna á höfuðborgarsvæðinu | Beton ehf.",
     template: "%s | Beton ehf.",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     locale: "is_IS",
     type: "website",
     siteName: "Beton ehf.",
-    url: "https://betonehf.is",
+    url: "https://beton.is",
     images: [
       {
         url: "/images/hero.jpg",
@@ -44,10 +44,10 @@ export const metadata: Metadata = {
     images: ["/images/hero.jpg"],
   },
   alternates: {
-    canonical: "https://betonehf.is",
+    canonical: "https://beton.is",
     languages: {
-      is: "https://betonehf.is",
-      "x-default": "https://betonehf.is",
+      is: "https://beton.is",
+      "x-default": "https://beton.is",
     },
   },
 };
@@ -56,9 +56,9 @@ const localBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "HomeAndConstructionBusiness",
   name: COMPANY.name,
-  url: "https://betonehf.is",
-  logo: "https://betonehf.is/images/beton-logo.webp",
-  image: "https://betonehf.is/images/hero.jpg",
+  url: "https://beton.is",
+  logo: "https://beton.is/images/beton-logo.webp",
+  image: "https://beton.is/images/hero.jpg",
   description:
     "Fagleg ástandsskoðun fasteigna á höfuðborgarsvæðinu. Traust, hlutlaus ráðgjöf fyrir kaupendur og seljendur.",
   email: COMPANY.email,

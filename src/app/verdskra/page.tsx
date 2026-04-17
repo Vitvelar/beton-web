@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Verðskrá — ástandsskoðun frá 129.900 kr.",
   description:
     "Verðskrá Beton ehf. fyrir ástandsskoðun fasteigna á höfuðborgarsvæðinu. Gagnsæ verðlagning með virðisaukaskatti, akstur innifalinn.",
-  alternates: { canonical: "https://betonehf.is/verdskra" },
+  alternates: { canonical: "https://beton.is/verdskra" },
 };
 
 export default function Verdskra() {
