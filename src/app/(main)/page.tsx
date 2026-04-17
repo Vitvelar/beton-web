@@ -14,7 +14,7 @@ export default function Home() {
         ctaText="Bóka skoðun"
         ctaHref="/skodun"
         imageSrc="/images/hero.jpg"
-        imageAlt="Nútímaleg bygging í Reykjavík"
+        imageAlt="Litrík timburhús í miðbæ Reykjavíkur"
       />
 
       {/* Services */}
