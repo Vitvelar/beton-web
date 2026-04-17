@@ -50,6 +50,10 @@ export const metadata: Metadata = {
       "x-default": "https://beton.is",
     },
   },
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-icon.png",
+  },
 };
 
 const localBusinessJsonLd = {
