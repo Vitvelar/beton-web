@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifyAuthToken } from "@/lib/auth";
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const sitePassword = process.env.SITE_PASSWORD;
 
   // If no password is set, allow access (production mode)
@@ -25,7 +26,7 @@ export function proxy(request: NextRequest) {
 
   // Check for auth cookie
   const authCookie = request.cookies.get("beton-auth");
-  if (authCookie?.value === sitePassword) {
+  if (await verifyAuthToken(authCookie?.value, sitePassword)) {
     return NextResponse.next();
   }
 

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { authCookieMaxAgeSeconds, createAuthToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const { password } = await request.json();
@@ -9,12 +10,12 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set("beton-auth", sitePassword, {
+  cookieStore.set("beton-auth", await createAuthToken(sitePassword), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: authCookieMaxAgeSeconds(),
   });
 
   return Response.json({ success: true });

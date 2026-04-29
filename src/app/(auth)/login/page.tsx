@@ -10,7 +10,7 @@ function LoginForm() {
   const [error, setError] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const redirect = safeRedirectPath(searchParams.get("redirect"));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,6 +60,13 @@ function LoginForm() {
       </button>
     </form>
   );
+}
+
+function safeRedirectPath(redirect: string | null): string {
+  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
+    return "/";
+  }
+  return redirect;
 }
 
 export default function LoginPage() {

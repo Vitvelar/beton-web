@@ -2,18 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { NAV_LINKS } from "@/lib/constants";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const pathname = usePathname();
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
@@ -76,6 +69,7 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
                   className="text-base font-medium text-slate hover:text-charcoal transition-colors"
                 >
                   {link.label}
@@ -83,6 +77,7 @@ export function Header() {
               ))}
               <Link
                 href="/skodun"
+                onClick={() => setMobileMenuOpen(false)}
                 className="inline-flex items-center justify-center rounded-md bg-charcoal px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-charcoal-light transition-colors mt-2"
               >
                 Bóka skoðun

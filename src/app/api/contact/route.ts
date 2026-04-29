@@ -1,12 +1,12 @@
 import { Resend } from "resend";
-import { contactSchema } from "@/lib/schemas";
+import { contactSubmissionSchema } from "@/lib/schemas";
 
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "beton@betonehf.is";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const result = contactSchema.safeParse(body);
+    const result = contactSubmissionSchema.safeParse(body);
 
     if (!result.success) {
       return Response.json(
