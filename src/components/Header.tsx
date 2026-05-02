@@ -5,47 +5,54 @@ import Image from "next/image";
 import { useState } from "react";
 import { NAV_LINKS } from "@/lib/constants";
 
-export function Header() {
+interface HeaderProps {
+  active?: string;
+}
+
+export function Header({ active }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-      <nav className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-paper/92 border-b border-concrete">
+      <nav className="mx-auto max-w-[1280px] px-6 lg:px-14">
+        <div className="flex h-24 items-center justify-between">
+          <Link href="/" className="flex items-center gap-3" aria-label="Beton ehf.">
             <Image
               src="/images/beton-logo.webp"
-              alt="Beton ehf. merki"
-              width={140}
-              height={48}
-              className="h-10 w-auto"
+              alt="Beton ehf."
+              width={220}
+              height={80}
               priority
+              className="h-14 w-auto md:h-[58px]"
             />
           </Link>
 
-          {/* Desktop navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-9">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-slate hover:text-charcoal transition-colors"
+                className={`text-[14.5px] font-medium tracking-tight transition-colors ${
+                  active === link.label ? "text-ink" : "text-fog hover:text-ink"
+                }`}
               >
                 {link.label}
               </Link>
             ))}
             <Link
               href="/skodun"
-              className="inline-flex items-center justify-center rounded-md bg-charcoal px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-charcoal-light transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-[11px] bg-ink text-paper text-sm font-semibold rounded-[2px] hover:bg-navy-deep transition-colors"
             >
               Bóka skoðun
+              <span className="opacity-70">→</span>
             </Link>
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile toggle */}
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center rounded-md p-2.5 text-slate"
+            className="md:hidden inline-flex items-center justify-center p-2.5 text-fog"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Loka valmynd" : "Opna valmynd"}
           >
@@ -63,14 +70,14 @@ export function Header() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-6 border-t border-gray-100 pt-4">
+          <div className="md:hidden pb-6 border-t border-concrete pt-4">
             <div className="flex flex-col gap-4">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-base font-medium text-slate hover:text-charcoal transition-colors"
+                  className="text-base font-medium text-fog hover:text-ink"
                 >
                   {link.label}
                 </Link>
@@ -78,9 +85,10 @@ export function Header() {
               <Link
                 href="/skodun"
                 onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex items-center justify-center rounded-md bg-charcoal px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-charcoal-light transition-colors mt-2"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-ink text-paper text-sm font-semibold rounded-[2px] mt-2 w-fit"
               >
                 Bóka skoðun
+                <span className="opacity-70">→</span>
               </Link>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Eyebrow } from "@/components/Editorial";
 
 export const metadata: Metadata = {
   title: "Skilmálar",
@@ -7,193 +8,139 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://beton.is/skilmalar" },
 };
 
+const sections = [
+  {
+    n: "01",
+    title: "Markmið",
+    body: "Markmið ástandsskoðunar er að veita kaupanda eða eiganda fasteignar hlutlausa og faglega úttekt á sýnilegu ástandi eignarinnar á skoðunardegi. Skoðunin er ekki ætluð sem trygging gegn framtíðarbilunum né jafngildir hún ítarlegri tæknilegri úttekt á burðarvirki.",
+  },
+  {
+    n: "02",
+    title: "Umfang",
+    body: "Skoðun nær til sýnilegra hluta innanhúss og utanhúss, þar á meðal gólfa, veggja, lofta, glugga, hurða, þaks (þar sem örugglega er hægt að skoða), kjallara, bílskúrs og garðs. Lagnir og raflagnir eru skoðaðar sjónrænt og prófaðar í þeim mæli sem aðstæður leyfa.",
+  },
+  {
+    n: "03",
+    title: "Það sem ekki er hluti",
+    body: "Skoðun felur ekki í sér að taka upp gólfefni, opna veggi eða loft, eða framkvæma eyðileggjandi prófanir. Hún felur ekki í sér úttekt á asbesti, myglusveppum með rannsóknarstofuprófum, hávaðamælingum eða lögfræðilegum athugunum á eignarheimildum.",
+  },
+  {
+    n: "04",
+    title: "Rakamælingar",
+    body: "Rakamælingar eru framkvæmdar með kvörðuðum rakamælum á völdum stöðum þar sem grunur leikur á raka eða þar sem byggingareðli kallar á slíka mælingu. Niðurstöður eru leiðbeinandi og endurspegla ástand á skoðunardegi.",
+  },
+  {
+    n: "05",
+    title: "Framkvæmd",
+    body: "Skoðun er framkvæmd af húsasmíðameistara og byggingafræðingi. Skoðunarmaður kemur með nauðsynleg verkfæri og ljósmyndar allar athugasemdir. Eigandi eða umboðsmaður skal vera viðstaddur eða hafa veitt aðgang að öllum rýmum.",
+  },
+  {
+    n: "06",
+    title: "Skýrslugerð",
+    body: "Skrifleg skýrsla er afhent á rafrænu formi (PDF) innan 5 virkra daga frá skoðun. Skýrslan inniheldur lýsingu á eign, athugasemdir flokkaðar eftir alvarleikastigi, ljósmyndir, mælingar og tillögur að úrbótum þar sem við á.",
+  },
+  {
+    n: "07",
+    title: "Takmörkun ábyrgðar",
+    body: "Ábyrgð Beton ehf. takmarkast við vinnu og skýrslugerð á skoðunardegi. Beton ehf. ber ekki ábyrgð á göllum sem ekki eru sýnilegir, eru huldir á bak við klæðningar eða innréttingar, eða koma fram síðar vegna venjulegrar slits eða notkunar.",
+  },
+  {
+    n: "08",
+    title: "Öryggi",
+    body: "Öryggi skoðunarmanns hefur forgang. Þök eru aðeins skoðuð þar sem örugglega er hægt að komast að þeim án sérstaks öryggisbúnaðar. Þar sem það er ekki mögulegt er framkvæmd sjónræn úttekt frá jörðu eða með dróna eftir samkomulagi.",
+  },
+  {
+    n: "09",
+    title: "Frekari athuganir",
+    body: "Þegar þörf krefur er mælt með frekari athugunum sérfræðinga (t.d. pípulagningameistara, rafvirkjameistara eða burðarþolsverkfræðings). Slíkar athuganir eru ekki innifaldar í verði ástandsskoðunar.",
+  },
+  {
+    n: "10",
+    title: "Hlutleysi",
+    body: "Beton ehf. hefur engin fjárhagsleg eða önnur tengsl við seljendur, fasteignasala eða aðra hagsmunaaðila. Skoðunarmaður tjáir sig um eignina út frá fagmennsku einni saman.",
+  },
+  {
+    n: "11",
+    title: "Greiðsla",
+    body: "Greiðsla fyrir skoðun fer fram að lokinni skoðun og fyrir afhendingu skýrslu. Greitt er með millifærslu samkvæmt reikningi sem sendur er á netfang viðskiptavinar. Reikningur er gjalddagi við móttöku.",
+  },
+];
+
 export default function Skilmalar() {
   return (
     <>
-      <section className="py-20 px-6 bg-light-gray">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-charcoal mb-4">
-            Skilmálar
-          </h1>
-          <p className="text-lg text-slate">
-            Skilmálar og fyrirvarar ástandsskoðunar Beton ehf.
-          </p>
+      <section className="px-6 lg:px-14 pt-20 lg:pt-24 pb-16">
+        <div className="mx-auto max-w-[1280px]">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24">
+            <div>
+              <Eyebrow>Skilmálar</Eyebrow>
+              <div className="text-xs text-fog font-mono mt-12 lg:mt-14 tracking-[0.08em]">
+                Síðast uppfært
+                <br />
+                01.01.2026
+              </div>
+            </div>
+            <div>
+              <h1 className="text-[40px] lg:text-[56px] leading-none font-medium tracking-[-0.03em] mb-6 text-balance">
+                Almennir skilmálar fyrir ástandsskoðun.
+              </h1>
+              <p className="text-[17px] leading-[1.55] text-fog max-w-[640px]">
+                Eftirfarandi skilmálar gilda um alla ástandsskoðun framkvæmda af Beton ehf.
+                Skilmálar eru hluti af samningi á milli viðskiptavinar og Beton ehf.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="py-16 px-6">
-        <article className="mx-auto max-w-3xl prose prose-lg prose-charcoal">
-          <h2>1. Markmið og gildissvið</h2>
-          <p>
-            Markmið ástandsskoðunar er að veita verkkaupa upplýsingar um almennt
-            og sýnilegt ástand fasteignar á þeim tímapunkti sem skoðun fer fram.
-            Ástandsskoðun byggir á hlutlausri skoðun og stöðluðum verkferlum
-            Beton ehf. og er ætluð til upplýsingaöflunar vegna fasteignaviðskipta
-            eða mats á ástandi eigin eignar.
-          </p>
-          <p>
-            Ástandsskoðun og skýrsla eiga eingöngu við um þá fasteign sem skoðuð
-            er og taka einungis til þeirra atriða sem sérstaklega eru nefnd í
-            skýrslu.
-          </p>
+      {/* TOC + sections */}
+      <section className="px-6 lg:px-14 pb-24 lg:pb-32">
+        <div className="mx-auto max-w-[1280px]">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24 items-start">
+            {/* Sticky TOC */}
+            <div className="md:sticky md:top-32">
+              <div className="font-mono text-[11px] tracking-[0.12em] text-fog uppercase mb-5 pb-4 border-b border-concrete-dk">
+                Efnisyfirlit
+              </div>
+              <div className="flex flex-col gap-3">
+                {sections.map((s) => (
+                  <a
+                    key={s.n}
+                    href={`#sect-${s.n}`}
+                    className="grid grid-cols-[32px_1fr] gap-3 text-sm text-ink hover:text-navy py-1"
+                  >
+                    <span className="font-mono text-[11px] text-copper tracking-[0.05em]">
+                      {s.n}
+                    </span>
+                    <span>{s.title}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
 
-          <h2>2. Umfang skoðunar</h2>
-          <p>
-            Ástandsskoðun nær eingöngu til þeirra atriða sem skoðunarmaður getur
-            séð eða athugað með sjónskoðun og einföldum tækjum, án inngrips.
-          </p>
-          <p>
-            Eign er skoðuð að innan sem utan. Að utan eru einungis aðgengileg
-            svæði skoðuð, að öðrum kosti frá jörðu eða götu. Byggingarhlutar ofar
-            en 3 metrar frá jörðu eru ekki skoðaðir vegna fallhættu nema
-            sérstaklega hafi verið samið um það. Allur kostnaður vegna sérstakra
-            ráðstafana eða tækjaleigu fellur á verkkaupa.
-          </p>
-
-          <h2>3. Það sem er ekki hluti af ástandsskoðun</h2>
-          <p>
-            Eftirfarandi er ekki hluti af ástandsskoðun nema sérstaklega sé samið
-            um það skriflega:
-          </p>
-          <ul>
-            <li>
-              Skoðun inn í veggi, undir gólfefni, inn í stokka eða bak við
-              innréttingar, hreinlætistæki (s.s. baðkör og sturtubotna), fasta
-              spegla, klæðningar, listaverk eða stóra fataskápa/kommóður.
-            </li>
-            <li>
-              Tæknileg skoðun á burðarvirki, kerfum eða íhlutum fasteignar.
-            </li>
-            <li>
-              Skoðun á þaki, þakköntum og þakrennum nema hægt sé að skoða þau
-              frá jörðu, svölum eða sérstaklega hafi verið samið um þakskoðun.
-            </li>
-            <li>Skoðun á drenlögnum, fráveitu- og skólplögnum.</li>
-            <li>
-              Skoðun á raflögnum, neysluvatns-, hita- eða ofnalögnum sem og dren-
-              og fráveitulögnum, nema um sé að ræða sjónskoðun á utanáliggjandi
-              lögnum eða lagnagrind.
-            </li>
-            <li>
-              Yfirferð opinberra gagna, teikninga eða annarra skjala.
-            </li>
-            <li>
-              Staðfesting á því að fasteign uppfylli ákvæði byggingarreglugerða,
-              staðla eða fyrirmæli framleiðenda.
-            </li>
-            <li>
-              Mat á framtíðarástandi, endingartíma eða nothæfi byggingarhluta.
-            </li>
-          </ul>
-
-          <h2>4. Rakamælingar og hitamyndun</h2>
-          <p>
-            Rakamælingar eru framkvæmdar án inngrips (non-invasive) með viðeigandi
-            rakamælum. Ekki er um eiginlega hlutfallsrakamælingar að ræða heldur
-            viðmiðunarrakamælingar út frá þeim forsemdum sem eru til staðar við
-            skoðun (þ.e.a.s. mælingar á sambærilegu byggingarefni innan rýmis eða
-            fasteignar). Bent er á að þrátt fyrir rakamælingar er aldrei hægt að
-            tryggja að fasteign sé laus við raka, myglu eða örveruvöxt, þar sem
-            slíkir gallar geta leynst innan byggingarhluta án sjáanlegra
-            ummerkja.
-          </p>
-
-          <h2>5. Framkvæmd skoðunar</h2>
-          <p>
-            Skoðunarmaður beitir sjónskoðun, tekur ljósmyndir og skráir
-            athugasemdir um þá galla eða ágalla sem hann telur geta valdið
-            verulegri skerðingu á notagildi eignar eða geti haft í för með sér
-            verulegan kostnaðarauka fyrir væntanlegan kaupanda. Atriði sem teljast
-            eðlilegt slit eða hafa ekki veruleg áhrif á notagildi eða kostnað eru
-            almennt ekki talin upp. Einnig er ekki talið upp þegar búnaður virkar
-            ekki að fullu en hefur þó hvorki teljandi áhrif á notagildi né í för
-            með sér verulegan kostnað.
-          </p>
-          <p>
-            Sameign fjölbýlishúsa er ekki skoðuð nema sérstaklega sé um það
-            samið.
-          </p>
-
-          <h2>6. Skýrslugerð og notkun skýrslu</h2>
-          <p>
-            Skýrsla er unnin á grundvelli þeirra upplýsinga sem skoðunarmaður
-            hafði aðgang að á skoðunartíma. Allar niðurstöður og ályktanir
-            byggjast á því að framangreindar upplýsingar um tiltekna fasteign séu
-            réttar og fullnægjandi og takmarkast við þá dagsetningu sem fasteign
-            var skoðuð.
-          </p>
-          <p>
-            Varast skal að byggja ákvörðun um fasteignakaup eingöngu á efni
-            skýrslunnar. Skýrslan má ekki vera notuð í öðrum tilgangi en í
-            tengslum við ákvarðanatöku um fasteignakaup eða til upplýsingaöflunar
-            um ástand eigin eignar.
-          </p>
-          <p>
-            Dreifing eða afhending skýrslu til þriðja aðila er óheimil nema með
-            skriflegu samþykki Beton ehf.
-          </p>
-
-          <h2>7. Takmörkun ábyrgðar</h2>
-          <p>
-            Ábyrgð Beton ehf. og starfsmanna þess vegna ástandsskoðunar,
-            skýrslugerðar eða athugasemda takmarkast, að hámarki, við þá
-            heildarþóknun sem greidd var fyrir viðkomandi skoðun.
-          </p>
-          <p>
-            Skoðunarmaður veitir enga ábyrgð, hvorki beina né óbeina, á því: að
-            allir gallar hafi fundist, að skoðaðir byggingarhlutar séu rétt
-            hannaðir eða framkvæmdir í samræmi við faglega verkhætti, að
-            byggingarhlutar muni halda áfram að virka með sama hætti í
-            framtíðinni, eða að fasteign eða einstakir hlutar hennar séu hæfir
-            til tiltekins notkunartilgangs.
-          </p>
-          <p>
-            Með því að undirrita þennan samning viðurkennir viðskiptavinur að
-            skoðunargjaldið sem greitt er til skoðunarmanns sé lítið miðað við þá
-            áhættu á skaðabótaskyldu sem fylgir fasteignaskoðunum ef ekki væri
-            hægt að takmarka ábyrgð. Viðskiptavinur viðurkennir að án
-            möguleikans á að takmarka ábyrgð væri skoðunarmaðurinn neyddur til að
-            rukka viðskiptavin mun hærra gjald fyrir þjónustu sína en núverandi
-            skoðunargjald.
-          </p>
-
-          <h2>8. Öryggi</h2>
-          <p>
-            Skoðunarmaður áskilur sér rétt til að sleppa því að skoða eða mæla
-            hluta fasteignar telji hann að öryggi sínu eða annarra sé stefnt í
-            hættu, svo sem vegna fallhættu, óheilnæms vinnuumhverfis eða
-            loftgæða.
-          </p>
-
-          <h2>9. Frekari athuganir</h2>
-          <p>
-            Nánari athugun eða viðgerð á göllum sem nefndir eru í skýrslu getur
-            leitt í ljós frekari galla sem voru ekki sýnilegir eða aðgengilegir á
-            skoðunartíma. Slíkir gallar falla utan ábyrgðar Beton ehf.
-          </p>
-
-          <h2>10. Hlutleysi og fagmennska</h2>
-          <p>
-            Skoðunarmaður starfar sem hlutlaus matsaðili, af heilindum og
-            fagmennsku, og hefur engra annarra hagsmuna að gæta en að vinna verk
-            sitt á faglegan hátt samkvæmt bestu vitund.
-          </p>
-
-          <h2>11. Greiðsla og afhending skýrslu vegna ástandsskoðunar</h2>
-          <p>
-            Greitt er fyrir ástandsskoðun ásamt skýrslu ekki seinna en 24 klst.
-            fyrir áætlaða skoðun og fer ástandsskoðun ekki fram nema greiðsla hafi
-            borist að fullu innan tilskilins frests.
-          </p>
-          <p>
-            Skýrsla vegna ástandsskoðunar er afhent innan 48 klst. frá framkvæmd
-            skoðunar, nema um annað hafi verið samið skriflega.
-          </p>
-          <p className="font-semibold">
-            Skilmálar þessir gilda fyrir allar ástandsskoðanir sem Beton ehf.
-            framkvæmir nema annað sé sérstaklega samið skriflega.
-          </p>
-        </article>
+            <div>
+              {sections.map((s, i) => (
+                <div
+                  key={s.n}
+                  id={`sect-${s.n}`}
+                  className={`py-10 ${i === sections.length - 1 ? "" : "border-b border-concrete"} ${i === 0 ? "pt-0" : ""}`}
+                >
+                  <div className="flex items-baseline gap-5 mb-4">
+                    <span className="font-mono text-[13px] text-copper tracking-[0.05em] min-w-[32px]">
+                      {s.n}
+                    </span>
+                    <h2 className="text-[26px] font-medium tracking-[-0.015em] m-0 text-ink">
+                      {s.title}
+                    </h2>
+                  </div>
+                  <p className="text-base leading-[1.7] text-ink/85 m-0 pl-[52px] max-w-[720px]">
+                    {s.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
     </>
   );

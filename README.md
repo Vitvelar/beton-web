@@ -32,7 +32,7 @@ Opnaðu [http://localhost:3000](http://localhost:3000) í vafranum.
 |---|---|
 | `RESEND_API_KEY` | API lykill frá [resend.com](https://resend.com) til að senda tölvupóst |
 | `SITE_PASSWORD` | Lykilorð til að vernda síðuna á meðan hún er í þróun. Eyða til að slökkva á vernd. |
-| `CONTACT_EMAIL` | Netfang sem tekur á móti fyrirspurnum (sjálfgefið: beton@betonehf.is) |
+| `CONTACT_EMAIL` | Netfang sem tekur á móti fyrirspurnum (sjálfgefið: beton@beton.is) |
 
 ## Uppsetning tölvupósts (Resend)
 

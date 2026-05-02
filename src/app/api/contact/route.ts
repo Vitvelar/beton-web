@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 import { contactSubmissionSchema } from "@/lib/schemas";
 
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "beton@betonehf.is";
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "beton@beton.is";
 
 export async function POST(request: Request) {
   try {

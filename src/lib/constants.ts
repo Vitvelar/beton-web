@@ -2,7 +2,7 @@ export const COMPANY = {
   name: "Beton ehf.",
   location: "Hafnarfjörður, Ísland",
   kennitala: "490925-2950",
-  email: "beton@betonehf.is",
+  email: "beton@beton.is",
   founder: "Bragi Michaelsson",
 } as const;
 

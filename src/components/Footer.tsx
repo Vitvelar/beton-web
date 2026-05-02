@@ -1,63 +1,67 @@
 import Link from "next/link";
-import { COMPANY, NAV_LINKS } from "@/lib/constants";
+import { COMPANY } from "@/lib/constants";
+import { BetonMark } from "./BetonMark";
+
+function FCol({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-paper/55 mb-[18px]">
+        {title}
+      </div>
+      <div className="flex flex-col gap-2.5">{children}</div>
+    </div>
+  );
+}
+
+function FLink({ href = "#", children }: { href?: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className="text-[13.5px] text-paper/[0.78] hover:text-paper transition-colors">
+      {children}
+    </Link>
+  );
+}
 
 export function Footer() {
   return (
-    <footer className="bg-charcoal text-white">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+    <footer className="bg-ink text-paper px-6 lg:px-14 pt-[72px] pb-12">
+      <div className="mx-auto max-w-[1280px]">
+        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-10 md:gap-16">
           <div>
-            <h3 className="text-lg font-semibold mb-4">{COMPANY.name}</h3>
-            <p className="text-gray-400 text-sm leading-relaxed">
-              Fagleg ástandsskoðun fasteigna með ítarlegri skýrslu. Traust og
-              gagnsæi í öndvegi.
+            <div className="flex items-center gap-3 mb-5">
+              <BetonMark color="var(--color-paper)" size={28} />
+              <div className="text-[22px] font-bold tracking-[0.03em]">BETON</div>
+            </div>
+            <p className="text-sm leading-[1.65] text-paper/65 max-w-[360px]">
+              Ítarleg og hlutlaus ástandsskoðun fasteigna. Framkvæmd af húsasmíðameistara og byggingafræðingi með löggildingu.
             </p>
           </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Flýtileiðir</h3>
-            <ul className="space-y-2">
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-gray-400 text-sm hover:text-white transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link
-                  href="/skodun"
-                  className="text-gray-400 text-sm hover:text-white transition-colors"
-                >
-                  Bóka skoðun
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Upplýsingar</h3>
-            <ul className="space-y-2 text-gray-400 text-sm">
-              <li>{COMPANY.location}</li>
-              <li>Kt. {COMPANY.kennitala}</li>
-              <li>
-                <a
-                  href={`mailto:${COMPANY.email}`}
-                  className="hover:text-white transition-colors"
-                >
-                  {COMPANY.email}
-                </a>
-              </li>
-            </ul>
-          </div>
+          <FCol title="Þjónusta">
+            <FLink href="/skodun">Ástandsskoðun</FLink>
+            <FLink href="/verdskra">Atvinnuhúsnæði</FLink>
+            <FLink href="/verdskra">Húsfélög</FLink>
+            <FLink>Rakamælingar</FLink>
+          </FCol>
+          <FCol title="Fyrirtækið">
+            <FLink href="/umokkur">Um okkur</FLink>
+            <FLink href="/verdskra">Verðskrá</FLink>
+            <FLink href="/skilmalar">Skilmálar</FLink>
+            <FLink href="/samband">Hafa samband</FLink>
+          </FCol>
+          <FCol title="Hafðu samband">
+            <div className="text-[13.5px] leading-[1.8] text-paper/75">
+              <a href={`mailto:${COMPANY.email}`} className="hover:text-paper">
+                {COMPANY.email}
+              </a>
+              <br />
+              {COMPANY.location}
+              <br />
+              kt. {COMPANY.kennitala}
+            </div>
+          </FCol>
         </div>
-
-        <div className="mt-12 pt-8 border-t border-gray-700 text-center text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} {COMPANY.name} Allur réttur
-          áskilinn.
+        <div className="max-w-[1280px] mx-auto mt-14 pt-7 border-t border-paper/12 flex justify-between text-[12.5px] text-paper/50">
+          <div>© 2026 {COMPANY.name} Öll réttindi áskilin.</div>
+          <div>Hannað í Hafnarfirði</div>
         </div>
       </div>
     </footer>
