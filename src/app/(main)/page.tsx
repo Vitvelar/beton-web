@@ -4,17 +4,6 @@ import { Eyebrow } from "@/components/Editorial";
 import { BetonMark } from "@/components/BetonMark";
 import { PRICING, COMPANY } from "@/lib/constants";
 
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div>
-      <div className="text-[32px] font-medium text-ink tracking-[-0.02em] leading-none">
-        {value}
-      </div>
-      <div className="text-xs text-fog mt-2 tracking-[0.05em] uppercase">{label}</div>
-    </div>
-  );
-}
-
 function Feature({
   n,
   title,
@@ -112,11 +101,6 @@ export default function Home() {
                 Sjá verðskrá
               </Link>
             </div>
-            <div className="mt-14 pt-7 border-t border-concrete-dk flex gap-12">
-              <Stat value="20+" label="Ára reynsla" />
-              <Stat value="2" label="Háskólagráður" />
-              <Stat value="6" label="Fagnámskeið" />
-            </div>
           </div>
 
           {/* Right: hero image of old house in Reykjavík */}
@@ -130,15 +114,6 @@ export default function Home() {
                 className="object-cover object-center"
                 sizes="(max-width: 1024px) 100vw, 600px"
               />
-              <div className="absolute top-5 left-5 px-3 py-2 bg-paper/92 backdrop-blur-sm font-mono text-[10.5px] tracking-[0.08em] text-ink uppercase">
-                REF · BTN-2026-0142
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 px-6 pt-12 pb-5 bg-gradient-to-t from-ink/85 to-transparent text-paper">
-                <div className="text-[11px] tracking-[0.12em] opacity-70 uppercase font-mono">
-                  Skoðun í gangi
-                </div>
-                <div className="text-lg font-medium mt-1">Einbýli · 247 m² · Garðabær</div>
-              </div>
             </div>
             {/* Floating chevron mark */}
             <div className="hidden md:flex absolute -top-8 -right-8 w-[88px] h-[88px] bg-paper border border-concrete-dk items-center justify-center rounded-[2px]">
