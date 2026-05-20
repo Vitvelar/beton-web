@@ -23,7 +23,7 @@ export function Header({ active }: HeaderProps) {
               width={220}
               height={80}
               priority
-              className="h-14 w-auto md:h-[58px]"
+              className="h-16 w-auto md:h-[72px]"
             />
           </Link>
 

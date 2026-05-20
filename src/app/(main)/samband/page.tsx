@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Eyebrow } from "@/components/Editorial";
 import { ContactForm } from "@/components/ContactForm";
-import { COMPANY } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Hafa samband",
@@ -10,40 +8,6 @@ export const metadata: Metadata = {
     "Hafðu samband við Beton ehf. fyrir ástandsskoðun fasteigna á höfuðborgarsvæðinu. Sendu fyrirspurn eða hafðu samband á beton@beton.is",
   alternates: { canonical: "https://beton.is/samband" },
 };
-
-function SideBlock({
-  label,
-  value,
-  href,
-  mono,
-  children,
-}: {
-  label: string;
-  value?: string;
-  href?: string;
-  mono?: boolean;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="py-6 border-t border-concrete">
-      <div className="text-[11px] font-mono tracking-[0.12em] text-fog uppercase mb-2">
-        {label}
-      </div>
-      {href ? (
-        <a
-          href={href}
-          className={`${mono ? "font-mono" : ""} text-[16px] text-ink border-b border-ink pb-0.5 hover:text-navy`}
-        >
-          {value}
-        </a>
-      ) : children ? (
-        <div className="text-base text-ink leading-[1.5]">{children}</div>
-      ) : (
-        <div className={`${mono ? "font-mono" : ""} text-base text-ink leading-[1.5]`}>{value}</div>
-      )}
-    </div>
-  );
-}
 
 export default function Samband() {
   return (
@@ -73,41 +37,13 @@ export default function Samband() {
             </div>
           </div>
 
-          {/* Form + sidebar */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-12 lg:gap-20">
+          {/* Form */}
+          <div className="max-w-[720px]">
             <div className="bg-paper border border-concrete-dk p-8 md:p-12">
               <div className="font-mono text-[11px] tracking-[0.12em] text-fog uppercase mb-8">
                 Skilaboð · Form
               </div>
               <ContactForm />
-            </div>
-
-            <div className="flex flex-col">
-              <SideBlock
-                label="Netfang"
-                value={COMPANY.email}
-                href={`mailto:${COMPANY.email}`}
-              />
-              <SideBlock label="Staðsetning" value={COMPANY.location} />
-              <SideBlock label="Kennitala" value={COMPANY.kennitala} mono />
-              <SideBlock label="Þjónustusvæði">
-                Höfuðborgarsvæðið innifalið. Önnur svæði eftir samkomulagi.
-              </SideBlock>
-
-              <div className="mt-8 bg-ink text-paper p-8">
-                <div className="font-mono text-[11px] tracking-[0.12em] text-copper uppercase mb-4">
-                  Vilt frekar bóka beint?
-                </div>
-                <div className="text-[22px] font-medium leading-[1.25] mb-6 tracking-[-0.015em]">
-                  Bóka skoðun á netinu og veldu dagsetningu sem hentar.
-                </div>
-                <Link
-                  href="/skodun"
-                  className="inline-flex items-center gap-2 text-sm text-paper border-b border-copper pb-1"
-                >
-                  Til bókunar →
-                </Link>
-              </div>
             </div>
           </div>
         </div>

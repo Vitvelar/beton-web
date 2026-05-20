@@ -27,19 +27,15 @@ export function Footer() {
       <div className="mx-auto max-w-[1280px]">
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-10 md:gap-16">
           <div>
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex items-center gap-3">
               <BetonMark color="var(--color-paper)" size={28} />
               <div className="text-[22px] font-bold tracking-[0.03em]">BETON</div>
             </div>
-            <p className="text-sm leading-[1.65] text-paper/65 max-w-[360px]">
-              Ítarleg og hlutlaus ástandsskoðun fasteigna. Framkvæmd af húsasmíðameistara og byggingafræðingi með löggildingu.
-            </p>
           </div>
           <FCol title="Þjónusta">
-            <FLink href="/skodun">Ástandsskoðun</FLink>
-            <FLink href="/verdskra">Atvinnuhúsnæði</FLink>
-            <FLink href="/verdskra">Húsfélög</FLink>
-            <FLink>Rakamælingar</FLink>
+            <FLink href="/samband">Ástandsskoðun</FLink>
+            <FLink href="/samband">Kostnaðarmat</FLink>
+            <FLink href="/samband">Ástand pípulagna</FLink>
           </FCol>
           <FCol title="Fyrirtækið">
             <FLink href="/umokkur">Um okkur</FLink>
@@ -61,7 +57,6 @@ export function Footer() {
         </div>
         <div className="max-w-[1280px] mx-auto mt-14 pt-7 border-t border-paper/12 flex justify-between text-[12.5px] text-paper/50">
           <div>© 2026 {COMPANY.name} Öll réttindi áskilin.</div>
-          <div>Hannað í Hafnarfirði</div>
         </div>
       </div>
     </footer>

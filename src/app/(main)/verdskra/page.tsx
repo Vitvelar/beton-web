@@ -50,21 +50,13 @@ export default function Verdskra() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24">
             <div>
               <Eyebrow>Verðskrá</Eyebrow>
-              <div className="text-xs text-fog font-mono mt-12 lg:mt-14 tracking-[0.08em]">
-                Gildir frá 01.01.2026
-                <br />
-                Verðskrá v. 3.2
-              </div>
             </div>
             <div>
               <h1 className="text-[44px] lg:text-[64px] leading-none font-medium tracking-[-0.03em] mb-8 text-balance">
-                Verð miðað við stærð.
-                <br />
-                <span className="italic-accent">Engar undanskotnar tölur.</span>
+                Verðskrá
               </h1>
               <p className="text-[17.5px] leading-[1.55] text-fog max-w-[640px]">
-                Allar tölur eru með VSK. Akstur innan höfuðborgarsvæðisins er innifalinn.
-                Skýrsla afhent innan 5 virkra daga frá skoðun.
+                Verð birt með VSK. Skýrsla afhendist innan 48 klst. frá framkvæmd skoðunar.
               </p>
             </div>
           </div>
@@ -78,36 +70,34 @@ export default function Verdskra() {
 
           <div className="border border-concrete-dk bg-paper">
             {/* Header row */}
-            <div className="hidden md:grid grid-cols-[120px_1.4fr_2fr_1fr_1fr] px-8 py-5 bg-paper-alt border-b border-concrete-dk text-[11px] tracking-[0.12em] uppercase font-mono text-fog font-semibold">
+            <div className="hidden md:grid grid-cols-[100px_1.5fr_1fr_1fr] px-8 py-5 bg-paper-alt border-b border-concrete-dk text-[12px] tracking-[0.1em] uppercase font-mono text-fog font-semibold">
               <div>Þrep</div>
               <div>Stærð</div>
-              <div>Lýsing</div>
               <div className="text-right">Verð</div>
               <div></div>
             </div>
             {residential.map((r, i) => (
               <div
                 key={r.size}
-                className={`grid grid-cols-[60px_1fr] md:grid-cols-[120px_1.4fr_2fr_1fr_1fr] px-6 md:px-8 py-6 md:py-8 items-center gap-y-2 ${
+                className={`grid grid-cols-[60px_1fr] md:grid-cols-[100px_1.5fr_1fr_1fr] px-6 md:px-8 py-6 md:py-8 items-center gap-y-2 ${
                   i === residential.length - 1 ? "" : "border-b border-concrete"
                 } ${i === 1 ? "bg-copper/[0.04]" : ""}`}
               >
-                <div className="font-mono text-[13px] text-copper tracking-[0.05em]">
+                <div className="font-mono text-[14px] text-copper tracking-[0.05em] font-medium">
                   T{i + 1}
                 </div>
-                <div className="text-[20px] md:text-[22px] font-medium tracking-[-0.01em] text-ink">
+                <div className="text-[22px] md:text-[26px] font-medium tracking-[-0.01em] text-ink">
                   {r.size}
                 </div>
-                <div className="hidden md:block text-[14.5px] text-fog">{r.note}</div>
                 <div className="md:text-right flex items-baseline md:justify-end gap-1">
-                  <span className="text-[24px] md:text-[26px] font-medium text-ink tracking-[-0.02em]">
+                  <span className="text-[26px] md:text-[30px] font-medium text-ink tracking-[-0.02em]">
                     {r.price}
                   </span>
-                  {r.price !== "Tilboð" && <span className="text-[14px] text-fog">kr.</span>}
+                  {r.price !== "Tilboð" && <span className="text-[15px] text-fog">kr.</span>}
                 </div>
                 <div className="md:text-right">
                   <Link
-                    href="/skodun"
+                    href="/samband"
                     className="text-[13px] text-ink border-b border-ink pb-0.5"
                   >
                     Bóka →
@@ -122,7 +112,7 @@ export default function Verdskra() {
             {[
               ["VSK", "Innifalin í verði"],
               ["Akstur", "Höfuðborgarsvæðið innifalið"],
-              ["Skýrsla", "Afhent innan 5 virkra daga"],
+              ["Skýrsla", "Afhent innan 48 klst."],
             ].map(([k, v]) => (
               <div key={k} className="px-6 py-5 bg-paper-alt border-l-2 border-copper">
                 <div className="text-[11px] text-fog tracking-[0.12em] uppercase font-mono mb-1.5">

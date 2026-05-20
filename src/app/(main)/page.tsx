@@ -4,25 +4,7 @@ import { Eyebrow } from "@/components/Editorial";
 import { BetonMark } from "@/components/BetonMark";
 import { PRICING, COMPANY } from "@/lib/constants";
 
-function Feature({
-  n,
-  title,
-  body,
-  border,
-}: {
-  n: string;
-  title: string;
-  body: string;
-  border?: boolean;
-}) {
-  return (
-    <div className={`px-9 ${border ? "border-l border-concrete-dk" : ""}`}>
-      <div className="font-mono text-[11px] text-copper tracking-[0.1em] mb-7">{n} / 03</div>
-      <h3 className="text-[26px] font-medium tracking-[-0.015em] text-ink mb-4">{title}</h3>
-      <p className="text-[15.5px] leading-[1.6] text-fog">{body}</p>
-    </div>
-  );
-}
+const SERVICES = ["Ástandsskoðun", "Kostnaðarmat", "Ástand pípulagna"];
 
 function PriceTier({
   size,
@@ -74,17 +56,16 @@ export default function Home() {
       <section className="mx-auto max-w-[1280px] px-6 lg:px-14 pt-16 lg:pt-[88px] pb-20 lg:pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-center">
           <div>
-            <Eyebrow>Ástandsskoðun fasteigna · Síðan 2025</Eyebrow>
-            <h1 className="text-[56px] lg:text-[84px] leading-[0.95] font-medium tracking-[-0.035em] text-ink mt-8 mb-7 text-balance">
-              Ástandsskoðun
+            <h1 className="text-[56px] lg:text-[84px] leading-[0.95] font-medium tracking-[-0.035em] text-ink mb-7 text-balance">
+              Fagleg og
               <br />
-              fasteigna með
+              hlutlaus
               <br />
-              <span className="italic-accent">óháðu auga.</span>
+              <span className="italic-accent">ráðgjöf.</span>
             </h1>
             <p className="text-lg leading-[1.55] text-fog max-w-[520px] mb-10">
-              Fagleg, hlutlaus og ítarleg skoðun á ástandi fasteigna — framkvæmd af
-              húsasmíðameistara og byggingafræðingi með löggildingu fasteignasala.
+              Við sérhæfum okkur í ástandsskoðunum fasteigna og veitum faglega og
+              hlutlausa ráðgjöf fyrir bæði kaupendur og seljendur.
             </p>
             <div className="flex flex-wrap gap-4 items-center">
               <Link
@@ -123,37 +104,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FEATURES */}
+      {/* ÞJÓNUSTUFRAMBOÐ */}
       <section className="bg-paper-alt px-6 lg:px-14 py-20 lg:py-24">
         <div className="mx-auto max-w-[1280px]">
-          <div className="flex justify-between items-end mb-16 flex-wrap gap-6">
-            <div>
-              <Eyebrow>Hvers vegna Beton</Eyebrow>
-              <h2 className="text-[36px] lg:text-[48px] leading-[1.05] font-medium tracking-[-0.03em] mt-5 max-w-[720px] text-balance">
-                Þrjár forsendur fyrir traustri ákvörðun um fasteign.
-              </h2>
-            </div>
-            <div className="text-xs text-fog font-mono tracking-[0.08em]">01 — 03</div>
+          <div className="mb-16">
+            <Eyebrow>Þjónustuframboð Beton</Eyebrow>
+            <h2 className="text-[36px] lg:text-[48px] leading-[1.05] font-medium tracking-[-0.03em] mt-5 max-w-[720px] text-balance">
+              Veldu þá þjónustu sem hentar þér.
+            </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-y-10">
-            <Feature
-              n="01"
-              title="Ítarleg skoðun"
-              body="Yfirgripsmikil úttekt á burðarvirki, þaki, lögnum, raka og frágangi — framkvæmd með rakamælum og hitamyndavél þar sem þörf krefur."
-            />
-            <Feature
-              n="02"
-              title="Traust og gagnsæi"
-              body="Hlutlaus skoðun án hagsmunatengsla við seljanda eða fasteignasala. Allar athugasemdir studdar með ljósmyndum og mælingum."
-              border
-            />
-            <Feature
-              n="03"
-              title="Ítarleg skýrsla"
-              body="Skrifleg skýrsla afhent innan 5 virkra daga með alvarleikaflokkun, tillögum að úrbótum og kostnaðarmati þegar við á."
-              border
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {SERVICES.map((s) => (
+              <Link
+                key={s}
+                href="/samband"
+                className="group bg-paper border border-concrete-dk px-8 py-7 flex items-center justify-between hover:border-ink transition-colors"
+              >
+                <span className="text-[18px] font-medium tracking-[-0.01em] text-navy group-hover:text-ink transition-colors">
+                  {s}
+                </span>
+                <span className="text-navy text-xl">→</span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -165,9 +138,9 @@ export default function Home() {
             <div>
               <Eyebrow>Verðskrá</Eyebrow>
               <h2 className="text-[36px] lg:text-[48px] leading-[1.05] font-medium tracking-[-0.03em] mt-5">
-                Gagnsætt verð.
+                Gagnsæ verðlagning.
                 <br />
-                Engir hulinn kostnaður.
+                Engin falinn kostnaður.
               </h2>
             </div>
             <div className="md:pt-3">
@@ -200,10 +173,10 @@ export default function Home() {
             <h2 className="text-[40px] lg:text-[56px] leading-none font-medium tracking-[-0.03em] mt-6 mb-6 text-paper text-balance">
               Tilbúin að bóka
               <br />
-              skoðun á þinni fasteign?
+              skoðun á fasteign?
             </h2>
             <p className="text-[17px] leading-[1.6] text-paper/70 max-w-[540px]">
-              Fáðu skoðun bókaða innan 7–14 daga. Skýrsla afhent innan 5 virkra daga frá skoðun.
+              Skýrsla vegna ástandsskoðunar er afhent innan 48 klst. frá framkvæmd skoðunar.
             </p>
           </div>
           <div className="flex flex-col gap-3">

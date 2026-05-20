@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { nafn, netfang, simanumer, skilabod, website } = result.data;
+    const { nafn, netfang, simanumer, samskipti, skilabod, website } = result.data;
 
     // Honeypot check — bots fill this in, humans don't
     if (website && website.length > 0) {
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
         `Nafn: ${nafn}`,
         `Netfang: ${netfang}`,
         simanumer ? `Símanúmer: ${simanumer}` : null,
+        samskipti ? `Samskipti: ${samskipti === "hringja" ? "Hringja" : "Tölvupóstur"}` : null,
         "",
         "Skilaboð:",
         skilabod,

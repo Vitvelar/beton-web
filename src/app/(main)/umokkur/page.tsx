@@ -66,14 +66,14 @@ export default function UmOkkur() {
               </h1>
               <div className="text-lg leading-[1.6] text-ink/85 max-w-[720px] space-y-5">
                 <p>
-                  Beton ehf. var stofnað til þess að bjóða upp á eina af því sem mest er
-                  þörf á í íslenska fasteignamarkaðinum: hlutlausa, faglega ástandsskoðun
-                  framkvæmda af einstaklingi sem hefur bæði verkkunnáttu húsasmíðameistara
-                  og fræðilega þekkingu byggingafræðings.
+                  Við sérhæfum okkur í ástandsskoðunum fasteigna og veitum{" "}
+                  <strong className="text-ink">faglega og hlutlausa ráðgjöf</strong> fyrir
+                  bæði kaupendur og seljendur.
                 </p>
                 <p>
-                  Við skoðum húsið eins og við værum að kaupa það sjálf — og við skrifum
-                  skýrsluna eins og við ætluðum að lifa með afleiðingunum.
+                  Með faglegu og skilvirku verklagi gerir það okkur kleift að{" "}
+                  <strong className="text-ink">meta ástand eignarinnar og greina helstu áhættuþætti</strong>.
+                  Þess vegna leggjum við okkur fram við að útskýra niðurstöður á mannamáli.
                 </p>
               </div>
             </div>

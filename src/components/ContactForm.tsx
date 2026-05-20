@@ -3,7 +3,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import Link from "next/link";
 import { contactSchema, type ContactFormData } from "@/lib/schemas";
 
 const fieldClass =
@@ -121,6 +120,30 @@ export function ContactForm() {
       </div>
 
       <div>
+        <label className={labelClass}>Samskipti</label>
+        <div className="flex gap-6 py-3">
+          <label className="flex items-center gap-2.5 cursor-pointer text-[15px] text-ink">
+            <input
+              type="radio"
+              value="hringja"
+              className="accent-ink w-4 h-4"
+              {...register("samskipti")}
+            />
+            Hringja í mig
+          </label>
+          <label className="flex items-center gap-2.5 cursor-pointer text-[15px] text-ink">
+            <input
+              type="radio"
+              value="tolvupostur"
+              className="accent-ink w-4 h-4"
+              {...register("samskipti")}
+            />
+            Tölvupóstur
+          </label>
+        </div>
+      </div>
+
+      <div>
         <label htmlFor="skilabod" className={labelClass}>
           Skilaboð *
         </label>
@@ -142,21 +165,11 @@ export function ContactForm() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 pt-2">
-        <div className="text-xs text-fog">
-          Með því að senda samþykkir þú{" "}
-          <Link
-            href="/skilmalar"
-            className="text-ink border-b border-ink pb-0.5 hover:text-navy"
-          >
-            skilmála
-          </Link>
-          .
-        </div>
+      <div className="pt-2">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-ink text-paper text-sm font-semibold rounded-[2px] hover:bg-navy-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed self-start md:self-auto"
+          className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-ink text-paper text-sm font-semibold rounded-[2px] hover:bg-navy-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Sendir..." : "Senda skilaboð"}
           <span className="opacity-70">→</span>

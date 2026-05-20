@@ -37,7 +37,7 @@ const sections = [
   {
     n: "06",
     title: "Skýrslugerð",
-    body: "Skrifleg skýrsla er afhent á rafrænu formi (PDF) innan 5 virkra daga frá skoðun. Skýrslan inniheldur lýsingu á eign, athugasemdir flokkaðar eftir alvarleikastigi, ljósmyndir, mælingar og tillögur að úrbótum þar sem við á.",
+    body: "Skrifleg skýrsla er afhent á rafrænu formi (PDF) innan 48 klst. frá skoðun. Skýrslan inniheldur lýsingu á eign, athugasemdir flokkaðar eftir alvarleikastigi, ljósmyndir, mælingar og tillögur að úrbótum þar sem við á.",
   },
   {
     n: "07",
