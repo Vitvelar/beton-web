@@ -3,7 +3,7 @@ interface EyebrowProps {
   color?: string;
 }
 
-export function Eyebrow({ children, color = "var(--color-copper)" }: EyebrowProps) {
+export function Eyebrow({ children, color = "var(--color-navy)" }: EyebrowProps) {
   return (
     <div
       className="text-[11px] font-semibold tracking-[0.16em] uppercase flex items-center gap-2.5"

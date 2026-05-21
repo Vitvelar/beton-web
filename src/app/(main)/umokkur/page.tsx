@@ -1,177 +1,124 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Eyebrow, NumberedDivider } from "@/components/Editorial";
 
 export const metadata: Metadata = {
   title: "Um okkur — Bragi Michaelsson, húsaskoðunarmaður",
   description:
-    "Kynntu þér Beton ehf. og stofnanda fyrirtækisins, Braga Michaelsson. Húsasmíðameistari með áratuga reynslu í byggingaiðnaði á Íslandi og í Danmörku.",
+    "Kynntu þér Beton ehf. og stofnanda fyrirtækisins, Braga Michaelsson. Húsasmíðameistari með áralanga reynslu í byggingageiranum á Íslandi og í Danmörku.",
   alternates: { canonical: "https://beton.is/umokkur" },
 };
 
 const educations = [
-  { year: "1998", degree: "Húsasmíðameistari", school: "Iðnskólinn í Hafnarfirði" },
-  { year: "2003", degree: "BSc Byggingafræði", school: "KEA Copenhagen" },
-  { year: "2008", degree: "Nám til löggildingar Fasteigna- og skipasala", school: "Endurmenntun HÍ" },
-  { year: "2014", degree: "MCF í Fjármálum fyrirtækja", school: "Háskólinn í Reykjavík" },
-  { year: "2019", degree: "BSc Viðskiptafræði", school: "Háskóli Íslands" },
+  { degree: "Húsasmíðameistari", school: "Iðnskólinn í Hafnarfirði" },
+  {
+    degree: "BSc. í Byggingafræði",
+    school: "KEA – Copenhagen School of Design and Technology",
+  },
+  {
+    degree: "Nám til löggildingar Fasteigna- og skipasala",
+    school: "Endurmenntun Háskóla Íslands",
+  },
+  { degree: "MCF í Fjármálum fyrirtækja", school: "Háskólinn í Reykjavík" },
+  { degree: "BSc. í Viðskiptafræði", school: "Háskóli Íslands" },
 ];
 
 const courses = [
-  "Húsaskoðun",
-  "Frágangur votrýma",
-  "Raki og mygla",
-  "Rakamælingar",
-  "Ábyrgð byggingastjóra",
-  "Svansvottaðar byggingar",
+  { name: "Húsaskoðun og matstækni", school: "Endurmenntun HÍ" },
+  { name: "Frágangur votrýma I", school: "Iðan fræðslusetur" },
+  { name: "Raki og mygla í húsum", school: "Iðan fræðslusetur" },
+  { name: "Rakamælingar í byggingum", school: "Iðan fræðslusetur" },
+  { name: "Ábyrgð byggingastjóra", school: "Iðan fræðslusetur" },
+  { name: "Svansvottaðar byggingar", school: "Iðan fræðslusetur" },
 ];
 
-const values = [
-  {
-    t: "Hlutleysi",
-    b: "Engin hagsmunatengsl við kaupanda, seljanda eða fasteignasala. Skýrslan endurspeglar húsið — ekki samninginn.",
-  },
-  {
-    t: "Mæling fram yfir mat",
-    b: "Þar sem hægt er að mæla, er mælt: rakamælar, hitamyndavél, hallamælar. Tölurnar fylgja athugasemdunum.",
-  },
-  {
-    t: "Skýrt orðalag",
-    b: "Athugasemdir flokkaðar í þrjú alvarleikastig með skýrum tillögum að úrbótum. Ekkert tæknimál án skýringar.",
-  },
-];
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[12px] tracking-[0.18em] uppercase font-semibold text-navy mb-7 pb-4 border-b border-concrete-dk">
+      {children}
+    </h3>
+  );
+}
 
 export default function UmOkkur() {
   return (
-    <>
-      {/* Intro */}
-      <section className="px-6 lg:px-14 pt-20 lg:pt-24 pb-16">
-        <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24 items-start">
-            <div>
-              <Eyebrow>Um okkur</Eyebrow>
-              <div className="text-xs text-fog font-mono mt-12 lg:mt-16 tracking-[0.08em]">
-                Stofnað 2025
-                <br />
-                Hafnarfjörður, ÍS
-              </div>
-            </div>
-            <div>
-              <h1 className="text-[44px] lg:text-[64px] leading-none font-medium tracking-[-0.03em] mb-12 text-balance">
-                Fyrirtæki sem byggir
-                <br />
-                á <span className="italic-accent">tveimur áratugum</span>
-                <br />
-                af reynslu og námi.
-              </h1>
-              <div className="text-lg leading-[1.6] text-ink/85 max-w-[720px] space-y-5">
-                <p>
-                  Við sérhæfum okkur í ástandsskoðunum fasteigna og veitum{" "}
-                  <strong className="text-ink">faglega og hlutlausa ráðgjöf</strong> fyrir
-                  bæði kaupendur og seljendur.
-                </p>
-                <p>
-                  Með faglegu og skilvirku verklagi gerir það okkur kleift að{" "}
-                  <strong className="text-ink">meta ástand eignarinnar og greina helstu áhættuþætti</strong>.
-                  Þess vegna leggjum við okkur fram við að útskýra niðurstöður á mannamáli.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Founder profile */}
-      <section className="px-6 lg:px-14 py-16 lg:py-24">
-        <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[5fr_7fr] gap-12 md:gap-16">
-            <div>
-              <div className="relative aspect-[4/5] rounded-[2px] overflow-hidden bg-concrete">
-                <Image
-                  src="/images/about.jpg"
-                  alt="Bragi Michaelsson, stofnandi Beton ehf."
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 500px"
-                />
-                <div className="absolute bottom-6 left-6 right-6 p-4 bg-paper/92 backdrop-blur-sm">
-                  <div className="text-[11px] font-mono tracking-[0.1em] text-fog uppercase">
-                    Stofnandi · Skoðunarmaður
-                  </div>
-                  <div className="text-[22px] font-medium text-ink mt-1.5 tracking-[-0.01em]">
-                    Bragi Michaelsson
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <Eyebrow>Stofnandi</Eyebrow>
-              <h2 className="text-[32px] lg:text-[44px] leading-[1.05] font-medium tracking-[-0.025em] mt-5 mb-8">
-                Húsasmíðameistari, byggingafræðingur, viðskiptafræðingur.
-              </h2>
-              <p className="text-[16.5px] leading-[1.65] text-ink/80 mb-14 max-w-[620px]">
-                Bragi byrjaði ferilinn sinn á byggingastað, lærði iðnina sjálfa frá grunni
-                og bætti síðar við fræðilegri þekkingu — fyrst í Kaupmannahöfn, síðan í
-                Reykjavík. Þessi blanda af handverki, fræðum og rekstrarþekkingu er það
-                sem gerir Beton einstakt.
+    <section className="px-6 lg:px-14 pt-20 lg:pt-28 pb-20 lg:pb-28">
+      <div className="mx-auto max-w-[1280px]">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_1fr] gap-14 lg:gap-20 items-start">
+          {/* Left: bio + Menntun + Námskeið */}
+          <div>
+            <h1 className="text-[44px] lg:text-[64px] leading-[1.02] font-medium tracking-[-0.025em] text-ink mb-10">
+              Bragi Michaelsson
+            </h1>
+            <div className="text-[17.5px] leading-[1.7] text-ink/85 space-y-4 mb-16 max-w-[640px]">
+              <p>
+                Bragi Michaelsson er með áralanga reynslu úr byggingageiranum bæði á
+                Íslandi og í Danmörku.
               </p>
+              <p>
+                Störf hans hafa meðal annars falist í verkefnastjórnun
+                byggingaverkefna, byggingaeftirliti, þakviðgerðum og smíðum.
+              </p>
+            </div>
 
-              <NumberedDivider n="01" label="Menntun" />
-              <div className="flex flex-col">
+            {/* Menntun */}
+            <div className="mb-16">
+              <SectionLabel>Menntun</SectionLabel>
+              <div>
                 {educations.map((e, i) => (
                   <div
                     key={e.degree}
-                    className={`grid grid-cols-1 md:grid-cols-[80px_1fr_200px] gap-4 md:gap-6 py-5 items-baseline ${
+                    className={`grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-2 md:gap-8 py-5 ${
                       i === 0 ? "" : "border-t border-concrete"
                     }`}
                   >
-                    <div className="font-mono text-xs text-copper tracking-[0.05em]">
-                      {e.year}
+                    <div className="text-[16.5px] font-medium text-ink leading-[1.4]">
+                      {e.degree}
                     </div>
-                    <div className="text-[17px] font-medium text-ink">{e.degree}</div>
-                    <div className="text-[13.5px] text-fog md:text-right">{e.school}</div>
+                    <div className="text-[14.5px] text-fog md:text-right leading-[1.4]">
+                      {e.school}
+                    </div>
                   </div>
                 ))}
               </div>
+            </div>
 
-              <div className="mt-16 lg:mt-20">
-                <NumberedDivider n="02" label="Fagnámskeið" />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3.5">
-                  {courses.map((c, i) => (
-                    <div key={c} className="flex items-center gap-3 text-[15px] text-ink">
-                      <span className="font-mono text-[11px] text-fog tracking-[0.05em] min-w-6">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <span>{c}</span>
+            {/* Námskeið */}
+            <div>
+              <SectionLabel>Námskeið</SectionLabel>
+              <div>
+                {courses.map((c, i) => (
+                  <div
+                    key={c.name}
+                    className={`grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-2 md:gap-8 py-5 ${
+                      i === 0 ? "" : "border-t border-concrete"
+                    }`}
+                  >
+                    <div className="text-[16.5px] font-medium text-ink leading-[1.4]">
+                      {c.name}
                     </div>
-                  ))}
-                </div>
+                    <div className="text-[14.5px] text-fog md:text-right leading-[1.4]">
+                      {c.school}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Values band */}
-      <section className="bg-paper-alt px-6 lg:px-14 py-20 lg:py-24">
-        <div className="mx-auto max-w-[1280px]">
-          <Eyebrow>Vinnubrögð</Eyebrow>
-          <h2 className="text-[36px] lg:text-[48px] leading-[1.05] font-medium tracking-[-0.03em] mt-5 mb-16 max-w-[800px]">
-            Þrjár reglur sem skoðun Beton hvílir á.
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {values.map((v, i) => (
-              <div key={v.t}>
-                <div className="text-[56px] font-medium text-copper leading-none mb-6 font-mono tracking-[-0.02em]">
-                  0{i + 1}
-                </div>
-                <h3 className="text-[22px] font-medium tracking-[-0.015em] mb-3.5">{v.t}</h3>
-                <p className="text-[15px] leading-[1.65] text-fog">{v.b}</p>
-              </div>
-            ))}
+          {/* Right: portrait — sticky on desktop, B&W */}
+          <div className="lg:sticky lg:top-32 self-start order-first lg:order-last">
+            <div className="relative aspect-[4/5] rounded-[2px] overflow-hidden bg-concrete shadow-[0_30px_60px_-30px_rgba(10,13,46,0.25)]">
+              <Image
+                src="/images/bragi.webp"
+                alt="Bragi Michaelsson, stofnandi Beton ehf."
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 420px"
+              />
+            </div>
           </div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

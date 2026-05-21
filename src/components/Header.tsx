@@ -20,10 +20,10 @@ export function Header({ active }: HeaderProps) {
             <Image
               src="/images/beton-logo.webp"
               alt="Beton ehf."
-              width={220}
-              height={80}
+              width={264}
+              height={96}
               priority
-              className="h-16 w-auto md:h-[72px]"
+              className="h-20 w-auto md:h-[88px]"
             />
           </Link>
 
@@ -33,19 +33,21 @@ export function Header({ active }: HeaderProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-[14.5px] font-medium tracking-tight transition-colors ${
-                  active === link.label ? "text-ink" : "text-fog hover:text-ink"
+                className={`text-[13px] font-semibold tracking-[0.18em] uppercase transition-colors ${
+                  active === link.label
+                    ? "text-gold border-b border-gold pb-1"
+                    : "text-gold/85 hover:text-gold"
                 }`}
               >
                 {link.label}
               </Link>
             ))}
             <Link
-              href="/skodun"
-              className="inline-flex items-center gap-2 px-5 py-[11px] bg-ink text-paper text-sm font-semibold rounded-[2px] hover:bg-navy-deep transition-colors"
+              href="/samband"
+              className="inline-flex items-center gap-2 px-6 py-[11px] bg-navy text-paper text-[13px] font-semibold tracking-[0.12em] uppercase rounded-full hover:bg-navy-deep transition-colors"
             >
-              Bóka skoðun
-              <span className="opacity-70">→</span>
+              Hafa samband
+              <span className="opacity-80">→</span>
             </Link>
           </div>
 
@@ -77,18 +79,18 @@ export function Header({ active }: HeaderProps) {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="text-base font-medium text-fog hover:text-ink"
+                  className="text-[13px] font-semibold tracking-[0.18em] uppercase text-gold/85 hover:text-gold"
                 >
                   {link.label}
                 </Link>
               ))}
               <Link
-                href="/skodun"
+                href="/samband"
                 onClick={() => setMobileMenuOpen(false)}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-ink text-paper text-sm font-semibold rounded-[2px] mt-2 w-fit"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-navy text-paper text-[13px] font-semibold tracking-[0.12em] uppercase rounded-full mt-2 w-fit"
               >
-                Bóka skoðun
-                <span className="opacity-70">→</span>
+                Hafa samband
+                <span className="opacity-80">→</span>
               </Link>
             </div>
           </div>

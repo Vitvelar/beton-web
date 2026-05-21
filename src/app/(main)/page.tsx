@@ -54,26 +54,40 @@ export default function Home() {
     <>
       {/* HERO — editorial split */}
       <section className="mx-auto max-w-[1280px] px-6 lg:px-14 pt-16 lg:pt-[88px] pb-20 lg:pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-start">
           <div>
-            <h1 className="text-[56px] lg:text-[84px] leading-[0.95] font-medium tracking-[-0.035em] text-ink mb-7 text-balance">
+            <h1 className="text-[56px] lg:text-[84px] leading-[0.95] font-medium tracking-[-0.035em] text-ink mb-8 text-balance">
               Fagleg og
               <br />
               hlutlaus
               <br />
               <span className="italic-accent">ráðgjöf.</span>
             </h1>
-            <p className="text-lg leading-[1.55] text-fog max-w-[520px] mb-10">
-              Við sérhæfum okkur í ástandsskoðunum fasteigna og veitum faglega og
-              hlutlausa ráðgjöf fyrir bæði kaupendur og seljendur.
-            </p>
+            <div className="text-[17px] lg:text-[18px] leading-[1.65] text-ink/80 max-w-[560px] mb-10 space-y-4">
+              <p>
+                Við sérhæfum okkur í ástandsskoðunum fasteigna og veitum faglega og
+                hlutlausa ráðgjöf fyrir bæði kaupendur og seljendur. Markmið okkar er
+                að tryggja að þú hafir skýra mynd af ástandi eignarinnar.
+              </p>
+              <p>
+                Með áralanga reynslu úr byggingageiranum leggjum við áherslu á vönduð
+                vinnubrögð, nákvæma skýrslugerð og góða þjónustu. Með faglegu og
+                skilvirku verklagi gerir það okkur kleift að meta ástand eignarinnar
+                og greina helstu áhættuþætti.
+              </p>
+              <p>
+                Við trúum því að traust og gagnsæi skipti öllu máli. Þess vegna
+                leggjum við okkur fram við að útskýra niðurstöður á mannamáli, svo
+                þú getir tekið upplýsta ákvörðun og byggt hana á góðum grunni.
+              </p>
+            </div>
             <div className="flex flex-wrap gap-4 items-center">
               <Link
-                href="/skodun"
-                className="inline-flex items-center gap-2.5 px-7 py-4 bg-ink text-paper text-[14.5px] font-semibold rounded-[2px] hover:bg-navy-deep transition-colors"
+                href="/samband"
+                className="inline-flex items-center gap-2.5 px-7 py-4 bg-navy text-paper text-[14.5px] font-semibold rounded-full hover:bg-navy-deep transition-colors"
               >
-                Bóka skoðun
-                <span className="opacity-70">→</span>
+                Hafa samband
+                <span className="opacity-80">→</span>
               </Link>
               <Link
                 href="/verdskra"
@@ -166,30 +180,28 @@ export default function Home() {
       </section>
 
       {/* CTA — closing band */}
-      <section className="bg-ink text-paper px-6 lg:px-14 py-20 lg:py-24">
-        <div className="mx-auto max-w-[1280px] grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-center">
+      <section className="bg-ink text-paper px-6 lg:px-14 py-12 lg:py-14">
+        <div className="mx-auto max-w-[1280px] grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-8 lg:gap-12 items-center">
           <div>
-            <Eyebrow color="var(--color-copper)">Hafðu samband</Eyebrow>
-            <h2 className="text-[40px] lg:text-[56px] leading-none font-medium tracking-[-0.03em] mt-6 mb-6 text-paper text-balance">
-              Tilbúin að bóka
-              <br />
-              skoðun á fasteign?
+            <Eyebrow color="var(--color-navy-soft)">Hafðu samband</Eyebrow>
+            <h2 className="text-[28px] lg:text-[36px] leading-[1.1] font-medium tracking-[-0.02em] mt-4 mb-3 text-paper text-balance">
+              Tilbúin að bóka skoðun á fasteign?
             </h2>
-            <p className="text-[17px] leading-[1.6] text-paper/70 max-w-[540px]">
+            <p className="text-[14.5px] leading-[1.55] text-paper/65 max-w-[540px]">
               Skýrsla vegna ástandsskoðunar er afhent innan 48 klst. frá framkvæmd skoðunar.
             </p>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2.5">
             <Link
-              href="/skodun"
-              className="px-7 py-5 bg-paper text-ink text-[15px] font-semibold flex justify-between items-center rounded-[2px]"
+              href="/samband"
+              className="px-6 py-3.5 bg-paper text-ink text-[14px] font-semibold flex justify-between items-center rounded-full"
             >
-              <span>Bóka skoðun á netinu</span>
+              <span>Hafa samband</span>
               <span>→</span>
             </Link>
             <a
               href={`mailto:${COMPANY.email}`}
-              className="px-7 py-5 text-paper text-[15px] font-medium border border-paper/25 flex justify-between items-center rounded-[2px]"
+              className="px-6 py-3.5 text-paper text-[14px] font-medium border border-paper/25 flex justify-between items-center rounded-full"
             >
               <span>{COMPANY.email}</span>
               <span className="opacity-60">↗</span>

@@ -20,22 +20,22 @@ const residential = [
 
 function TilbodCard({ n, label, body }: { n: string; label: string; body: string }) {
   return (
-    <div className="bg-ink text-paper rounded-[2px] p-10 lg:p-12 flex flex-col justify-between min-h-[320px]">
+    <div className="bg-paper-alt border border-concrete-dk text-ink rounded-[2px] p-10 lg:p-12 flex flex-col justify-between min-h-[320px]">
       <div>
         <div className="flex justify-between items-baseline mb-8">
-          <div className="text-[11px] font-mono tracking-[0.12em] text-copper uppercase">
+          <div className="text-[11px] font-mono tracking-[0.12em] text-navy uppercase">
             {n} / {label}
           </div>
-          <div className="text-[32px] font-medium text-paper tracking-[-0.02em]">Tilboð</div>
+          <div className="text-[32px] font-medium text-ink tracking-[-0.02em]">Tilboð</div>
         </div>
-        <p className="text-base leading-[1.6] text-paper/75">{body}</p>
+        <p className="text-base leading-[1.6] text-ink/75">{body}</p>
       </div>
       <a
         href={`mailto:${COMPANY.email}`}
-        className="mt-8 px-6 py-4 bg-paper/[0.06] border border-paper/[0.18] text-paper text-sm font-medium flex justify-between items-center rounded-[2px] hover:bg-paper/10 transition-colors"
+        className="mt-8 px-6 py-4 bg-navy text-paper text-sm font-semibold flex justify-between items-center rounded-[2px] hover:bg-navy-deep transition-colors"
       >
         <span>Óska eftir tilboði</span>
-        <span className="opacity-60">→</span>
+        <span className="opacity-70">→</span>
       </a>
     </div>
   );
@@ -55,9 +55,13 @@ export default function Verdskra() {
               <h1 className="text-[44px] lg:text-[64px] leading-none font-medium tracking-[-0.03em] mb-8 text-balance">
                 Verðskrá
               </h1>
-              <p className="text-[17.5px] leading-[1.55] text-fog max-w-[640px]">
-                Verð birt með VSK. Skýrsla afhendist innan 48 klst. frá framkvæmd skoðunar.
-              </p>
+              <div className="text-[17.5px] leading-[1.55] text-fog max-w-[640px] space-y-4">
+                <p>
+                  Verð er gefið fyrir ástandsskoðun með skýrslu. Innifalið í verði er
+                  allt verkfæragjald sem og akstur innan höfuðborgarsvæðisins.
+                </p>
+                <p>Skýrsla afhendist innan 48 klst. frá framkvæmd skoðunar.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -73,7 +77,7 @@ export default function Verdskra() {
             <div className="hidden md:grid grid-cols-[100px_1.5fr_1fr_1fr] px-8 py-5 bg-paper-alt border-b border-concrete-dk text-[12px] tracking-[0.1em] uppercase font-mono text-fog font-semibold">
               <div>Þrep</div>
               <div>Stærð</div>
-              <div className="text-right">Verð</div>
+              <div className="text-right">Verð með VSK.</div>
               <div></div>
             </div>
             {residential.map((r, i) => (
