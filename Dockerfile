@@ -1,7 +1,9 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm — pin to version that generated pnpm-lock.yaml.
+# pnpm 11.x requires Node 22+; we use Node 22 here for forward compatibility
+# but keep pnpm pinned to 10.x for lockfile determinism.
+RUN corepack enable && corepack prepare pnpm@10.33.1 --activate
 ENV COREPACK_INTEGRITY_KEYS=0
 
 # ---- Dependencies ----
