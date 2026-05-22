@@ -4,11 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { SeverityBadge } from "@/components/dashboard/SeverityBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ReportActions } from "./report-actions";
+import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
 import type {
   Severity,
   InspectionStatus,
   Observation,
   Room,
+  Photo,
 } from "@/lib/supabase/types";
 
 interface PropertyData {
@@ -49,8 +51,16 @@ export default async function InspectionDetailPage({
     notFound();
   }
 
+  let reportSignedUrl: string | null = null;
+  if (inspection.report_url) {
+    const { data: urlData } = await supabase.storage
+      .from("inspection-reports")
+      .createSignedUrl(inspection.report_url, 3600);
+    reportSignedUrl = urlData?.signedUrl ?? null;
+  }
+
   const propertyData = (inspection.property_data ?? {}) as PropertyData;
-  const rooms = (inspection.rooms as (Room & { observations: Observation[]; photos: { id: string }[] })[]) ?? [];
+  const rooms = (inspection.rooms as (Room & { observations: Observation[]; photos: Photo[] })[]) ?? [];
   rooms.sort((a, b) => a.sort_order - b.sort_order);
 
   const totalObservations = rooms.reduce(
@@ -129,7 +139,7 @@ export default async function InspectionDetailPage({
       {/* Report actions */}
       <ReportActions
         inspectionId={inspection.id}
-        reportUrl={inspection.report_url}
+        reportUrl={reportSignedUrl}
         hasAiReport={!!inspection.ai_report_data}
       />
 
@@ -204,6 +214,15 @@ export default async function InspectionDetailPage({
                   <p className="px-4 py-3 text-sm text-fog">
                     Engar athugasemdir í þessu rými.
                   </p>
+                )}
+
+                {photoCount > 0 && (
+                  <div className="px-4 py-3 border-t border-concrete/30">
+                    <p className="text-xs font-semibold text-fog mb-2">
+                      Myndir ({photoCount})
+                    </p>
+                    <PhotoGrid photos={room.photos} />
+                  </div>
                 )}
               </div>
             );

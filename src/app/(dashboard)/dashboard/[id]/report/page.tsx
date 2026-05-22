@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SeverityBadge } from "@/components/dashboard/SeverityBadge";
+import { PrintButton } from "./print-button";
 import type { Severity } from "@/lib/supabase/types";
 
 interface ReportData {
@@ -87,13 +88,7 @@ export default async function ReportPage({
         >
           &larr; Til baka
         </Link>
-        <button
-          onClick={undefined}
-          className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
-          data-print
-        >
-          Prenta / Vista PDF
-        </button>
+        <PrintButton />
       </div>
 
       {/* Report content */}
@@ -277,18 +272,6 @@ export default async function ReportPage({
         </div>
       </article>
 
-      {/* Print script */}
-      <PrintButton />
     </div>
-  );
-}
-
-function PrintButton() {
-  return (
-    <script
-      dangerouslySetInnerHTML={{
-        __html: `document.querySelector('[data-print]')?.addEventListener('click',()=>window.print())`,
-      }}
-    />
   );
 }

@@ -243,6 +243,7 @@ export async function generateReport(inspectionId: string) {
     .eq("id", inspectionId);
 
   revalidatePath(`/dashboard/${inspectionId}`);
+  revalidatePath("/dashboard");
   return {
     status: "success",
     ai_summary: aiSummary,
