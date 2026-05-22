@@ -74,3 +74,24 @@ body {
   color: var(--color-ink);
   opacity: 0.85;
 }
+
+/* ═══ Print styles for report PDF ═══ */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 18mm;
+  }
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .report-article {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .report-article img {
+    break-inside: avoid;
+  }
+}
