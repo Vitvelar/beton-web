@@ -179,6 +179,14 @@ export default async function ReportPage({
 
   return (
     <div className="max-w-4xl mx-auto">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @page { size: A4; margin: 15mm 18mm; }
+        @media print {
+          body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .report-article { border: none !important; border-radius: 0 !important; box-shadow: none !important; }
+          .report-article img { break-inside: avoid; }
+        }
+      `}} />
       {/* Navigation — hidden in print */}
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
