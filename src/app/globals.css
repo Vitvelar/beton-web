@@ -76,11 +76,12 @@ body {
 }
 
 /* ═══ Print styles for report PDF ═══ */
+@page {
+  size: A4;
+  margin: 15mm 18mm;
+}
+
 @media print {
-  @page {
-    size: A4;
-    margin: 15mm 18mm;
-  }
   body {
     background: white !important;
     -webkit-print-color-adjust: exact;
