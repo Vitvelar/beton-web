@@ -130,6 +130,7 @@ export default async function InspectionDetailPage({
       <ReportActions
         inspectionId={inspection.id}
         reportUrl={inspection.report_url}
+        hasAiReport={!!inspection.ai_report_data}
       />
 
       {/* Rooms */}

@@ -1,17 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { generateReport, sendToDrive } from "./actions";
 
 export function ReportActions({
   inspectionId,
   reportUrl,
+  hasAiReport,
 }: {
   inspectionId: string;
   reportUrl: string | null;
+  hasAiReport: boolean;
 }) {
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
+  const [justGenerated, setJustGenerated] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -25,6 +29,7 @@ export function ReportActions({
     if (result.error) {
       setMessage({ type: "error", text: result.error });
     } else {
+      setJustGenerated(true);
       setMessage({ type: "success", text: "Skýrsla búin til." });
     }
   }
@@ -46,6 +51,8 @@ export function ReportActions({
     }
   }
 
+  const showViewReport = hasAiReport || justGenerated || reportUrl;
+
   return (
     <div className="rounded-xl border border-concrete bg-white p-4">
       <h3 className="text-sm font-semibold text-ink mb-3">Skýrsla</h3>
@@ -56,8 +63,21 @@ export function ReportActions({
           disabled={generating}
           className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors disabled:opacity-50"
         >
-          {generating ? "Bý til skýrslu..." : "Búa til skýrslu"}
+          {generating
+            ? "Bý til skýrslu..."
+            : showViewReport
+              ? "Endurgera skýrslu"
+              : "Búa til skýrslu"}
         </button>
+
+        {showViewReport && (
+          <Link
+            href={`/dashboard/${inspectionId}/report`}
+            className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
+          >
+            Skoða skýrslu
+          </Link>
+        )}
 
         {reportUrl && (
           <>
@@ -65,9 +85,9 @@ export function ReportActions({
               href={reportUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
+              className="rounded-lg border border-concrete px-4 py-2 text-sm font-semibold text-stone hover:bg-stone/5 transition-colors"
             >
-              Skoða skýrslu
+              Sækja PDF
             </a>
 
             <button
