@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { verifyAuthToken } from "@/lib/auth";
 
 function createSupabaseProxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -62,32 +61,8 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // --- Marketing routes: SITE_PASSWORD auth ---
-  const sitePassword = process.env.SITE_PASSWORD;
-
-  if (!sitePassword) {
-    return NextResponse.next();
-  }
-
-  if (
-    pathname === "/login" ||
-    pathname.startsWith("/api/") ||
-    pathname.startsWith("/_next/") ||
-    pathname.startsWith("/images/") ||
-    pathname.startsWith("/documents/") ||
-    pathname === "/favicon.ico"
-  ) {
-    return NextResponse.next();
-  }
-
-  const authCookie = request.cookies.get("beton-auth");
-  if (await verifyAuthToken(authCookie?.value, sitePassword)) {
-    return NextResponse.next();
-  }
-
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("redirect", pathname);
-  return NextResponse.redirect(loginUrl);
+  // Marketing routes: no auth required
+  return NextResponse.next();
 }
 
 export const config = {
