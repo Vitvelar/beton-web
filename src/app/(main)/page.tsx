@@ -76,7 +76,7 @@ export default function Home() {
       <section className="mx-auto max-w-[1280px] px-6 lg:px-14 pt-16 lg:pt-[88px] pb-20 lg:pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-start">
           <div>
-            <h1 className="text-[56px] lg:text-[84px] leading-[0.95] font-medium tracking-[-0.035em] text-ink mb-8 text-balance">
+            <h1 className="text-[clamp(2.2rem,10vw,5.25rem)] leading-[1] font-medium tracking-[-0.035em] text-ink mb-8 text-balance">
               Traust
               <br />
               <span className="italic-accent">ástandsskoðun.</span>
