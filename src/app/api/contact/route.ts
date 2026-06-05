@@ -2,6 +2,9 @@ import { Resend } from "resend";
 import { contactSubmissionSchema } from "@/lib/schemas";
 
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "beton@beton.is";
+// Override with a verified Resend sender (e.g. "Beton <noreply@beton.is>") in production.
+// The onboarding@resend.dev fallback only delivers to the Resend account owner's address.
+const FROM_EMAIL = process.env.RESEND_FROM || "Beton vefsíða <onboarding@resend.dev>";
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +37,7 @@ export async function POST(request: Request) {
     const resend = new Resend(apiKey);
 
     await resend.emails.send({
-      from: "Beton vefsíða <onboarding@resend.dev>",
+      from: FROM_EMAIL,
       to: CONTACT_EMAIL,
       replyTo: netfang,
       subject: `Ný fyrirspurn frá ${nafn}`,

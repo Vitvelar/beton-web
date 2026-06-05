@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Eyebrow, NumberedDivider } from "@/components/Editorial";
-import { COMPANY } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Verðskrá — ástandsskoðun frá 129.900 kr.",
@@ -30,13 +29,13 @@ function TilbodCard({ n, label, body }: { n: string; label: string; body: string
         </div>
         <p className="text-base leading-[1.6] text-ink/75">{body}</p>
       </div>
-      <a
-        href={`mailto:${COMPANY.email}`}
+      <Link
+        href="/samband"
         className="mt-8 px-6 py-4 bg-navy text-paper text-sm font-semibold flex justify-between items-center rounded-[2px] hover:bg-navy-deep transition-colors"
       >
         <span>Óska eftir tilboði</span>
         <span className="opacity-70">→</span>
-      </a>
+      </Link>
     </div>
   );
 }

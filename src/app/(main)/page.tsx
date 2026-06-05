@@ -1,10 +1,30 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Eyebrow } from "@/components/Editorial";
-import { BetonMark } from "@/components/BetonMark";
+import { ContactForm } from "@/components/ContactForm";
 import { PRICING, COMPANY } from "@/lib/constants";
+import { FAQ } from "@/lib/faq";
 
-const SERVICES = ["Ástandsskoðun", "Kostnaðarmat", "Ástand pípulagna"];
+const SERVICES = [
+  {
+    title: "Ástandsskoðun",
+    body: "Ítarleg úttekt á ástandi fasteignar — þak, klæðningar, lagnir, raki og burðarvirki. Niðurstöður flokkaðar eftir alvarleika með skýrum tillögum að úrbótum.",
+  },
+  {
+    title: "Kostnaðarmat",
+    body: "Mat á áætluðum kostnaði við þær úrbætur sem skoðun leiðir í ljós, svo þú hafir skýra mynd af því sem framundan er áður en gengið er frá kaupum.",
+  },
+];
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ.map(({ q, a }) => ({
+    "@type": "Question",
+    name: q,
+    acceptedAnswer: { "@type": "Answer", text: a },
+  })),
+};
 
 function PriceTier({
   size,
@@ -57,11 +77,9 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-12 lg:gap-16 items-start">
           <div>
             <h1 className="text-[56px] lg:text-[84px] leading-[0.95] font-medium tracking-[-0.035em] text-ink mb-8 text-balance">
-              Fagleg og
+              Traust
               <br />
-              hlutlaus
-              <br />
-              <span className="italic-accent">ráðgjöf.</span>
+              <span className="italic-accent">ástandsskoðun.</span>
             </h1>
             <div className="text-[17px] lg:text-[18px] leading-[1.65] text-ink/80 max-w-[560px] mb-10 space-y-4">
               <p>
@@ -110,10 +128,6 @@ export default function Home() {
                 sizes="(max-width: 1024px) 100vw, 600px"
               />
             </div>
-            {/* Floating chevron mark */}
-            <div className="hidden md:flex absolute -top-8 -right-8 w-[88px] h-[88px] bg-paper border border-concrete-dk items-center justify-center rounded-[2px]">
-              <BetonMark color="var(--color-navy)" size={44} />
-            </div>
           </div>
         </div>
       </section>
@@ -124,29 +138,69 @@ export default function Home() {
           <div className="mb-16">
             <Eyebrow>Þjónustuframboð Beton</Eyebrow>
             <h2 className="text-[36px] lg:text-[48px] leading-[1.05] font-medium tracking-[-0.03em] mt-5 max-w-[720px] text-balance">
-              Veldu þá þjónustu sem hentar þér.
+              Fagleg ráðgjöf um viðhald
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {SERVICES.map((s) => (
-              <Link
-                key={s}
-                href="/samband"
-                className="group bg-paper border border-concrete-dk px-8 py-7 flex items-center justify-between hover:border-ink transition-colors"
-              >
-                <span className="text-[18px] font-medium tracking-[-0.01em] text-navy group-hover:text-ink transition-colors">
-                  {s}
-                </span>
-                <span className="text-navy text-xl">→</span>
-              </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {SERVICES.map((s, i) => (
+              <div key={s.title} className="bg-paper border border-concrete-dk px-8 py-9">
+                <div className="font-mono text-[12px] tracking-[0.1em] text-copper uppercase mb-5">
+                  0{i + 1}
+                </div>
+                <h3 className="text-[24px] font-medium tracking-[-0.015em] text-ink mb-3.5">
+                  {s.title}
+                </h3>
+                <p className="text-[15.5px] leading-[1.65] text-fog">{s.body}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* PRICING PREVIEW */}
+      {/* UM OKKUR — founder preview */}
       <section className="px-6 lg:px-14 py-24 lg:py-32">
+        <div className="mx-auto max-w-[1280px]">
+          <div className="grid grid-cols-1 md:grid-cols-[5fr_7fr] gap-12 md:gap-16 items-center">
+            <div className="relative aspect-[4/5] rounded-[2px] overflow-hidden bg-concrete shadow-[0_30px_60px_-30px_rgba(10,13,46,0.25)]">
+              <Image
+                src="/images/bragi.webp"
+                alt="Bragi Michaelsson, stofnandi Beton ehf."
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 500px"
+              />
+            </div>
+            <div>
+              <Eyebrow>Um okkur</Eyebrow>
+              <h2 className="text-[32px] lg:text-[44px] leading-[1.05] font-medium tracking-[-0.025em] mt-5 mb-7 text-balance">
+                Byggingafræðingur og smiður með mikla reynslu
+              </h2>
+              <div className="text-[16.5px] leading-[1.65] text-ink/80 space-y-5 max-w-[600px]">
+                <p>
+                  Bragi Michaelsson stofnaði Beton og leiðir hverja skoðun sjálfur. Hann
+                  er byggingafræðingur og húsasmíðameistari með áralanga reynslu úr
+                  byggingageiranum á Íslandi og í Danmörku.
+                </p>
+                <p>
+                  Þessi blanda af handverki, fræðum og rekstrarþekkingu tryggir hlutlausa
+                  úttekt þar sem niðurstöður eru útskýrðar á mannamáli — án hagsmunatengsla
+                  við kaupanda, seljanda eða fasteignasala.
+                </p>
+              </div>
+              <Link
+                href="/umokkur"
+                className="inline-flex items-center gap-2 mt-8 text-sm font-medium text-ink border-b border-ink pb-0.5"
+              >
+                Lesa meira um Beton <span>→</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING PREVIEW */}
+      <section className="bg-paper-alt px-6 lg:px-14 py-24 lg:py-32">
         <div className="mx-auto max-w-[1280px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 mb-16 lg:mb-20">
             <div>
@@ -154,7 +208,7 @@ export default function Home() {
               <h2 className="text-[36px] lg:text-[48px] leading-[1.05] font-medium tracking-[-0.03em] mt-5">
                 Gagnsæ verðlagning.
                 <br />
-                Engin falinn kostnaður.
+                Enginn falinn kostnaður.
               </h2>
             </div>
             <div className="md:pt-3">
@@ -179,36 +233,69 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA — closing band */}
-      <section className="bg-ink text-paper px-6 lg:px-14 py-12 lg:py-14">
-        <div className="mx-auto max-w-[1280px] grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-8 lg:gap-12 items-center">
-          <div>
-            <Eyebrow color="var(--color-navy-soft)">Hafðu samband</Eyebrow>
-            <h2 className="text-[28px] lg:text-[36px] leading-[1.1] font-medium tracking-[-0.02em] mt-4 mb-3 text-paper text-balance">
-              Tilbúin að bóka skoðun á fasteign?
-            </h2>
-            <p className="text-[14.5px] leading-[1.55] text-paper/65 max-w-[540px]">
-              Skýrsla vegna ástandsskoðunar er afhent innan 48 klst. frá framkvæmd skoðunar.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2.5">
-            <Link
-              href="/samband"
-              className="px-6 py-3.5 bg-paper text-ink text-[14px] font-semibold flex justify-between items-center rounded-full"
-            >
-              <span>Hafa samband</span>
-              <span>→</span>
-            </Link>
-            <a
-              href={`mailto:${COMPANY.email}`}
-              className="px-6 py-3.5 text-paper text-[14px] font-medium border border-paper/25 flex justify-between items-center rounded-full"
-            >
-              <span>{COMPANY.email}</span>
-              <span className="opacity-60">↗</span>
-            </a>
+      {/* SPURT OG SVARAÐ — FAQ for SEO/AEO */}
+      <section className="px-6 lg:px-14 py-24 lg:py-32">
+        <div className="mx-auto max-w-[1280px]">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24">
+            <div>
+              <Eyebrow>Spurt og svarað</Eyebrow>
+              <h2 className="text-[32px] lg:text-[44px] leading-[1.05] font-medium tracking-[-0.03em] mt-5 text-balance">
+                Algengar spurningar um ástandsskoðun.
+              </h2>
+            </div>
+            <div className="divide-y divide-concrete-dk border-t border-concrete-dk">
+              {FAQ.map(({ q, a }) => (
+                <details key={q} className="group py-6">
+                  <summary className="flex items-start justify-between gap-6 cursor-pointer list-none">
+                    <h3 className="text-[19px] lg:text-[21px] font-medium tracking-[-0.01em] text-ink">
+                      {q}
+                    </h3>
+                    <span className="mt-1 text-fog text-xl leading-none transition-transform group-open:rotate-45">
+                      +
+                    </span>
+                  </summary>
+                  <p className="mt-4 text-[16px] leading-[1.65] text-fog max-w-[640px]">{a}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </div>
       </section>
+
+      {/* CONTACT — closing band with form */}
+      <section id="hafa-samband" className="bg-ink text-paper px-6 lg:px-14 py-20 lg:py-28">
+        <div className="mx-auto max-w-[1280px] grid grid-cols-1 lg:grid-cols-[1fr_1.05fr] gap-12 lg:gap-20 items-start">
+          <div>
+            <Eyebrow color="var(--color-navy-soft)">Hafðu samband</Eyebrow>
+            <h2 className="text-[40px] lg:text-[56px] leading-none font-medium tracking-[-0.03em] mt-6 mb-7 text-paper text-balance">
+              Tilbúin að bóka
+              <br />
+              skoðun á fasteign?
+            </h2>
+            <p className="text-[17px] leading-[1.65] text-paper/70 max-w-[540px]">
+              Ástandsskoðunarskýrsla er afhent innan 48 klukkustunda frá ástandsskoðun.
+              Hafðu samband með því að fylla út formið hér til hliðar eða sendu tölvupóst á{" "}
+              <a
+                href={`mailto:${COMPANY.email}`}
+                className="text-paper underline underline-offset-4 decoration-paper/40 hover:decoration-paper transition-colors"
+              >
+                {COMPANY.email}
+              </a>
+              .
+            </p>
+          </div>
+          <div className="bg-paper text-ink p-8 md:p-10 rounded-[2px]">
+            <ContactForm />
+          </div>
+        </div>
+      </section>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
     </>
   );
 }

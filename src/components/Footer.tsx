@@ -1,6 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
 import { COMPANY } from "@/lib/constants";
-import { BetonMark } from "./BetonMark";
 
 function InstagramIcon() {
   return (
@@ -45,10 +45,15 @@ export function Footer() {
       <div className="mx-auto max-w-[1280px]">
         <div className="grid grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1.2fr] gap-5 md:gap-8 items-start">
           <div className="flex flex-col gap-3 col-span-2 md:col-span-1">
-            <div className="flex items-center gap-2">
-              <BetonMark color="var(--color-paper)" size={18} />
-              <div className="text-[14px] font-bold tracking-[0.06em]">BETON</div>
-            </div>
+            <Link href="/" aria-label="Beton ehf." className="w-fit">
+              <Image
+                src="/images/beton-logo.webp"
+                alt="Beton ehf."
+                width={120}
+                height={120}
+                className="h-12 w-auto [filter:brightness(0)_invert(1)]"
+              />
+            </Link>
             <div className="flex items-center gap-3">
               <a
                 href="https://www.instagram.com/beton_ehf"
@@ -73,7 +78,6 @@ export function Footer() {
           <FCol title="Þjónusta">
             <FLink href="/samband">Ástandsskoðun</FLink>
             <FLink href="/samband">Kostnaðarmat</FLink>
-            <FLink href="/samband">Ástand pípulagna</FLink>
           </FCol>
           <FCol title="Fyrirtækið">
             <FLink href="/umokkur">Um okkur</FLink>
