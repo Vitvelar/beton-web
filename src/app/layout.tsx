@@ -1,20 +1,28 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Anton, Epilogue, Abel } from "next/font/google";
 import "./globals.css";
 import { COMPANY } from "@/lib/constants";
 
-const inter = Inter({
+const epilogue = Epilogue({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-epilogue",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const anton = Anton({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400"],
   display: "swap",
-  variable: "--font-jetbrains-mono",
+  variable: "--font-anton",
+});
+
+const abel = Abel({
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+  variable: "--font-abel",
 });
 
 export const metadata: Metadata = {
@@ -146,7 +154,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="is" className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+    <html lang="is" className={`${epilogue.variable} ${anton.variable} ${abel.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-paper text-ink">
         {children}
         <script

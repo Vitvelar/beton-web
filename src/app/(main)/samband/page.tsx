@@ -40,9 +40,6 @@ export default function Samband() {
           {/* Form */}
           <div className="max-w-[720px]">
             <div className="bg-paper border border-concrete-dk p-8 md:p-12">
-              <div className="font-mono text-[11px] tracking-[0.12em] text-fog uppercase mb-8">
-                Skilaboð · Form
-              </div>
               <ContactForm />
             </div>
           </div>

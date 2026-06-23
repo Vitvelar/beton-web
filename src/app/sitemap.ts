@@ -10,7 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: `${base}/skodun`,
+      url: `${base}/samband`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.9,
@@ -26,12 +26,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "yearly",
       priority: 0.7,
-    },
-    {
-      url: `${base}/samband`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.6,
     },
     {
       url: `${base}/skilmalar`,
