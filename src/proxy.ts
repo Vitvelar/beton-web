@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { isAllowedEmail } from "@/lib/allowed-users";
 
 function createSupabaseProxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -55,6 +56,12 @@ export async function proxy(request: NextRequest) {
 
     if (!user) {
       const loginUrl = new URL("/dashboard/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (!isAllowedEmail(user.email)) {
+      const loginUrl = new URL("/dashboard/login", request.url);
+      loginUrl.searchParams.set("error", "unauthorized");
       return NextResponse.redirect(loginUrl);
     }
 

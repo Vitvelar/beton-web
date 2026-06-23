@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { DashboardRealtimeRefresh } from "@/components/dashboard/DashboardRealtimeRefresh";
 
 export const metadata = {
   title: {
@@ -24,6 +25,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-paper">
+      <DashboardRealtimeRefresh />
       <DashboardHeader email={user.email ?? ""} />
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
     </div>
