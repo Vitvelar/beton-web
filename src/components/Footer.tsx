@@ -99,6 +99,13 @@ export function Footer() {
         </div>
         <div className="mt-4 pt-3 border-t border-paper/10 flex justify-between text-[10.5px] text-paper/45">
           <div>© 2026 {COMPANY.name}</div>
+          <a
+            href="https://admin.beton.is"
+            rel="nofollow"
+            className="hover:text-paper transition-colors"
+          >
+            Innskráning
+          </a>
         </div>
       </div>
     </footer>

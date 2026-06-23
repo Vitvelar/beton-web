@@ -31,8 +31,15 @@ function createSupabaseProxy(request: NextRequest) {
 }
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   const host = request.headers.get("host") ?? "";
+
+  // Stjórnborðið býr á admin.beton.is. Ef einhver opnar /dashboard á
+  // markaðssíðunni (beton.is) beinum við yfir á admin-lénið.
+  const isMarketingHost = host === "beton.is" || host === "www.beton.is";
+  if (isMarketingHost && pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(`https://admin.beton.is${pathname}${search}`);
+  }
 
   // admin.beton.is root → redirect to /dashboard
   if (host.startsWith("admin.") && pathname === "/") {
