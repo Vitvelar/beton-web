@@ -88,7 +88,8 @@ export default async function ReportPage({
       rooms (
         id, name, slug, sort_order, ratings, notes,
         observations (
-          id, observation_number, category, title, description, suggestion, severity, sort_order
+          id, observation_number, category, title, description, suggestion, severity, sort_order,
+          photos (id, storage_path, photo_type, caption, is_cover, sort_order, room_id, observation_id)
         ),
         photos (id, storage_path, photo_type, caption, is_cover, sort_order, room_id, observation_id)
       )
@@ -109,20 +110,36 @@ export default async function ReportPage({
       id: string; observation_number: string | null; category: string | null;
       title: string; description: string | null; suggestion: string | null;
       severity: string; sort_order: number;
+      photos: RawPhoto[];
     }>;
-    photos: Array<{
-      id: string; storage_path: string | null; photo_type: string;
-      caption: string | null; is_cover: boolean; sort_order: number;
-      room_id: string | null; observation_id: string | null;
-    }>;
+    photos: RawPhoto[];
+  };
+  type RawPhoto = {
+    id: string; storage_path: string | null; photo_type: string;
+    caption: string | null; is_cover: boolean; sort_order: number;
+    room_id: string | null; observation_id: string | null;
   };
   const dbRooms = ((inspection.rooms ?? []) as RawRoom[]).sort(
     (a, b) => a.sort_order - b.sort_order
   );
 
-  const allDbPhotos = dbRooms.flatMap((r) =>
-    (r.photos ?? []).filter((p) => p.storage_path)
-  );
+  // Bæði rýmismyndir (r.photos) og athugasemdamyndir (r.observations[].photos).
+  // Athugasemdamyndir bera observation_id og room_id = null, svo þær koma aðeins
+  // fram í observation-embed-inu — roomPhotos()/obsPhotos() flokka þær rétt.
+  const allDbPhotos = (() => {
+    const byId = new Map<string, RawPhoto>();
+    for (const r of dbRooms) {
+      for (const p of r.photos ?? []) {
+        if (p.storage_path) byId.set(p.id, p);
+      }
+      for (const o of r.observations ?? []) {
+        for (const p of o.photos ?? []) {
+          if (p.storage_path) byId.set(p.id, p);
+        }
+      }
+    }
+    return [...byId.values()];
+  })();
 
   const signedUrls = new Map<string, string>();
   const batchSize = 20;
@@ -177,16 +194,55 @@ export default async function ReportPage({
   const propData = report.inspection.property_data ?? {};
   const inspectorName = (propData.inspectorName as string) ?? "Bragi Michaelsson";
 
+  const logoSrc = "/images/beton-logo.webp";
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
-        @page { size: A4; margin: 15mm 18mm; }
+        /* Word "Normal" spássíur = 2,54 cm allan hringinn. */
+        @page { size: A4; margin: 25.4mm; }
+        /* Forsíða (fyrsta síða) og skilmálasíða eru heilsíður án hlaupandi haus. */
+        @page :first { margin: 0; }
+        @page terms { margin: 0; }
+        .run-header, .run-footer { display: none; }
         @media print {
-          body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .report-article { border: none !important; border-radius: 0 !important; box-shadow: none !important; }
-          .report-article img { break-inside: avoid; }
+          html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          /* Fjarlægja stjórnborðs-umgjörð (haus, miðjun, bakgrunnur) úr prentun. */
+          main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+          .report-article {
+            border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+            background: #fff !important; max-width: none !important; overflow: visible !important;
+          }
+          /* Venjulegar efnissíður — @page sér um spássíurnar, svo núllum innri lárétt bil. */
+          .report-article > section {
+            padding-left: 0 !important; padding-right: 0 !important;
+            padding-top: 4mm !important; padding-bottom: 0 !important; border: 0 !important;
+          }
+          /* Forsíða og skilmálasíða eru heilsíður (margin: 0) — gefa þeim eigin innri spássíu. */
+          .report-article > section.rpt-cover { padding: 20mm 25.4mm !important; }
+          .report-article > section.rpt-terms { page: terms; padding: 25.4mm !important; }
+          /* Lítið Beton-logo efst til vinstri + fótur, endurtekið á öllum síðum.
+             Á heilsíðunum (margin: 0) ýtir neikvæða staðsetningin þeim út af síðunni. */
+          .run-header { display: flex; align-items: center; position: fixed; top: -18mm; left: 0; }
+          .run-header img { height: 9mm; width: auto; }
+          .run-footer {
+            display: block; position: fixed; bottom: -18mm; left: 0; right: 0;
+            text-align: center; font-size: 8pt; color: #6b7280;
+          }
+          /* Myndir, töflur og spjöld mega ekki klofna milli síðna (eins og í Word). */
+          img, table, thead, tbody, tr, .rpt-keep { break-inside: avoid; page-break-inside: avoid; }
+          h2, h3 { break-after: avoid; }
         }
       `}} />
+
+      {/* Hlaupandi haus (lítið logo) + fótur — birtist aðeins í prentun, á öllum síðum. */}
+      <div className="run-header" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoSrc} alt="" />
+      </div>
+      <div className="run-footer" aria-hidden="true">
+        Beton ehf. · Ástandsskoðun · {report.inspection.address}
+      </div>
+
       {/* Navigation — hidden in print */}
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
@@ -198,13 +254,11 @@ export default async function ReportPage({
       <article className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
 
         {/* ═══ PAGE 1: COVER ═══ */}
-        <section className="print:break-after-page">
-          <div className="flex flex-col items-center text-center px-8 py-12 print:py-8">
-            <div className="w-16 h-16 mb-4 print:w-20 print:h-20">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                <rect width="100" height="100" rx="12" fill="#1a1f71" />
-                <text x="50" y="62" textAnchor="middle" fill="white" fontSize="32" fontWeight="800" fontFamily="system-ui">B</text>
-              </svg>
+        <section className="rpt-cover print:break-after-page">
+          <div className="flex flex-col items-center text-center px-8 py-12 print:py-0">
+            <div className="mb-5 print:mb-8">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoSrc} alt="Beton ehf." className="h-20 w-auto print:h-24" />
             </div>
             <p className="text-xs font-semibold tracking-[0.2em] text-navy mb-2">BETON EHF.</p>
             <h1 className="text-3xl font-bold text-navy mb-3">Ástandsskoðun</h1>
@@ -291,7 +345,7 @@ export default async function ReportPage({
 
           <div className="space-y-6">
             {(["athugasemd", "alvarleg", "mjog_alvarleg"] as const).map((sev) => (
-              <div key={sev} className="flex items-start gap-4">
+              <div key={sev} className="flex items-start gap-4 print:break-inside-avoid">
                 <div
                   className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl font-bold"
                   style={{ backgroundColor: SEV_COLORS[sev].color }}
@@ -412,7 +466,7 @@ export default async function ReportPage({
 
               {/* Room photos */}
               {rPhotos.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="grid grid-cols-3 gap-2 mb-4 print:break-inside-avoid">
                   {rPhotos.map((p) => (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-28 object-cover rounded" />
@@ -422,7 +476,7 @@ export default async function ReportPage({
 
               {/* Room ratings */}
               {room.ratings && Object.keys(room.ratings).length > 0 && (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1 bg-stone-50 rounded p-3 mb-4 text-xs">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1 bg-stone-50 rounded p-3 mb-4 text-xs print:break-inside-avoid">
                   {Object.entries(room.ratings)
                     .filter(([, v]) => v && v !== "na")
                     .map(([key, value]) => (
@@ -543,7 +597,7 @@ export default async function ReportPage({
         )}
 
         {/* ═══ SKILMÁLAR OG FYRIRVARAR ═══ */}
-        <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
+        <section className="rpt-terms px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <h2 className="text-base font-bold text-navy mb-1">
             Skilmálar og fyrirvarar ástandsskoðunar Beton ehf.
           </h2>
@@ -624,11 +678,9 @@ export default async function ReportPage({
             </TermsSection>
           </div>
 
-          <div className="text-center mt-6">
-            <svg viewBox="0 0 100 100" className="w-14 h-14 mx-auto opacity-30">
-              <rect width="100" height="100" rx="12" fill="#1a1f71" />
-              <text x="50" y="62" textAnchor="middle" fill="white" fontSize="32" fontWeight="800" fontFamily="system-ui">B</text>
-            </svg>
+          <div className="text-center mt-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={logoSrc} alt="Beton ehf." className="h-16 w-auto mx-auto" />
           </div>
         </section>
 

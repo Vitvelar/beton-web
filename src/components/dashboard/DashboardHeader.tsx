@@ -6,7 +6,7 @@ import { signOut } from "@/app/(dashboard)/actions";
 
 export function DashboardHeader({ email }: { email: string }) {
   return (
-    <header className="border-b border-concrete bg-white">
+    <header className="border-b border-concrete bg-white print:hidden">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image

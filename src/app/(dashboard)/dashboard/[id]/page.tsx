@@ -38,9 +38,10 @@ export default async function InspectionDetailPage({
       rooms (
         id, name, slug, sort_order, ratings, notes,
         observations (
-          id, observation_number, category, title, description, suggestion, severity, sort_order
+          id, observation_number, category, title, description, suggestion, severity, sort_order,
+          photos (id)
         ),
-        photos (id, storage_path, photo_type, caption, is_cover, sort_order)
+        photos (id, storage_path, photo_type, caption, is_cover, sort_order, observation_id)
       )
     `
     )
@@ -60,17 +61,27 @@ export default async function InspectionDetailPage({
   }
 
   const propertyData = (inspection.property_data ?? {}) as PropertyData;
-  const rooms = (inspection.rooms as (Room & { observations: Observation[]; photos: Photo[] })[]) ?? [];
+  const rooms = (inspection.rooms as (Room & {
+    observations: (Observation & { photos?: { id: string }[] })[];
+    photos: Photo[];
+  })[]) ?? [];
   rooms.sort((a, b) => a.sort_order - b.sort_order);
 
   const totalObservations = rooms.reduce(
     (sum, r) => sum + (r.observations?.length ?? 0),
     0
   );
-  const totalPhotos = rooms.reduce(
-    (sum, r) => sum + (r.photos?.length ?? 0),
-    0
-  );
+  // Heildarmyndir = rýmismyndir + athugasemdamyndir. Rýmismyndir eru aðeins
+  // þær sem hafa ekkert observation_id; athugasemdamyndir teljast undir sinni
+  // athugasemd (og birtast ekki í rýmisyfirlitinu að neðan).
+  const totalPhotos = rooms.reduce((sum, r) => {
+    const roomOnly = (r.photos ?? []).filter((p) => !p.observation_id).length;
+    const obsPhotos = (r.observations ?? []).reduce(
+      (s, o) => s + (o.photos?.length ?? 0),
+      0
+    );
+    return sum + roomOnly + obsPhotos;
+  }, 0);
 
   return (
     <div>
@@ -157,7 +168,10 @@ export default async function InspectionDetailPage({
           {rooms.map((room) => {
             const obs = room.observations ?? [];
             obs.sort((a: Observation, b: Observation) => a.sort_order - b.sort_order);
-            const photoCount = room.photos?.length ?? 0;
+            // Aðeins rýmismyndir í yfirlitinu — athugasemdamyndir birtast undir
+            // sinni athugasemd, ekki hér.
+            const roomPhotos = (room.photos ?? []).filter((p) => !p.observation_id);
+            const photoCount = roomPhotos.length;
 
             return (
               <div
@@ -221,7 +235,7 @@ export default async function InspectionDetailPage({
                     <p className="text-xs font-semibold text-fog mb-2">
                       Myndir ({photoCount})
                     </p>
-                    <PhotoGrid photos={room.photos} />
+                    <PhotoGrid photos={roomPhotos} />
                   </div>
                 )}
               </div>
