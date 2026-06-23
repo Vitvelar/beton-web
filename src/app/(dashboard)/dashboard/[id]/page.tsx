@@ -39,7 +39,7 @@ export default async function InspectionDetailPage({
         id, name, slug, sort_order, ratings, notes,
         observations (
           id, observation_number, category, title, description, suggestion, severity, sort_order,
-          photos (id)
+          photos (id, storage_path, photo_type, caption, is_cover, sort_order)
         ),
         photos (id, storage_path, photo_type, caption, is_cover, sort_order, observation_id)
       )
@@ -62,7 +62,7 @@ export default async function InspectionDetailPage({
 
   const propertyData = (inspection.property_data ?? {}) as PropertyData;
   const rooms = (inspection.rooms as (Room & {
-    observations: (Observation & { photos?: { id: string }[] })[];
+    observations: (Observation & { photos?: Photo[] })[];
     photos: Photo[];
   })[]) ?? [];
   rooms.sort((a, b) => a.sort_order - b.sort_order);
@@ -194,7 +194,9 @@ export default async function InspectionDetailPage({
 
                 {obs.length > 0 && (
                   <ul className="divide-y divide-concrete/30">
-                    {obs.map((o: Observation) => (
+                    {obs.map((o) => {
+                      const obsPhotos = (o.photos ?? []).filter((p) => p.storage_path);
+                      return (
                       <li key={o.id}>
                         <Link
                           href={`/dashboard/${id}/observation/${o.id}`}
@@ -219,8 +221,14 @@ export default async function InspectionDetailPage({
                           </div>
                           <SeverityBadge severity={o.severity as Severity} />
                         </Link>
+                        {obsPhotos.length > 0 && (
+                          <div className="px-4 pb-3">
+                            <PhotoGrid photos={obsPhotos} />
+                          </div>
+                        )}
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 )}
 
