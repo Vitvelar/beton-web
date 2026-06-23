@@ -195,60 +195,55 @@ export default async function ReportPage({
   const inspectorName = (propData.inspectorName as string) ?? "Bragi Michaelsson";
 
   const logoSrc = "/images/beton-logo.webp";
+  // Skráarnafn = Astandsskodun_<heimilisfang>_<dagsetning> (eins og í appinu).
+  const safeAddress = report.inspection.address
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  const pdfFileName = `Astandsskodun_${safeAddress}_${report.inspection.inspection_date}`;
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
-        /* Word "Normal" spássíur = 2,54 cm allan hringinn. */
-        @page { size: A4; margin: 25.4mm; }
-        /* Forsíða (fyrsta síða) og skilmálasíða eru heilsíður án hlaupandi haus. */
-        @page :first { margin: 0; }
-        @page terms { margin: 0; }
-        .run-header, .run-footer { display: none; }
+        /* Word "Normal" spássíur = 2,54 cm. Haus/fótur lifa í spássíu-reitum
+           (@page margin boxes) — Chrome birtir þá áreiðanlega, engin skörun. */
+        @page {
+          size: A4;
+          margin: 25.4mm;
+          @top-left { content: "BETON EHF."; font-size: 7.5pt; letter-spacing: 1.2px; color: #6b7280; }
+          @bottom-left { content: ${JSON.stringify(`${report.inspection.address} · Ástandsskoðun`)}; font-size: 7.5pt; color: #9ca3af; }
+          @bottom-right { content: "Bls. " counter(page) " / " counter(pages); font-size: 7.5pt; color: #9ca3af; }
+        }
+        /* Forsíða og skilmálasíða: heilsíður, EKKERT hlaupandi haus/fótur (stórt logo þar). */
+        @page :first { margin: 0; @top-left { content: none } @bottom-left { content: none } @bottom-right { content: none } }
+        @page terms  { margin: 0; @top-left { content: none } @bottom-left { content: none } @bottom-right { content: none } }
         @media print {
           html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          /* Fjarlægja stjórnborðs-umgjörð (haus, miðjun, bakgrunnur) úr prentun. */
           main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
           .report-article {
             border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
             background: #fff !important; max-width: none !important; overflow: visible !important;
           }
-          /* Venjulegar efnissíður — @page sér um spássíurnar, svo núllum innri lárétt bil. */
           .report-article > section {
             padding-left: 0 !important; padding-right: 0 !important;
             padding-top: 4mm !important; padding-bottom: 0 !important; border: 0 !important;
           }
-          /* Forsíða og skilmálasíða eru heilsíður (margin: 0) — gefa þeim eigin innri spássíu. */
           .report-article > section.rpt-cover { padding: 20mm 25.4mm !important; }
           .report-article > section.rpt-terms { page: terms; padding: 25.4mm !important; }
-          /* Lítið Beton-logo efst til vinstri + fótur, endurtekið á öllum síðum.
-             Á heilsíðunum (margin: 0) ýtir neikvæða staðsetningin þeim út af síðunni. */
-          .run-header { display: flex; align-items: center; position: fixed; top: -18mm; left: 0; }
-          .run-header img { height: 9mm; width: auto; }
-          .run-footer {
-            display: block; position: fixed; bottom: -18mm; left: 0; right: 0;
-            text-align: center; font-size: 8pt; color: #6b7280;
-          }
-          /* Myndir, töflur og spjöld mega ekki klofna milli síðna (eins og í Word). */
+          /* Myndir/töflur klofna ekki milli síðna. Athugasemda-/rýmismyndir sýna FULLA
+             mynd (engin klipping) — náttúrulegt hlutfall, takmarkað í hæð. */
           img, table, thead, tbody, tr, .rpt-keep { break-inside: avoid; page-break-inside: avoid; }
+          .rpt-photo { height: auto !important; max-height: 95mm !important; object-fit: contain !important; }
           h2, h3 { break-after: avoid; }
         }
       `}} />
-
-      {/* Hlaupandi haus (lítið logo) + fótur — birtist aðeins í prentun, á öllum síðum. */}
-      <div className="run-header" aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoSrc} alt="" />
-      </div>
-      <div className="run-footer" aria-hidden="true">
-        Beton ehf. · Ástandsskoðun · {report.inspection.address}
-      </div>
 
       {/* Navigation — hidden in print */}
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
           &larr; Til baka
         </Link>
-        <PrintButton />
+        <PrintButton fileName={pdfFileName} />
       </div>
 
       <article className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
@@ -469,7 +464,7 @@ export default async function ReportPage({
                 <div className="grid grid-cols-3 gap-2 mb-4 print:break-inside-avoid">
                   {rPhotos.map((p) => (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-28 object-cover rounded" />
+                    <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-28 object-cover rounded rpt-photo" />
                   ))}
                 </div>
               )}
@@ -538,7 +533,7 @@ export default async function ReportPage({
                           <div className="grid grid-cols-2 gap-2 mt-3">
                             {oPhotos.map((p) => (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-36 object-cover rounded" />
+                              <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-36 object-cover rounded rpt-photo" />
                             ))}
                           </div>
                         )}
