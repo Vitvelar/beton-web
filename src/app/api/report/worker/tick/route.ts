@@ -39,11 +39,14 @@ export async function POST(request: NextRequest) {
   }
 
   draining = true;
-  const deadline = Date.now() + DRAIN_BUDGET_MS;
-  const workerId = `tick-${process.pid}`;
-  const svc = createServiceClient();
   const results: Array<{ job: string; ok: boolean; error?: string }> = [];
   try {
+    // Everything that can throw (incl. createServiceClient when the service key
+    // is missing) lives INSIDE the try so `draining` is always reset in finally
+    // — otherwise one early throw wedges this instance into "already-draining".
+    const svc = createServiceClient();
+    const deadline = Date.now() + DRAIN_BUDGET_MS;
+    const workerId = `tick-${process.pid}`;
     while (Date.now() < deadline) {
       const { data, error } = await svc.rpc("claim_next_report_job", {
         worker_id: workerId,
@@ -57,10 +60,15 @@ export async function POST(request: NextRequest) {
       const r = await processJob(svc, job);
       results.push({ job: job.id, ok: r.ok, error: r.error });
     }
+    return NextResponse.json({ processed: results.length, results });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : String(e), processed: results.length },
+      { status: 500 }
+    );
   } finally {
     draining = false;
   }
-  return NextResponse.json({ processed: results.length, results });
 }
 
 type ReportJob = {
