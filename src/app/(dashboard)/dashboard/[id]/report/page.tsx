@@ -205,18 +205,12 @@ export default async function ReportPage({
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
-        /* Word "Normal" spássíur = 2,54 cm. Haus/fótur lifa í spássíu-reitum
-           (@page margin boxes) — Chrome birtir þá áreiðanlega, engin skörun. */
-        @page {
-          size: A4;
-          margin: 25.4mm;
-          @top-left { content: "BETON EHF."; font-size: 7.5pt; letter-spacing: 1.2px; color: #6b7280; }
-          @bottom-left { content: ${JSON.stringify(`${report.inspection.address} · Ástandsskoðun`)}; font-size: 7.5pt; color: #9ca3af; }
-          @bottom-right { content: "Bls. " counter(page) " / " counter(pages); font-size: 7.5pt; color: #9ca3af; }
-        }
-        /* Forsíða og skilmálasíða: heilsíður, EKKERT hlaupandi haus/fótur (stórt logo þar). */
-        @page :first { margin: 0; @top-left { content: none } @bottom-left { content: none } @bottom-right { content: none } }
-        @page terms  { margin: 0; @top-left { content: none } @bottom-left { content: none } @bottom-right { content: none } }
+        /* Spássíurnar (Word "Normal" = 2,54 cm) eru í EFNINU sjálfu (padding),
+           EKKI í @page. Þannig haldast þær sama hvað "Margins" stillingin í
+           prentglugga Chrome er stillt á (None/Default) — áður var reitt á
+           @page margin sem Chrome hunsar þegar notandi velur "None", og þá
+           rann textinn út í kant. */
+        @page { size: A4; margin: 0; }
         @media print {
           html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
@@ -224,12 +218,12 @@ export default async function ReportPage({
             border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
             background: #fff !important; max-width: none !important; overflow: visible !important;
           }
+          /* 25,4mm til hliðanna á öllum efnissíðum, hóflegt að ofan/neðan. */
           .report-article > section {
-            padding-left: 0 !important; padding-right: 0 !important;
-            padding-top: 4mm !important; padding-bottom: 0 !important; border: 0 !important;
+            padding: 18mm 25.4mm !important; border: 0 !important;
           }
           .report-article > section.rpt-cover { padding: 20mm 25.4mm !important; }
-          .report-article > section.rpt-terms { page: terms; padding: 25.4mm !important; }
+          .report-article > section.rpt-terms { padding: 25.4mm !important; }
           /* Myndir/töflur klofna ekki milli síðna. Athugasemda-/rýmismyndir sýna FULLA
              mynd (engin klipping) — náttúrulegt hlutfall, takmarkað í hæð. */
           img, table, thead, tbody, tr, .rpt-keep { break-inside: avoid; page-break-inside: avoid; }
