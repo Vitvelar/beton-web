@@ -1,4 +1,8 @@
-FROM node:22-alpine AS base
+# glibc base (Debian bookworm-slim) — NOT alpine/musl. The server-side PDF route
+# (report/pdf) uses @sparticuz/chromium whose bundled Chromium binary requires
+# glibc and will NOT launch on Alpine. Using a glibc base for ALL stages also
+# avoids any musl→glibc mismatch for native modules traced into .next/standalone.
+FROM node:22-bookworm-slim AS base
 
 # Install pnpm — pin to version that generated pnpm-lock.yaml.
 # pnpm 11.x requires Node 22+; we use Node 22 here for forward compatibility
@@ -11,6 +15,12 @@ FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
+
+# ---- Production Dependencies ----
+FROM base AS prod-deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --frozen-lockfile
 
 # ---- Build ----
 FROM base AS builder
@@ -28,13 +38,36 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Install the distro Chromium for the server-side PDF route. The @sparticuz
+# Chromium binary's executablePath() extracts via tar-fs, which does NOT trace
+# into the pnpm .next/standalone output (ERR_MODULE_NOT_FOUND: tar-fs). So on
+# Docker we use the apt Chromium directly (pulls all its own shared libs) and
+# point the route at it via PUPPETEER_EXECUTABLE_PATH. Vercel keeps using the
+# @sparticuz binary (PUPPETEER_EXECUTABLE_PATH is unset there).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      chromium \
+      fonts-liberation \
+  && rm -rf /var/lib/apt/lists/*
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+# Non-root user (groupadd/useradd from passwd — always present on Debian, unlike
+# Alpine's addgroup/adduser). Home dir so Chromium has a writable profile/cache.
+RUN groupadd --system --gid 1001 nodejs \
+  && useradd --system --uid 1001 --gid nodejs --create-home --home-dir /home/nextjs nextjs
 
 COPY --from=builder /app/public ./public
 
-# Standalone output
+# Standalone output (includes the traced chromium.br ~62MB via
+# outputFileTracingIncludes in next.config.ts).
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+# The Next standalone trace keeps some pnpm packages under node_modules/.pnpm
+# without every top-level symlink that Node's external loader expects. Copy the
+# production install over the standalone node_modules so dynamic server imports
+# such as puppeteer-core resolve in the isolated Docker image.
+RUN rm -rf node_modules
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs

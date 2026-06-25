@@ -77,35 +77,46 @@ export async function GET(
   // því puppeteer leggur til spássíurnar (sjá margin hér að neðan).
   const reportUrl = `${baseUrl}/dashboard/${id}/report?pdf=1`;
 
-  // 3) Ræsa chromium. Á serverless (Vercel)/Docker notum við @sparticuz/chromium.
-  //    Í þróun (staðbær Chrome til) má nota PUPPETEER_EXECUTABLE_PATH.
-  const isLocal = process.env.NODE_ENV !== "production" && !process.env.VERCEL;
+  // 3) Ræsa chromium. Tvær leiðir:
+  //    - PUPPETEER_EXECUTABLE_PATH sett (Docker/Dokploy: /usr/bin/chromium úr apt;
+  //      eða þróun: staðbær Chrome) → notum það BEINT. Forðumst @sparticuz
+  //      extraction (tar-fs) sem rekst EKKI inn í pnpm standalone output.
+  //    - Annars (Vercel/serverless) → @sparticuz/chromium binaríið.
+  const distroChromium = process.env.PUPPETEER_EXECUTABLE_PATH;
 
   // Dýnamískur import svo pakkarnir lendi aldrei í client/edge-bundle.
   const puppeteer = (await import("puppeteer-core")).default;
-  const chromium = (await import("@sparticuz/chromium")).default;
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
 
   try {
-    const executablePath = isLocal
-      ? process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-      : await chromium.executablePath();
+    let executablePath: string | undefined;
+    let launchArgs: string[];
+    if (distroChromium) {
+      executablePath = distroChromium;
+      launchArgs = [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ];
+    } else {
+      const chromium = (await import("@sparticuz/chromium")).default;
+      executablePath = await chromium.executablePath();
+      launchArgs = chromium.args;
+    }
 
     if (!executablePath) {
       return NextResponse.json(
         {
           error:
-            "Chromium fannst ekki. Settu PUPPETEER_EXECUTABLE_PATH í þróun eða notaðu @sparticuz/chromium í framleiðslu.",
+            "Chromium fannst ekki. Settu PUPPETEER_EXECUTABLE_PATH (Docker/þróun) eða notaðu @sparticuz/chromium (Vercel).",
         },
         { status: 500 }
       );
     }
 
     browser = await puppeteer.launch({
-      args: isLocal
-        ? ["--no-sandbox", "--disable-setuid-sandbox"]
-        : chromium.args,
+      args: launchArgs,
       defaultViewport: { width: 1240, height: 1754, deviceScaleFactor: 2 },
       executablePath,
       headless: true,
@@ -175,8 +186,8 @@ export async function GET(
     //    síðuskipti). Verður að kalla á undan page.pdf().
     await page.emulateMediaType("print");
 
-    // 7) Búa til PDF. page.pdf leggur til spássíur OG blaðsíðunúmer; @page CSS
-    //    á report-síðunni er margin:0 svo þær tvöfaldast ekki.
+    // 7) Búa til PDF. page.pdf leggur til spássíur OG blaðsíðunúmer; í ?pdf=1
+    //    sleppir report-síðan @page margin:0 svo þessar spássíur haldist.
     const pdfBytes = await page.pdf({
       format: "A4",
       printBackground: true,
