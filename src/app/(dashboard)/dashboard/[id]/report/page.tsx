@@ -243,7 +243,7 @@ export default async function ReportPage({
       <article className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
 
         {/* ═══ PAGE 1: COVER ═══ */}
-        <section className="rpt-cover print:break-after-page">
+        <section className="rpt-cover">
           <div className="flex flex-col items-center text-center px-8 py-12 print:py-0">
             <div className="mb-5 print:mb-8">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -282,7 +282,7 @@ export default async function ReportPage({
         </section>
 
         {/* ═══ PAGE 2: EFNISYFIRLIT (TOC) ═══ */}
-        <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page print:break-after-page">
+        <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <h2 className="text-2xl font-bold text-navy mb-2">Efnisyfirlit</h2>
           <div className="h-0.5 bg-navy mb-6" />
           <div className="space-y-0">
@@ -302,7 +302,7 @@ export default async function ReportPage({
         </section>
 
         {/* ═══ PAGE 3: INTRO + MATSKERFI ═══ */}
-        <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page print:break-after-page">
+        <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <div className="border-l-4 border-navy bg-stone-50 rounded-sm px-6 py-5 mb-8">
             <h2 className="text-lg font-bold text-navy mb-3">Ástandsskoðun Beton ehf.</h2>
             <p className="text-sm text-ink/80 leading-relaxed mb-3">
@@ -357,7 +357,7 @@ export default async function ReportPage({
         </section>
 
         {/* ═══ PAGE 4: SAMANTEKT ═══ */}
-        <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page print:break-after-page">
+        <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <h2 className="text-lg font-bold text-navy mb-6">
             <span className="text-sev-calm font-bold mr-2">1.</span>Samantekt
           </h2>
@@ -524,7 +524,7 @@ export default async function ReportPage({
                           </div>
                         )}
                         {oPhotos.length > 0 && (
-                          <div className="grid grid-cols-2 gap-2 mt-3">
+                          <div className="grid grid-cols-2 gap-2 mt-3 items-start print:break-inside-avoid">
                             {oPhotos.map((p) => (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-36 object-cover rounded rpt-photo" />
@@ -592,7 +592,7 @@ export default async function ReportPage({
           </h2>
           <div className="h-0.5 bg-navy mb-4" />
 
-          <div className="space-y-1.5 text-[11px] leading-snug text-ink/90 print:text-[7pt] print:leading-[1.25]">
+          <div className="space-y-1.5 text-[11px] leading-snug text-ink/90 print:text-[7.5pt] print:leading-[1.3]">
             <TermsSection n={1} title="Markmið og gildissvið">
               Markmið ástandsskoðunar er að veita verkkaupa upplýsingar um almennt og sýnilegt ástand fasteignar á
               þeim tímapunkti sem skoðun fer fram. Ástandsskoðun byggir á hlutlausri skoðun og stöðluðum verkferlum
@@ -667,9 +667,9 @@ export default async function ReportPage({
             </TermsSection>
           </div>
 
-          <div className="text-center mt-8 print:mt-4 print:break-inside-avoid print:break-before-avoid">
+          <div className="text-center mt-8 print:mt-5 print:break-inside-avoid print:break-before-avoid">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoSrc} alt="Beton ehf." className="h-16 w-auto mx-auto print:h-12" />
+            <img src={logoSrc} alt="Beton ehf." className="h-16 w-auto mx-auto print:h-14" />
           </div>
         </section>
 
@@ -681,9 +681,6 @@ export default async function ReportPage({
               {inspection.report_generated_at
                 ? new Date(inspection.report_generated_at).toLocaleString("is-IS")
                 : "—"}
-            </span>
-            <span>
-              {inspection.ai_model} &middot; ${inspection.ai_cost_usd?.toFixed(4) ?? "—"}
             </span>
           </div>
         </div>
@@ -713,7 +710,7 @@ function InfoTableRow({ label, value }: { label: string; value: string }) {
 function TermsSection({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="font-bold text-xs text-ink mt-2 mb-0.5 print:mt-1.5 print:mb-0 print:text-[8pt]">{n}. {title}</h3>
+      <h3 className="font-bold text-xs text-ink mt-2 mb-0.5 print:mt-2 print:mb-0.5 print:text-[8.5pt]">{n}. {title}</h3>
       <p>{children}</p>
     </div>
   );
