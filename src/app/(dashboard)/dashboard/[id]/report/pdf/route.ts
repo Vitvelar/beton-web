@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isAllowedEmail } from "@/lib/allowed-users";
+import {
+  createBearerClient,
+  getBearerAuthorization,
+} from "@/lib/supabase/bearer";
 
 // PDF-gerð keyrir á server (puppeteer-core + @sparticuz/chromium) til að fá
 // áreiðanlegar spássíur, raunverulegar blaðsíðunúmer og fyrirsjáanlega myndun —
@@ -51,22 +55,42 @@ export async function GET(
   const { id } = await ctx.params;
 
   // 1) Staðfesta að beiðandinn sé innskráður og á leyfðum lista ÁÐUR en við
-  //    ræsum dýra chromium-ferlið. createClient() les sömu cookies og síðan.
-  const supabase = await createClient();
+  //    ræsum dýra chromium-ferlið.
+  //
+  //    Admin notar Supabase cookies + allowlist eins og áður. Mobile appið
+  //    sendir hins vegar Supabase access token í Authorization header; þá látum
+  //    RLS staðfesta eignarhald skoðunarinnar og krefjumst ekki admin allowlist.
+  const bearerAuthorization = getBearerAuthorization(
+    request.headers.get("authorization")
+  );
+  const supabase = bearerAuthorization
+    ? createBearerClient(bearerAuthorization)
+    : await createClient();
+
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (!user || !isAllowedEmail(user.email)) {
+  if (userError || !user) {
+    return NextResponse.json({ error: "Óheimill aðgangur" }, { status: 401 });
+  }
+
+  if (!bearerAuthorization && !isAllowedEmail(user.email)) {
     return NextResponse.json({ error: "Óheimill aðgangur" }, { status: 401 });
   }
 
   // 2) Sækja lágmarksupplýsingar fyrir skráarnafn (og staðfesta tilvist).
-  const { data: inspection } = await supabase
+  let inspectionQuery = supabase
     .from("inspections")
-    .select("address, inspection_date, ai_report_data")
-    .eq("id", id)
-    .maybeSingle();
+    .select("id, address, inspection_date, ai_report_data")
+    .limit(1);
+
+  inspectionQuery = bearerAuthorization
+    ? inspectionQuery.or(`id.eq.${id},local_id.eq.${id}`)
+    : inspectionQuery.eq("id", id);
+
+  const { data: inspection } = await inspectionQuery.maybeSingle();
 
   if (!inspection?.ai_report_data) {
     return NextResponse.json({ error: "Skýrsla fannst ekki" }, { status: 404 });
@@ -75,7 +99,7 @@ export async function GET(
   const baseUrl = getBaseUrl(request);
   // ?pdf=1 segir report-síðunni að sleppa láréttu/minnka lóðréttu padding-i,
   // því puppeteer leggur til spássíurnar (sjá margin hér að neðan).
-  const reportUrl = `${baseUrl}/dashboard/${id}/report?pdf=1`;
+  const reportUrl = `${baseUrl}/dashboard/${inspection.id}/report?pdf=1`;
 
   // 3) Ræsa chromium. Tvær leiðir:
   //    - PUPPETEER_EXECUTABLE_PATH sett (Docker/Dokploy: /usr/bin/chromium úr apt;
@@ -123,6 +147,10 @@ export async function GET(
     });
 
     const page = await browser.newPage();
+
+    if (bearerAuthorization) {
+      await page.setExtraHTTPHeaders({ Authorization: bearerAuthorization });
+    }
 
     // 4) Afrita AUTH cookies beiðninnar yfir á puppeteer-síðuna svo hún komist
     //    inn á auth-læstu skýrsluna (Supabase RLS les sb-*-auth-token; einnig

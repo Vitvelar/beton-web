@@ -61,13 +61,18 @@ export function ReportActions({
         <button
           onClick={handleGenerate}
           disabled={generating}
-          className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors disabled:opacity-60"
         >
-          {generating
-            ? "Bý til skýrslu..."
-            : showViewReport
-              ? "Endurgera skýrslu"
-              : "Búa til skýrslu"}
+          {generating && (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          )}
+          <span>
+            {generating
+              ? "Bý til skýrslu..."
+              : showViewReport
+                ? "Endurgera skýrslu"
+                : "Búa til skýrslu"}
+          </span>
         </button>
 
         {showViewReport && (
@@ -100,6 +105,16 @@ export function ReportActions({
           </>
         )}
       </div>
+
+      {generating && (
+        <div className="mt-4 rounded-lg border border-navy/15 bg-navy/5 px-4 py-3 text-sm text-navy">
+          <p className="font-semibold">Skýrslugerð í gangi</p>
+          <p className="mt-1 text-navy/75">
+            AI er að lesa athugasemdir og myndir. Þetta getur tekið smá stund í
+            stórum skoðunum.
+          </p>
+        </div>
+      )}
 
       {message && (
         <p

@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import {
+  createBearerClient,
+  getBearerAuthorization,
+} from "@/lib/supabase/bearer";
 import type { Severity } from "@/lib/supabase/types";
 
 interface ReportData {
@@ -81,12 +86,17 @@ export default async function ReportPage({
   // puppeteer til spássíurnar (25,4mm til hliðanna o.fl.), svo við sleppum
   // láréttu og minnkum lóðréttu padding-i hér til að tvöfalda það ekki.
   const isPdfMode = (await searchParams)?.pdf === "1";
-  const supabase = await createClient();
+  const authorization = getBearerAuthorization(
+    (await headers()).get("authorization")
+  );
+  const supabase = authorization
+    ? createBearerClient(authorization)
+    : await createClient();
 
-  const { data: inspection } = await supabase
+  let query = supabase
     .from("inspections")
     .select(`
-      id, address, postal_code, municipality, fastanumer,
+      id, local_id, address, postal_code, municipality, fastanumer,
       customer_name, inspection_date, weather, attendees,
       property_data, ai_report_data, ai_summary,
       ai_cost_usd, ai_model, report_generated_at,
@@ -99,8 +109,13 @@ export default async function ReportPage({
         photos (id, storage_path, photo_type, caption, is_cover, sort_order, room_id, observation_id)
       )
     `)
-    .eq("id", id)
-    .maybeSingle();
+    .limit(1);
+
+  query = authorization
+    ? query.or(`id.eq.${id},local_id.eq.${id}`)
+    : query.eq("id", id);
+
+  const { data: inspection } = await query.maybeSingle();
 
   if (!inspection?.ai_report_data) {
     notFound();
