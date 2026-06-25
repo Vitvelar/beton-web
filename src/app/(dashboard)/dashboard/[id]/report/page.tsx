@@ -72,10 +72,16 @@ const SEV_RANK: Record<string, number> = {
 
 export default async function ReportPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ pdf?: string }>;
 }) {
   const { id } = await params;
+  // ?pdf=1 er sett af server-PDF leiðinni (report/pdf/route.ts). Þá leggur
+  // puppeteer til spássíurnar (25,4mm til hliðanna o.fl.), svo við sleppum
+  // láréttu og minnkum lóðréttu padding-i hér til að tvöfalda það ekki.
+  const isPdfMode = (await searchParams)?.pdf === "1";
   const supabase = await createClient();
 
   const { data: inspection } = await supabase
@@ -205,11 +211,19 @@ export default async function ReportPage({
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
-        /* Spássíurnar (Word "Normal" = 2,54 cm) eru í EFNINU sjálfu (padding),
-           EKKI í @page. Þannig haldast þær sama hvað "Margins" stillingin í
-           prentglugga Chrome er stillt á (None/Default) — áður var reitt á
-           @page margin sem Chrome hunsar þegar notandi velur "None", og þá
-           rann textinn út í kant. */
+        /* SPÁSSÍU-SKEMA — tvær leiðir, ein samræmd regla:
+
+           1) window.print() (Prenta/Vista PDF hnappur, varaleið):
+              Spássíurnar (Word "Normal" = 2,54 cm) eru í EFNINU sjálfu (padding),
+              EKKI í @page. Þannig haldast þær sama hvað "Margins" stillingin í
+              prentglugga Chrome er stillt á (None/Default) — áður var reitt á
+              @page margin sem Chrome hunsar þegar notandi velur "None".
+
+           2) Server-PDF (?pdf=1, report/pdf/route.ts):
+              puppeteer page.pdf() leggur til ALLAR spássíur (18mm/16mm/25.4mm)
+              OG blaðsíðunúmer. Þá DROPPUM við láréttu section-padding-i og
+              minnkum lóðréttu svo 25,4mm tvöfaldist ekki. @page margin er 0 í
+              báðum tilvikum svo þær bætast aldrei ofan á. */
         @page { size: A4; margin: 0; }
         @media print {
           html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -218,12 +232,22 @@ export default async function ReportPage({
             border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
             background: #fff !important; max-width: none !important; overflow: visible !important;
           }
-          /* 25,4mm til hliðanna á öllum efnissíðum, hóflegt að ofan/neðan. */
+          ${isPdfMode ? `
+          /* Server-PDF: puppeteer sér um hliðarspássíur — aðeins lítið lóðrétt
+             bil milli efnis og brúnar puppeteer-spássíunnar. */
+          .report-article > section {
+            padding: 4mm 0 !important; border: 0 !important;
+          }
+          .report-article > section.rpt-cover { padding: 0 !important; }
+          .report-article > section.rpt-terms { padding: 4mm 0 !important; }
+          ` : `
+          /* window.print(): 25,4mm til hliðanna á öllum efnissíðum, hóflegt að ofan/neðan. */
           .report-article > section {
             padding: 18mm 25.4mm !important; border: 0 !important;
           }
           .report-article > section.rpt-cover { padding: 20mm 25.4mm !important; }
           .report-article > section.rpt-terms { padding: 25.4mm !important; }
+          `}
           /* Myndir/töflur klofna ekki milli síðna. Athugasemda-/rýmismyndir sýna FULLA
              mynd (engin klipping) — náttúrulegt hlutfall, takmarkað í hæð. */
           img, table, thead, tbody, tr, .rpt-keep { break-inside: avoid; page-break-inside: avoid; }
@@ -237,7 +261,18 @@ export default async function ReportPage({
         <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
           &larr; Til baka
         </Link>
-        <PrintButton fileName={pdfFileName} />
+        <div className="flex items-center gap-2">
+          {/* Server-PDF (áreiðanlegar spássíur + blaðsíðunúmer). GET á route
+              handler sem skilar application/pdf — vafrinn hleður niður. */}
+          <a
+            href={`/dashboard/${id}/report/pdf`}
+            className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
+          >
+            Sækja PDF
+          </a>
+          {/* Varaleið: prentgluggi Chrome (gæti haft mismunandi spássíur). */}
+          <PrintButton fileName={pdfFileName} />
+        </div>
       </div>
 
       <article className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
