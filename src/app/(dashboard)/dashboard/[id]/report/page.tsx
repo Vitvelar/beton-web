@@ -598,7 +598,7 @@ export default async function ReportPage({
           </h2>
           <div className="h-0.5 bg-navy mb-4" />
 
-          <div className="space-y-2 text-[11px] leading-snug text-ink/90 print:text-[7.5pt] print:leading-[1.32]">
+          <div className="space-y-1.5 text-[11px] leading-snug text-ink/90 print:text-[7pt] print:leading-[1.25]">
             <TermsSection n={1} title="Markmið og gildissvið">
               Markmið ástandsskoðunar er að veita verkkaupa upplýsingar um almennt og sýnilegt ástand fasteignar á
               þeim tímapunkti sem skoðun fer fram. Ástandsskoðun byggir á hlutlausri skoðun og stöðluðum verkferlum
@@ -673,9 +673,9 @@ export default async function ReportPage({
             </TermsSection>
           </div>
 
-          <div className="text-center mt-8">
+          <div className="text-center mt-8 print:mt-4 print:break-inside-avoid print:break-before-avoid">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoSrc} alt="Beton ehf." className="h-16 w-auto mx-auto" />
+            <img src={logoSrc} alt="Beton ehf." className="h-16 w-auto mx-auto print:h-12" />
           </div>
         </section>
 
@@ -719,7 +719,7 @@ function InfoTableRow({ label, value }: { label: string; value: string }) {
 function TermsSection({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="font-bold text-xs text-ink mt-2 mb-0.5">{n}. {title}</h3>
+      <h3 className="font-bold text-xs text-ink mt-2 mb-0.5 print:mt-1.5 print:mb-0 print:text-[8pt]">{n}. {title}</h3>
       <p>{children}</p>
     </div>
   );

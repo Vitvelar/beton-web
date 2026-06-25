@@ -4,10 +4,58 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 
-const ANTHROPIC_MODEL = "claude-sonnet-4-6";
-const CLAUDE_MAX_TOKENS = 4096;
-const PRICE_INPUT_PER_M = 3;
-const PRICE_OUTPUT_PER_M = 15;
+const ANTHROPIC_MODEL = "claude-opus-4-8";
+// Hækkað úr 4096: löng íslensk skýrsla með mörgum athugasemdum rúmaðist ekki
+// og JSON-svarið slitnaði í miðju (olli "Expected ',' or '}' ..." villunni).
+const CLAUDE_MAX_TOKENS = 16000;
+// Opus-verð (USD/1M tókenar) — staðfesta gegn gildandi Anthropic verðskrá.
+const PRICE_INPUT_PER_M = 15;
+const PRICE_OUTPUT_PER_M = 75;
+
+// Tól sem þvingar Claude til að skila skipulögðu, gildu JSON (structured output).
+// Þetta kemur í veg fyrir að frítextasvar slitni/sé gallað og brjóti JSON.parse.
+const REPORT_TOOL: Anthropic.Tool = {
+  name: "skila_skyrslu",
+  description:
+    "Skilar fullunninni AI-samantekt fyrir ástandsskoðunarskýrslu: þrískiptan inngangstexta og snyrta lýsingu, tillögu og staðfestan alvarleika fyrir hverja athugasemd.",
+  input_schema: {
+    type: "object",
+    properties: {
+      introduction: { type: "string" },
+      property_description: { type: "string" },
+      conclusion: { type: "string" },
+      observations: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            id: { type: "string" },
+            severity: {
+              type: "string",
+              enum: ["athugasemd", "alvarleg", "mjog_alvarleg"],
+            },
+            polished_description: { type: "string" },
+            polished_suggestion: { type: "string" },
+          },
+          required: [
+            "id",
+            "severity",
+            "polished_description",
+            "polished_suggestion",
+          ],
+        },
+      },
+    },
+    required: [
+      "introduction",
+      "property_description",
+      "conclusion",
+      "observations",
+    ],
+  },
+};
+
+const VALID_SEVERITIES = new Set(["athugasemd", "alvarleg", "mjog_alvarleg"]);
 
 export async function updateObservation(
   obsId: string,
@@ -151,19 +199,30 @@ export async function generateReport(inspectionId: string) {
           cache_control: { type: "ephemeral" as const },
         },
       ],
+      tools: [REPORT_TOOL],
+      // Þvingum Claude til að kalla á tólið → alltaf gilt, skipulagt JSON.
+      tool_choice: { type: "tool", name: REPORT_TOOL.name },
       messages: [{ role: "user", content: userMessage }],
     });
+
+    if (response.stop_reason === "max_tokens") {
+      throw new Error(
+        "Svar varð of langt og slitnaði (max_tokens). Hækkaðu CLAUDE_MAX_TOKENS."
+      );
+    }
+
+    const toolUse = response.content.find(
+      (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
+    );
+    if (!toolUse) {
+      throw new Error("Claude skilaði ekki skipulögðu svari (tool_use vantar).");
+    }
 
     const inputTokens = response.usage?.input_tokens ?? 0;
     const outputTokens = response.usage?.output_tokens ?? 0;
 
-    const rawText = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim();
-
-    const parsed = parseClaudeJson(rawText);
+    // toolUse.input er þegar parse-að af SDK-inu — engin frítexta-JSON greining.
+    const parsed = validateReportOutput(toolUse.input);
     claudeResult = { output: parsed, inputTokens, outputTokens };
   } catch (e: unknown) {
     console.error("Claude error:", e);
@@ -178,6 +237,20 @@ export async function generateReport(inspectionId: string) {
   const aiCostUsd = computeCostUsd(
     claudeResult.inputTokens,
     claudeResult.outputTokens
+  );
+
+  // Verja gegn ógildum alvarleika frá líkaninu (DB-dálkurinn er þvingaður).
+  const origSeverityById = new Map<string, string>();
+  for (const r of sortedRooms) {
+    for (const o of r.observations ?? []) origSeverityById.set(o.id, o.severity);
+  }
+  const safeSeverity = (id: string, sev: unknown): string =>
+    typeof sev === "string" && VALID_SEVERITIES.has(sev)
+      ? sev
+      : origSeverityById.get(id) ?? "athugasemd";
+
+  const polishById = new Map(
+    claudeResult.output.observations.map((p) => [p.id, p] as const)
   );
 
   const aiReportData = {
@@ -197,9 +270,7 @@ export async function generateReport(inspectionId: string) {
         .slice()
         .sort((a, b) => a.sort_order - b.sort_order)
         .map((o) => {
-          const polish = claudeResult.output.observations.find(
-            (p: { id: string }) => p.id === o.id
-          );
+          const polish = polishById.get(o.id);
           return {
             id: o.id,
             number: o.observation_number,
@@ -209,38 +280,54 @@ export async function generateReport(inspectionId: string) {
               polish?.polished_description ?? o.description ?? "",
             suggestion:
               polish?.polished_suggestion ?? o.suggestion ?? "",
-            severity: polish?.severity ?? o.severity,
+            severity: safeSeverity(o.id, polish?.severity),
           };
         }),
     })),
   };
 
-  for (const obs of claudeResult.output.observations) {
-    await supabase
-      .from("observations")
-      .update({
-        description: obs.polished_description,
-        suggestion: obs.polished_suggestion,
-        severity: obs.severity,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", obs.id);
-  }
-
   const aiSummary = firstSentence(claudeResult.output.conclusion);
 
-  await supabase
-    .from("inspections")
-    .update({
-      status: "report_ready",
-      ai_report_data: aiReportData,
-      ai_summary: aiSummary,
-      ai_cost_usd: aiCostUsd,
-      ai_model: ANTHROPIC_MODEL,
-      report_generated_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", inspectionId);
+  // Skrif í gagnagrunn umlukin try/catch: ef eitthvað klikkar setjum við
+  // status='error' svo skýrslan festist EKKI í 'generating' (spinner sem hangir).
+  try {
+    for (const obs of claudeResult.output.observations) {
+      const { error } = await supabase
+        .from("observations")
+        .update({
+          description: obs.polished_description,
+          suggestion: obs.polished_suggestion,
+          severity: safeSeverity(obs.id, obs.severity),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", obs.id);
+      if (error)
+        throw new Error(`Uppfærsla athugasemdar mistókst: ${error.message}`);
+    }
+
+    const { error: inspErr } = await supabase
+      .from("inspections")
+      .update({
+        status: "report_ready",
+        ai_report_data: aiReportData,
+        ai_summary: aiSummary,
+        ai_cost_usd: aiCostUsd,
+        ai_model: ANTHROPIC_MODEL,
+        report_generated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", inspectionId);
+    if (inspErr)
+      throw new Error(`Uppfærsla skoðunar mistókst: ${inspErr.message}`);
+  } catch (e: unknown) {
+    console.error("DB write error:", e);
+    await supabase
+      .from("inspections")
+      .update({ status: "error", updated_at: new Date().toISOString() })
+      .eq("id", inspectionId);
+    const msg = e instanceof Error ? e.message : "Óþekkt villa";
+    return { error: `Villa við vistun skýrslu: ${msg}` };
+  }
 
   revalidatePath(`/dashboard/${inspectionId}`);
   revalidatePath("/dashboard");
@@ -314,25 +401,20 @@ interface ClaudeReportOutput {
   }>;
 }
 
-function parseClaudeJson(raw: string): ClaudeReportOutput {
-  let text = raw.trim();
-  if (text.startsWith("```")) {
-    text = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
-  }
-  const firstBrace = text.indexOf("{");
-  const lastBrace = text.lastIndexOf("}");
-  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-    throw new Error("Claude returned no JSON object");
-  }
-  const jsonText = text.slice(firstBrace, lastBrace + 1);
-  const obj = JSON.parse(jsonText) as Record<string, unknown>;
+/**
+ * Staðfestir lögun á skipulagða svarinu úr tólkallinu (toolUse.input er þegar
+ * gilt JSON-objekt frá SDK-inu — við tékkum bara að nauðsynlegir reitir séu til).
+ */
+function validateReportOutput(input: unknown): ClaudeReportOutput {
+  const obj = input as Record<string, unknown> | null;
   if (
+    !obj ||
     typeof obj.introduction !== "string" ||
     typeof obj.property_description !== "string" ||
     typeof obj.conclusion !== "string" ||
     !Array.isArray(obj.observations)
   ) {
-    throw new Error("Claude JSON missing required fields");
+    throw new Error("Skipulagt svar vantar nauðsynlega reiti.");
   }
   return obj as unknown as ClaudeReportOutput;
 }
@@ -444,7 +526,7 @@ Reglur:
 ÚTGANGSSKEMA — JSON
 ═══════════════════════════════════════════════════════════
 
-Skilaðu EINGÖNGU einum JSON hlut, ekkert annað (engar útskýringar, engin markdown kóði-block). Skemað:
+Skilaðu niðurstöðunni með því að kalla á tólið \`skila_skyrslu\`. Reitirnir eru samkvæmt þessu skema:
 
 {
   "introduction": string,
@@ -462,4 +544,4 @@ Skilaðu EINGÖNGU einum JSON hlut, ekkert annað (engar útskýringar, engin ma
 
 Athugasemdir í observations fylkinu verða að vera nákvæmlega jafn margar og koma inn, og hver "id" verður að passa við einn af id-unum sem þú fékkst. Ekki bæta við athugasemdum og ekki sleppa neinum.
 
-Ekki skrifa neinn texta utan JSON hlutarins. Ekki nota \`\`\`json eða markdown. Aðeins hreint, gilt JSON.`;
+Notaðu tólið \`skila_skyrslu\` til að skila svarinu — ekki skrifa svarið sem venjulegan texta.`;
