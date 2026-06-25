@@ -6,6 +6,8 @@ import {
   createBearerClient,
   getBearerAuthorization,
 } from "@/lib/supabase/bearer";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isWorkerRequest, WORKER_TOKEN_HEADER } from "@/lib/report/shared";
 import type { Severity } from "@/lib/supabase/types";
 
 interface ReportData {
@@ -96,10 +98,17 @@ export default async function ReportPage({
   // puppeteer til spássíurnar (25,4mm til hliðanna o.fl.), svo við sleppum
   // láréttu og minnkum lóðréttu padding-i hér til að tvöfalda það ekki.
   const isPdfMode = (await searchParams)?.pdf === "1";
-  const authorization = getBearerAuthorization(
-    (await headers()).get("authorization")
-  );
-  const supabase = authorization
+  const hdrs = await headers();
+  // Bakgrunns-worker (á beton.is) rendar þessa síðu með x-report-worker-token og
+  // notar service-client (RLS bypass) því hann er ekki innskráður notandi. Annars
+  // óbreytt: Bearer (app) eða cookie (admin).
+  const workerRequest = isWorkerRequest(hdrs.get(WORKER_TOKEN_HEADER));
+  const authorization = workerRequest
+    ? null
+    : getBearerAuthorization(hdrs.get("authorization"));
+  const supabase = workerRequest
+    ? createServiceClient()
+    : authorization
     ? createBearerClient(authorization)
     : await createClient();
 
@@ -273,7 +282,10 @@ export default async function ReportPage({
              mynd (engin klipping) — náttúrulegt hlutfall, takmarkað í hæð. */
           img, table, thead, tbody, tr, .rpt-keep { break-inside: avoid; page-break-inside: avoid; }
           .rpt-photo { height: auto !important; max-height: 95mm !important; object-fit: contain !important; }
-          h2, h3 { break-after: avoid; }
+          /* Halda fyrirsögnum við efnið sem fylgir (engar munaðarlausar fyrirsagnir
+             neðst á síðu). .rpt-obs-title = haus hverrar athugasemdar (númer + titill
+             + alvarleikamerki). */
+          h2, h3, .rpt-obs-title { break-after: avoid; }
         }
       `}} />
 
@@ -542,17 +554,17 @@ export default async function ReportPage({
 
               {/* Observations */}
               {room.observations.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-4 print:space-y-3">
                   {room.observations.map((obs, obsIdx) => {
                     const sev = SEV_COLORS[obs.severity] ?? SEV_COLORS.athugasemd;
                     const oPhotos = obsPhotos(obs.id);
                     return (
                       <div
                         key={obs.id}
-                        className="rounded-lg p-4 border-l-4 bg-white shadow-[0_0_2px_rgba(0,0,0,0.04)] print:break-inside-avoid"
+                        className="rounded-lg p-4 border-l-4 bg-white shadow-[0_0_2px_rgba(0,0,0,0.04)]"
                         style={{ borderLeftColor: sev.color }}
                       >
-                        <div className="flex items-baseline gap-2 flex-wrap mb-1">
+                        <div className="flex items-baseline gap-2 flex-wrap mb-1 rpt-obs-title">
                           <span className="font-bold text-navy text-sm">
                             {roomIdx + 2}.{obsIdx + 1}
                           </span>
@@ -571,14 +583,14 @@ export default async function ReportPage({
                           <p className="text-sm text-ink/80 leading-relaxed mb-2">{obs.description}</p>
                         )}
                         {obs.suggestion && (
-                          <div className="bg-stone-50 rounded px-3 py-2 mt-2">
+                          <div className="bg-stone-50 rounded px-3 py-2 mt-2 rpt-keep">
                             <p className="text-sm text-ink/80">
                               <strong className="text-navy">Tillaga:</strong> {obs.suggestion}
                             </p>
                           </div>
                         )}
                         {oPhotos.length > 0 && (
-                          <div className="grid grid-cols-2 gap-2 mt-3 items-start print:break-inside-avoid">
+                          <div className="grid grid-cols-2 gap-2 mt-3 items-start">
                             {oPhotos.map((p) => (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-36 object-cover rounded rpt-photo" />

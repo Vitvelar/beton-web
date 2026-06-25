@@ -390,20 +390,33 @@ export async function generateReport(inspectionId: string) {
         throw new Error(`Uppfærsla athugasemdar mistókst: ${error.message}`);
     }
 
+    // AI er búið; PDF-render fer í biðröð (bakgrunns-worker). status='report_ready',
+    // report_url og report_generated_at eru sett af worker þegar PDF er tilbúið.
     const { error: inspErr } = await supabase
       .from("inspections")
       .update({
-        status: "report_ready",
+        status: "rendering_pdf",
         ai_report_data: aiReportData,
         ai_summary: aiSummary,
         ai_cost_usd: aiCostUsd,
         ai_model: ANTHROPIC_MODEL,
-        report_generated_at: new Date().toISOString(),
+        report_error: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", inspectionId);
     if (inspErr)
       throw new Error(`Uppfærsla skoðunar mistókst: ${inspErr.message}`);
+
+    // Setja PDF-render í biðröð. 23505 = virkt starf þegar til fyrir þessa skoðun
+    // (partial unique index) → í lagi, það er nú þegar í biðröð.
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { error: jobErr } = await supabase
+      .from("report_jobs")
+      .insert({ inspection_id: inspectionId, requested_by: user?.id ?? null });
+    if (jobErr && jobErr.code !== "23505")
+      throw new Error(`Tókst ekki að setja PDF í biðröð: ${jobErr.message}`);
   } catch (e: unknown) {
     console.error("DB write error:", e);
     await supabase
