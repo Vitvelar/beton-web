@@ -74,14 +74,14 @@ const SEV_RANK: Record<string, number> = {
   athugasemd: 2,
 };
 
-// Server-PDF þarf ekki original myndaskrárnar. Minnkuð 1400px afrit eru enn
-// skörp á A4 en sækjast/prentast margfalt hraðar, sérstaklega þegar skýrslan
-// inniheldur tugi mynda.
+// Server-PDF þarf ekki original myndaskrárnar. Prentmyndir eru 2-3 dálkar víðast
+// hvar í A4 skýrslunni; 1000px afrit halda þeim skýrum en forða serverless
+// Chromium frá því að decode-a hundruð MB í minni þegar skýrsla er með ~100 myndir.
 const PDF_IMAGE_TRANSFORM = {
-  width: 1400,
-  height: 1400,
+  width: 1000,
+  height: 1000,
   resize: "contain" as const,
-  quality: 76,
+  quality: 70,
 };
 
 export default async function ReportPage({

@@ -144,7 +144,7 @@ export async function GET(
 
     browser = await puppeteer.launch({
       args: launchArgs,
-      defaultViewport: { width: 1240, height: 1754, deviceScaleFactor: 2 },
+      defaultViewport: { width: 1000, height: 1414, deviceScaleFactor: 1 },
       executablePath,
       headless: true,
     });
