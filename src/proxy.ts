@@ -48,6 +48,21 @@ export async function proxy(request: NextRequest) {
 
   // --- Dashboard routes: Supabase auth ---
   if (pathname.startsWith("/dashboard")) {
+    const hasBearerAuthorization =
+      request.headers
+        .get("authorization")
+        ?.toLowerCase()
+        .startsWith("bearer ") ?? false;
+    const isBearerReportRequest =
+      /^\/dashboard\/[^/]+\/report(?:\/pdf)?$/.test(pathname);
+
+    // Mobile appið sækir server-rendered PDF með Supabase access token í
+    // Authorization header. Hleypum aðeins report/report-pdf leiðunum í gegn;
+    // þær nota RLS til að staðfesta að notandinn eigi skoðunina.
+    if (hasBearerAuthorization && isBearerReportRequest) {
+      return NextResponse.next();
+    }
+
     // Allow login page and auth callback without session
     if (
       pathname === "/dashboard/login" ||
