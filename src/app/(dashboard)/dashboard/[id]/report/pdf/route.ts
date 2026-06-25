@@ -21,6 +21,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+const NAVIGATION_TIMEOUT_MS = 30_000;
+const IMAGE_SETTLE_TIMEOUT_MS = 18_000;
+
 // Hreinsar streng í öruggt skráarnafn (ASCII, undirstrik í stað bila/tákna).
 function safeFilenamePart(value: string): string {
   return value
@@ -172,25 +175,28 @@ export async function GET(
 
     // 5) Sigla á skýrsluna og bíða eftir að netið róist (myndir hlaðast).
     await page.goto(reportUrl, {
-      waitUntil: "networkidle0",
-      timeout: 45_000,
+      waitUntil: "domcontentloaded",
+      timeout: NAVIGATION_TIMEOUT_MS,
     });
 
-    // Tryggja að allar <img> séu raunverulega komnar (decode) áður en við
-    // prentum — networkidle0 dugar yfirleitt en þetta er belti-og-axlabönd.
-    await page.evaluate(async () => {
+    // Tryggja að myndir fái sanngjarna stund til að hlaðast áður en við
+    // prentum. Með stórar skýrslur (t.d. 100 myndir) má þetta ekki bíða
+    // endalaust, annars hittum við Vercel function timeout áður en PDF skilar sér.
+    await page.evaluate(async (timeoutMs) => {
       const imgs = Array.from(document.images);
       await Promise.all(
-        imgs.map((img) =>
-          img.complete && img.naturalHeight > 0
-            ? Promise.resolve()
-            : new Promise<void>((resolve) => {
-                img.addEventListener("load", () => resolve(), { once: true });
-                img.addEventListener("error", () => resolve(), { once: true });
-              })
-        )
+        imgs.map((img) => {
+          if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+          return Promise.race([
+            new Promise<void>((resolve) => {
+              img.addEventListener("load", () => resolve(), { once: true });
+              img.addEventListener("error", () => resolve(), { once: true });
+            }),
+            new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
+          ]);
+        })
       );
-    });
+    }, IMAGE_SETTLE_TIMEOUT_MS);
 
     // 5b) Verja gegn ÞÖGLU auðu PDF: ef auth-veggur (t.d. Vercel Deployment
     //     Protection) eða villa skilaði ekki skýrslunni þá vantar .report-article.

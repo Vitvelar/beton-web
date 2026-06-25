@@ -74,6 +74,16 @@ const SEV_RANK: Record<string, number> = {
   athugasemd: 2,
 };
 
+// Server-PDF þarf ekki original myndaskrárnar. Minnkuð 1400px afrit eru enn
+// skörp á A4 en sækjast/prentast margfalt hraðar, sérstaklega þegar skýrslan
+// inniheldur tugi mynda.
+const PDF_IMAGE_TRANSFORM = {
+  width: 1400,
+  height: 1400,
+  resize: "contain" as const,
+  quality: 76,
+};
+
 export default async function ReportPage({
   params,
   searchParams,
@@ -163,13 +173,16 @@ export default async function ReportPage({
 
   const signedUrls = new Map<string, string>();
   const batchSize = 20;
+  const signedUrlOptions = isPdfMode
+    ? { transform: PDF_IMAGE_TRANSFORM }
+    : undefined;
   for (let i = 0; i < allDbPhotos.length; i += batchSize) {
     const batch = allDbPhotos.slice(i, i + batchSize);
     const results = await Promise.all(
       batch.map(async (p) => {
         const { data } = await supabase.storage
           .from("inspection-photos")
-          .createSignedUrl(p.storage_path!, 3600);
+          .createSignedUrl(p.storage_path!, 3600, signedUrlOptions);
         return { id: p.id, url: data?.signedUrl ?? null };
       })
     );
