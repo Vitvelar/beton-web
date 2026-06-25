@@ -97,7 +97,8 @@ export async function generateReport(inspectionId: string) {
         id, name, slug, sort_order, ratings, equipment, notes,
         observations (
           id, observation_number, category, title, description,
-          suggestion, severity, sort_order
+          suggestion, severity, sort_order,
+          photos ( id, storage_path, photo_type, sort_order )
         )
       )
     `)
@@ -125,6 +126,12 @@ export async function generateReport(inspectionId: string) {
       suggestion: string | null;
       severity: string;
       sort_order: number;
+      photos: Array<{
+        id: string;
+        storage_path: string | null;
+        photo_type: string | null;
+        sort_order: number;
+      }> | null;
     }> | null;
   }>;
 
@@ -150,41 +157,93 @@ export async function generateReport(inspectionId: string) {
   const lookupFailed = Object.keys(propertyData).length === 0;
 
   const sortedRooms = rooms.slice().sort((a, b) => a.sort_order - b.sort_order);
-  const userPayload = {
-    inspection: {
-      address: inspection.address,
-      postal_code: inspection.postal_code,
-      municipality: inspection.municipality ?? "",
-      fastanumer: inspection.fastanumer ?? "",
-      customer_name: inspection.customer_name,
-      inspection_date: inspection.inspection_date,
-      weather: inspection.weather ?? "",
-      attendees: inspection.attendees ?? [],
-      property_data: propertyData,
-      lookup_failed: lookupFailed,
-    },
-    rooms: sortedRooms.map((r) => ({
-      name: r.name,
-      ratings: r.ratings ?? {},
-      notes: r.notes ?? "",
-      observations: (r.observations ?? [])
-        .slice()
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map((o) => ({
-          id: o.id,
-          number: o.observation_number,
-          category: o.category ?? "",
-          title: o.title,
-          description: o.description ?? "",
-          suggestion: o.suggestion ?? "",
-          current_severity: o.severity,
-        })),
-    })),
+
+  // Eignar-/skoðunarsamhengi (notað bæði í hvatningu og í ai_report_data).
+  const inspectionContext = {
+    address: inspection.address,
+    postal_code: inspection.postal_code,
+    municipality: inspection.municipality ?? "",
+    fastanumer: inspection.fastanumer ?? "",
+    customer_name: inspection.customer_name,
+    inspection_date: inspection.inspection_date,
+    weather: inspection.weather ?? "",
+    attendees: inspection.attendees ?? [],
+    property_data: propertyData,
+    lookup_failed: lookupFailed,
   };
 
-  const userMessage =
-    "Hér eru gögn skoðunarinnar sem þú átt að vinna úr. Skilaðu JSON svari samkvæmt skemanu sem skilgreint er í kerfishvatningunni.\n\n" +
-    JSON.stringify(userPayload, null, 2);
+  // Undirskrifa myndir hverrar athugasemdar (5 mín) svo Claude SJÁI þær.
+  const PHOTO_BUCKET = "inspection-photos";
+  const MAX_PHOTOS_PER_OBS = 4;
+  const obsPhotoPaths: string[] = [];
+  for (const r of sortedRooms) {
+    for (const o of r.observations ?? []) {
+      for (const p of (o.photos ?? [])
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .slice(0, MAX_PHOTOS_PER_OBS)) {
+        if (p.storage_path) obsPhotoPaths.push(p.storage_path);
+      }
+    }
+  }
+  const signedMap = new Map<string, string>();
+  if (obsPhotoPaths.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .createSignedUrls(obsPhotoPaths, 600);
+    for (const s of signed ?? []) {
+      if (s.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
+    }
+  }
+
+  // Byggja multimodal skilaboð: samhengi, svo hver athugasemd með sínum myndum.
+  const roomContext = sortedRooms.map((r) => ({
+    name: r.name,
+    ratings: r.ratings ?? {},
+    notes: r.notes ?? "",
+  }));
+  const content: Anthropic.ContentBlockParam[] = [
+    {
+      type: "text" as const,
+      text:
+        "Hér eru gögn skoðunarinnar. Eignar- og rýmissamhengi:\n\n" +
+        JSON.stringify({ inspection: inspectionContext, rooms: roomContext }, null, 2) +
+        "\n\nHér á eftir kemur hver athugasemd með sínum ljósmyndum. Notaðu það sem SÉST á myndunum ásamt samhenginu (rými, byggingarár, tegund eignar o.fl.) til að skrifa nákvæma faglega lýsingu og raunhæfa tillögu fyrir HVERJA athugasemd.",
+    },
+  ];
+  // Anthropic leyfir takmarkaðan fjölda mynda per beiðni — verjum okkur fyrir
+  // mjög stórum skoðunum með heildarþaki.
+  const MAX_TOTAL_IMAGES = 90;
+  let totalImages = 0;
+  for (const r of sortedRooms) {
+    for (const o of (r.observations ?? [])
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)) {
+      content.push({
+        type: "text" as const,
+        text:
+          `\n── Athugasemd ${o.id}\nRými: ${r.name}\nFlokkur: ${o.category ?? ""}\n` +
+          `Núverandi alvarleiki: ${o.severity}\nTitill: ${o.title}\n` +
+          `Lýsing skoðunarmanns: ${o.description ?? "(engin)"}\n` +
+          `Tillaga skoðunarmanns: ${o.suggestion ?? "(engin)"}`,
+      });
+      for (const p of (o.photos ?? [])
+        .slice()
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .slice(0, MAX_PHOTOS_PER_OBS)) {
+        if (totalImages >= MAX_TOTAL_IMAGES) break;
+        const url = p.storage_path ? signedMap.get(p.storage_path) : undefined;
+        if (url) {
+          content.push({ type: "image" as const, source: { type: "url" as const, url } });
+          totalImages++;
+        }
+      }
+    }
+  }
+  content.push({
+    type: "text" as const,
+    text: "Skilaðu nú niðurstöðunni fyrir ALLAR athugasemdir með því að kalla á tólið skila_skyrslu.",
+  });
 
   let claudeResult;
   try {
@@ -202,7 +261,7 @@ export async function generateReport(inspectionId: string) {
       tools: [REPORT_TOOL],
       // Þvingum Claude til að kalla á tólið → alltaf gilt, skipulagt JSON.
       tool_choice: { type: "tool", name: REPORT_TOOL.name },
-      messages: [{ role: "user", content: userMessage }],
+      messages: [{ role: "user", content }],
     });
 
     if (response.stop_reason === "max_tokens") {
@@ -254,7 +313,7 @@ export async function generateReport(inspectionId: string) {
   );
 
   const aiReportData = {
-    inspection: userPayload.inspection,
+    inspection: inspectionContext,
     ai_summary: {
       introduction: claudeResult.output.introduction,
       property_description: claudeResult.output.property_description,
@@ -439,7 +498,9 @@ const SYSTEM_PROMPT = `Þú ert faglegur ritstjóri fyrir Beton ehf., íslenskt 
 2) Snyrtu, faglega lýsingu og tillögu fyrir hverja athugasemd.
 3) Staðfestan alvarleikaflokk fyrir hverja athugasemd.
 
-Þú skrifar EKKI HTML, þú smíðar EKKI PDF. Annað kerfi sér um framsetningu. Þú skilar EINGÖNGU hreinu JSON sem fellur að skemanu sem lýst er hér að neðan.
+INNTAK: Fyrst kemur eignar- og rýmissamhengi sem JSON. Síðan kemur HVER athugasemd á eftir öðrum, merkt "── Athugasemd <id>", með rými, flokki, alvarleika, titli og hrátexta skoðunarmanns — og þar á eftir koma LJÓSMYNDIRNAR af þeirri athugasemd. Skoðaðu myndirnar vandlega; þær sýna oft það sem skoðunarmaður er að benda á. Mappaðu hverja niðurstöðu við rétt "id".
+
+Þú skrifar EKKI HTML, þú smíðar EKKI PDF. Annað kerfi sér um framsetningu. Þú skilar niðurstöðunni með tólinu skila_skyrslu.
 
 ═══════════════════════════════════════════════════════════
 TÓNN OG STÍLL
@@ -512,8 +573,8 @@ SNYRTING ATHUGASEMDA (polished_description, polished_suggestion)
 
 Fyrir hverja athugasemd færðu hráa lýsingu (description) og tillögu (suggestion) frá skoðunarmanni — oft er textinn stuttur, slangur eða með innsláttarvillum. Þú átt að:
 
-1. **polished_description** — Skrifaðu eina til þrjár setningar sem lýsa athuguninni faglega. Hvað sást, hvar, hvers vegna er það athugavert. Notaðu byggingafagmál. Ekki bæta við upplýsingum sem eru ekki í hráu gögnunum — þú mátt einungis betrumbæta orðalag.
-2. **polished_suggestion** — Skrifaðu eina til tvær setningar með ráðleggingu um úrbót. Hvað á að gera, hvernig, og ef við á: hver á að gera það (fagaðili eða eigandi). Engin verðmæti.
+1. **polished_description** — Skrifaðu eina til þrjár setningar sem lýsa athuguninni faglega. Hvað sást, hvar, hvers vegna er það athugavert. Notaðu byggingafagmál. Þú mátt NÝTA það sem sést á meðfylgjandi ljósmyndum athugasemdarinnar og eignarsamhengið (rými, byggingarár, tegund) til að gera lýsinguna nákvæmari — en EKKI finna upp galla sem hvorki sjást á myndum né koma fram hjá skoðunarmanni.
+2. **polished_suggestion** — Skrifaðu eina til tvær setningar með ráðleggingu um úrbót, byggða á lýsingunni, því sem sést á myndunum og alvarleika. Hvað á að gera, hvernig, og ef við á: hver á að gera það (fagaðili eða eigandi). Engin verðmæti.
 
 Reglur:
 - Ef hrá lýsing er tóm, skrifaðu eitthvað í líkingu við "Sjá meðfylgjandi mynd."
