@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { PrintButton } from "./print-button";
 import type { Severity } from "@/lib/supabase/types";
 
 interface ReportData {
@@ -201,13 +200,6 @@ export default async function ReportPage({
   const inspectorName = (propData.inspectorName as string) ?? "Bragi Michaelsson";
 
   const logoSrc = "/images/beton-logo.webp";
-  // Skráarnafn = Astandsskodun_<heimilisfang>_<dagsetning> (eins og í appinu).
-  const safeAddress = report.inspection.address
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-  const pdfFileName = `Astandsskodun_${safeAddress}_${report.inspection.inspection_date}`;
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -221,10 +213,11 @@ export default async function ReportPage({
 
            2) Server-PDF (?pdf=1, report/pdf/route.ts):
               puppeteer page.pdf() leggur til ALLAR spássíur (18mm/16mm/25.4mm)
-              OG blaðsíðunúmer. Þá DROPPUM við láréttu section-padding-i og
-              minnkum lóðréttu svo 25,4mm tvöfaldist ekki. @page margin er 0 í
-              báðum tilvikum svo þær bætast aldrei ofan á. */
-        @page { size: A4; margin: 0; }
+              OG blaðsíðunúmer. Þá DROPPUM við láréttu section-padding-i. MIKILVÆGT:
+              við megum EKKI setja @page { margin: 0 } í þessu tilviki — það
+              YFIRSKRIFAR puppeteer-spássíurnar og skilar 0 spássíum. Í print-
+              ham (window.print) höldum við @page margin:0 (efnið sér um padding). */
+        @page { size: A4; ${isPdfMode ? "" : "margin: 0;"} }
         @media print {
           html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
@@ -261,18 +254,16 @@ export default async function ReportPage({
         <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
           &larr; Til baka
         </Link>
-        <div className="flex items-center gap-2">
-          {/* Server-PDF (áreiðanlegar spássíur + blaðsíðunúmer). GET á route
-              handler sem skilar application/pdf — vafrinn hleður niður. */}
-          <a
-            href={`/dashboard/${id}/report/pdf`}
-            className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
-          >
-            Sækja PDF
-          </a>
-          {/* Varaleið: prentgluggi Chrome (gæti haft mismunandi spássíur). */}
-          <PrintButton fileName={pdfFileName} />
-        </div>
+        {/* EIN aðgerð: server-PDF (áreiðanlegar spássíur + blaðsíðunúmer, óháð
+            prentglugga). GET á route handler sem skilar application/pdf. Gamli
+            "Prenta/Vista" (window.print) hnappurinn fjarlægður til að forðast
+            rugling — PrintButton-comp er áfram til ef við viljum varaleið síðar. */}
+        <a
+          href={`/dashboard/${id}/report/pdf`}
+          className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
+        >
+          Sækja PDF
+        </a>
       </div>
 
       <article className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
