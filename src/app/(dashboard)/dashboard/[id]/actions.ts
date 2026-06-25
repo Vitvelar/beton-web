@@ -11,6 +11,16 @@ const CLAUDE_MAX_TOKENS = 16000;
 // Opus-verð (USD/1M tókenar) — staðfesta gegn gildandi Anthropic verðskrá.
 const PRICE_INPUT_PER_M = 15;
 const PRICE_OUTPUT_PER_M = 75;
+const PHOTO_BUCKET = "inspection-photos";
+const PHOTO_URL_TTL_SECONDS = 10 * 60;
+const MAX_PHOTOS_PER_OBS = 3;
+const MAX_TOTAL_IMAGES = 50;
+const CLAUDE_IMAGE_TRANSFORM = {
+  width: 1600,
+  height: 1600,
+  resize: "contain" as const,
+  quality: 75,
+};
 
 // Tól sem þvingar Claude til að skila skipulögðu, gildu JSON (structured output).
 // Þetta kemur í veg fyrir að frítextasvar slitni/sé gallað og brjóti JSON.parse.
@@ -172,27 +182,44 @@ export async function generateReport(inspectionId: string) {
     lookup_failed: lookupFailed,
   };
 
-  // Undirskrifa myndir hverrar athugasemdar (5 mín) svo Claude SJÁI þær.
-  const PHOTO_BUCKET = "inspection-photos";
-  const MAX_PHOTOS_PER_OBS = 4;
+  // Undirskrifa minnkaðar myndir hverrar athugasemdar svo Claude SJÁI þær.
+  // Anthropic hafnar "many-image" beiðnum ef einhver mynd er yfir 2000px á hlið;
+  // Supabase transform heldur upprunalegu myndinni óbreyttri en gefur Claude
+  // öruggt 1600px afrit.
   const obsPhotoPaths: string[] = [];
+  let queuedImages = 0;
   for (const r of sortedRooms) {
     for (const o of r.observations ?? []) {
       for (const p of (o.photos ?? [])
         .slice()
         .sort((a, b) => a.sort_order - b.sort_order)
         .slice(0, MAX_PHOTOS_PER_OBS)) {
-        if (p.storage_path) obsPhotoPaths.push(p.storage_path);
+        if (queuedImages >= MAX_TOTAL_IMAGES) break;
+        if (p.storage_path) {
+          obsPhotoPaths.push(p.storage_path);
+          queuedImages++;
+        }
       }
     }
   }
   const signedMap = new Map<string, string>();
   if (obsPhotoPaths.length > 0) {
-    const { data: signed } = await supabase.storage
-      .from(PHOTO_BUCKET)
-      .createSignedUrls(obsPhotoPaths, 600);
-    for (const s of signed ?? []) {
-      if (s.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
+    const signed = await Promise.all(
+      obsPhotoPaths.map(async (path) => {
+        const { data, error } = await supabase.storage
+          .from(PHOTO_BUCKET)
+          .createSignedUrl(path, PHOTO_URL_TTL_SECONDS, {
+            transform: CLAUDE_IMAGE_TRANSFORM,
+          });
+        if (error || !data?.signedUrl) {
+          console.error("Claude photo sign error:", { path, error });
+          return null;
+        }
+        return { path, signedUrl: data.signedUrl };
+      })
+    );
+    for (const s of signed) {
+      if (s?.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
     }
   }
 
@@ -213,7 +240,6 @@ export async function generateReport(inspectionId: string) {
   ];
   // Anthropic leyfir takmarkaðan fjölda mynda per beiðni — verjum okkur fyrir
   // mjög stórum skoðunum með heildarþaki.
-  const MAX_TOTAL_IMAGES = 90;
   let totalImages = 0;
   for (const r of sortedRooms) {
     for (const o of (r.observations ?? [])
