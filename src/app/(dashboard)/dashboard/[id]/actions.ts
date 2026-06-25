@@ -13,8 +13,8 @@ const PRICE_INPUT_PER_M = 15;
 const PRICE_OUTPUT_PER_M = 75;
 const PHOTO_BUCKET = "inspection-photos";
 const PHOTO_URL_TTL_SECONDS = 10 * 60;
-const MAX_PHOTOS_PER_OBS = 3;
-const MAX_TOTAL_IMAGES = 50;
+const MAX_PHOTOS_PER_OBS = 10;
+const MAX_TOTAL_IMAGES = 100;
 const CLAUDE_IMAGE_TRANSFORM = {
   width: 1600,
   height: 1600,
