@@ -9,8 +9,8 @@
 // never appeared (auth wall / unpublished) so the caller fails the job loudly
 // instead of storing a blank PDF.
 
-const NAVIGATION_TIMEOUT_MS = 30_000;
-const IMAGE_SETTLE_TIMEOUT_MS = 18_000;
+// Generous: networkidle2 must wait for all report images to load (up to ~100).
+const NAVIGATION_TIMEOUT_MS = 60_000;
 
 export class ReportNotRenderedError extends Error {
   constructor(message = "Skýrslusíðan hlóðst ekki (.report-article fannst ekki).") {
@@ -67,33 +67,21 @@ export async function renderReportPdf(
     });
 
     const page = await browser.newPage();
+    // Skýrslan er að fullu server-rendruð, óvirk prentsíða. Slökkvum á JS svo
+    // React hydrati ALDREI — þá getur óbanvæn client-villa (t.d. síða sem skilar
+    // 500) ekki skipt skýrslunni út fyrir error-boundary, og PDF verður
+    // fyrirsjáanlegt. page.$ / emulateMediaType / pdf keyra öll yfir CDP án
+    // síðu-JS. networkidle2 bíður eftir að myndir hlaðist (í stað JS-settla).
+    await page.setJavaScriptEnabled(false);
     if (opts.extraHeaders) await page.setExtraHTTPHeaders(opts.extraHeaders);
     if (opts.cookies && opts.cookies.length > 0) await page.setCookie(...opts.cookies);
 
     await page.goto(reportUrl, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "networkidle2",
       timeout: opts.navigationTimeoutMs ?? NAVIGATION_TIMEOUT_MS,
     });
 
-    // Gefa myndum sanngjarna stund til að hlaðast — en ekki endalaust (stórar
-    // skýrslur ~100 myndir).
-    await page.evaluate(async (timeoutMs) => {
-      const imgs = Array.from(document.images);
-      await Promise.all(
-        imgs.map((img) => {
-          if (img.complete && img.naturalHeight > 0) return Promise.resolve();
-          return Promise.race([
-            new Promise<void>((resolve) => {
-              img.addEventListener("load", () => resolve(), { once: true });
-              img.addEventListener("error", () => resolve(), { once: true });
-            }),
-            new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
-          ]);
-        })
-      );
-    }, opts.imageSettleTimeoutMs ?? IMAGE_SETTLE_TIMEOUT_MS);
-
-    const hasReport = await page.evaluate(() => !!document.querySelector(".report-article"));
+    const hasReport = (await page.$(".report-article")) !== null;
     if (!hasReport) throw new ReportNotRenderedError();
 
     // NAUÐSYNLEGT: öll síðuskipti/spássíu-stílun lifir undir @media print.
