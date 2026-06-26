@@ -6,16 +6,20 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 // this from client components. Throws clearly if the key is missing so we don't
 // silently fall back to an under-privileged client.
 export function createServiceClient(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  // Accept either env name — the service-role key has gone by both in this repo.
+  // Prefer a RUNTIME url var. NEXT_PUBLIC_* is inlined at build time and bakes in
+  // empty on the beton.is Docker image (the Dockerfile doesn't pass it as a build
+  // arg), so the worker can't rely on it — SUPABASE_URL is read live like the
+  // service key. Accept both key names this repo has used.
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
-  if (!url || !key) {
-    throw new Error(
-      "Service-client vantar: NEXT_PUBLIC_SUPABASE_URL og SUPABASE_SERVICE_ROLE_KEY (eða SUPABASE_SECRET_KEY) verða að vera sett (beton.is)."
-    );
+  const missing: string[] = [];
+  if (!url) missing.push("SUPABASE_URL (eða NEXT_PUBLIC_SUPABASE_URL)");
+  if (!key) missing.push("SUPABASE_SERVICE_ROLE_KEY (eða SUPABASE_SECRET_KEY)");
+  if (missing.length > 0) {
+    throw new Error(`Service-client vantar á beton.is: ${missing.join(" + ")}`);
   }
-  return createClient(url, key, {
+  return createClient(url!, key!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
