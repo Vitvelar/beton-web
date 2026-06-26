@@ -103,6 +103,7 @@ export default async function ReportPage({
   // notar service-client (RLS bypass) því hann er ekki innskráður notandi. Annars
   // óbreytt: Bearer (app) eða cookie (admin).
   const workerRequest = isWorkerRequest(hdrs.get(WORKER_TOKEN_HEADER));
+  try {
   const authorization = workerRequest
     ? null
     : getBearerAuthorization(hdrs.get("authorization"));
@@ -753,6 +754,21 @@ export default async function ReportPage({
       </article>
     </div>
   );
+  } catch (err) {
+    // Re-throw Next control-flow (notFound/redirect); surface real errors so the
+    // worker render can report what actually broke (TEMP diagnostic).
+    const digest = (err as { digest?: string } | null)?.digest;
+    if (typeof digest === "string" && digest.startsWith("NEXT_")) throw err;
+    if (workerRequest) {
+      const e = err as Error;
+      return (
+        <pre id="worker-error" style={{ whiteSpace: "pre-wrap", fontSize: 11 }}>
+          {`WORKER_RENDER_ERROR: ${e?.message}\n${e?.stack ?? String(err)}`}
+        </pre>
+      );
+    }
+    throw err;
+  }
 }
 
 function TocRow({ num, name }: { num: string; name: string }) {
