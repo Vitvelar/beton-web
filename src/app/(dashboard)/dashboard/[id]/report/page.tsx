@@ -7,8 +7,13 @@ import {
   getBearerAuthorization,
 } from "@/lib/supabase/bearer";
 import { createServiceClient } from "@/lib/supabase/service";
-import { isWorkerRequest, WORKER_TOKEN_HEADER } from "@/lib/report/shared";
+import {
+  isWorkerRequest,
+  WORKER_TOKEN_HEADER,
+  reportDownloadName,
+} from "@/lib/report/shared";
 import type { Severity } from "@/lib/supabase/types";
+import type { Metadata } from "next";
 
 interface ReportData {
   inspection: {
@@ -85,6 +90,42 @@ const PDF_IMAGE_TRANSFORM = {
   resize: "contain" as const,
   quality: 70,
 };
+
+// Sets the PDF/document title to match the download name ("Beton Ástandsskoðun -
+// <heimilisfang>, <dags>") instead of the dashboard's "Stjórnborð | …" template.
+// `absolute` bypasses the parent layout title template entirely.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const hdrs = await headers();
+    const workerRequest = isWorkerRequest(hdrs.get(WORKER_TOKEN_HEADER));
+    const authorization = workerRequest
+      ? null
+      : getBearerAuthorization(hdrs.get("authorization"));
+    const supabase = workerRequest
+      ? createServiceClient()
+      : authorization
+      ? createBearerClient(authorization)
+      : await createClient();
+    let q = supabase
+      .from("inspections")
+      .select("address, inspection_date, local_id")
+      .limit(1);
+    q = authorization ? q.or(`id.eq.${id},local_id.eq.${id}`) : q.eq("id", id);
+    const { data } = await q.maybeSingle();
+    if (data?.address) {
+      const name = reportDownloadName(data.address, data.inspection_date).replace(/\.pdf$/, "");
+      return { title: { absolute: name } };
+    }
+  } catch {
+    // fall back to a generic title below
+  }
+  return { title: { absolute: "Beton Ástandsskoðun" } };
+}
 
 export default async function ReportPage({
   params,
