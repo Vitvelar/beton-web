@@ -9,8 +9,65 @@
 // never appeared (auth wall / unpublished) so the caller fails the job loudly
 // instead of storing a blank PDF.
 
+import { spawn } from "node:child_process";
+import { writeFile, readFile, unlink } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
+
 // Generous: networkidle2 must wait for all report images to load (up to ~100).
 const NAVIGATION_TIMEOUT_MS = 60_000;
+
+// Chromium's page.pdf() embeds each photo at ~1MB regardless of source size, so a
+// ~100-photo report is ~100MB — over Supabase Storage's upload limit. Ghostscript
+// downsamples embedded images to 150 DPI (/ebook), which is plenty for a printed
+// A4 report (photos display ~51mm wide) and brings 100MB → ~2MB with no visible
+// loss. Falls back to the raw PDF if gs is missing or errors (e.g. on non-Docker).
+const GS_BIN = process.env.GHOSTSCRIPT_PATH || "gs";
+const GS_PDF_SETTINGS = process.env.REPORT_PDF_GS_SETTINGS || "/ebook";
+
+async function compressPdf(input: Uint8Array): Promise<Uint8Array> {
+  const id = randomUUID();
+  const inPath = join(tmpdir(), `report-${id}-in.pdf`);
+  const outPath = join(tmpdir(), `report-${id}-out.pdf`);
+  try {
+    await writeFile(inPath, input);
+    await new Promise<void>((resolve, reject) => {
+      const gs = spawn(GS_BIN, [
+        "-sDEVICE=pdfwrite",
+        "-dCompatibilityLevel=1.5",
+        `-dPDFSETTINGS=${GS_PDF_SETTINGS}`,
+        "-dNOPAUSE",
+        "-dQUIET",
+        "-dBATCH",
+        "-dDetectDuplicateImages=true",
+        `-sOutputFile=${outPath}`,
+        inPath,
+      ]);
+      let stderr = "";
+      gs.stderr.on("data", (d) => {
+        stderr += d.toString();
+      });
+      gs.on("error", reject); // gs not on PATH
+      gs.on("close", (code) =>
+        code === 0 ? resolve() : reject(new Error(`gs exit ${code}: ${stderr.slice(0, 300)}`))
+      );
+    });
+    const out = await readFile(outPath);
+    // Only keep the compressed output if it actually came out smaller and non-empty.
+    if (out.length > 0 && out.length < input.length) return new Uint8Array(out);
+    return input;
+  } catch (err) {
+    console.error(
+      "compressPdf failed, using uncompressed PDF:",
+      err instanceof Error ? err.message : err
+    );
+    return input;
+  } finally {
+    await unlink(inPath).catch(() => {});
+    await unlink(outPath).catch(() => {});
+  }
+}
 
 export class ReportNotRenderedError extends Error {
   constructor(message = "Skýrslusíðan hlóðst ekki (.report-article fannst ekki).") {
@@ -44,6 +101,7 @@ export async function renderReportPdf(
   const puppeteer = (await import("puppeteer-core")).default;
 
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+  let rawPdf: Uint8Array;
   try {
     let executablePath: string | undefined;
     let launchArgs: string[];
@@ -105,8 +163,11 @@ export async function renderReportPdf(
         "</div>",
     });
 
-    return new Uint8Array(pdfBytes);
+    rawPdf = new Uint8Array(pdfBytes);
   } finally {
     if (browser) await browser.close();
   }
+
+  // Close Chromium first (free its memory), then shrink the PDF via Ghostscript.
+  return compressPdf(rawPdf);
 }

@@ -58,8 +58,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN apt-get update && apt-get install -y --no-install-recommends \
       chromium \
       fonts-liberation \
+      ghostscript \
   && rm -rf /var/lib/apt/lists/*
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Ghostscript path for report-PDF compression (render-pdf.ts). Chromium embeds
+# photos at ~1MB each → a 100-photo report is ~100MB, over Supabase Storage's
+# upload limit. gs downsamples images to 150 DPI (plenty for print) → ~2MB.
+ENV GHOSTSCRIPT_PATH=/usr/bin/gs
 
 # Non-root user (groupadd/useradd from passwd — always present on Debian, unlike
 # Alpine's addgroup/adduser). Home dir so Chromium has a writable profile/cache.
