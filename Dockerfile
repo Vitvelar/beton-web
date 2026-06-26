@@ -28,6 +28,17 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# NEXT_PUBLIC_* eru INLINE-uð á BUILD-tíma. .env.local er dockerignore-að og
+# Dokploy byggir í hreinu umhverfi, svo án þessara build-args bakast þau inn TÓM
+# á beton.is (þá detta dashboard-leiðir á tóma Supabase-stillingu). Settu þessi
+# sem BUILD ARGS í Dokploy (ekki bara runtime env). admin.beton.is (Vercel)
+# fær sín gildi sjálfkrafa og er óbreytt. service.ts deriveUrlFromKey og
+# (dashboard)/layout.tsx force-dynamic eru áfram til staðar sem öryggisnet.
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 

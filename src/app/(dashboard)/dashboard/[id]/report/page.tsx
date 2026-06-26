@@ -81,15 +81,11 @@ const SEV_RANK: Record<string, number> = {
   athugasemd: 2,
 };
 
-// Server-PDF þarf ekki original myndaskrárnar. Prentmyndir eru 2-3 dálkar víðast
-// hvar í A4 skýrslunni; 1000px afrit halda þeim skýrum en forða serverless
-// Chromium frá því að decode-a hundruð MB í minni þegar skýrsla er með ~100 myndir.
-const PDF_IMAGE_TRANSFORM = {
-  width: 1000,
-  height: 1000,
-  resize: "contain" as const,
-  quality: 70,
-};
+// Myndir eru nú minnkaðar EINU SINNI við upphal í appinu (long edge ≤ 1600px,
+// JPEG) — sjá beton-app/lib/utils/image.ts. Þess vegna sækjum við geymda
+// hlutinn BEINT án Supabase image-transform (Pro-kvótinn er aðeins 100/lotu og
+// ein myndaþung skoðun sprengdi hann, 108/100). Gamlar (full-size) myndir
+// renderast líka fínt í puppeteer, bara stærri skrá — engin transform hvort sem er.
 
 // Sets the PDF/document title to match the download name ("Beton Ástandsskoðun -
 // <heimilisfang>, <dags>") instead of the dashboard's "Stjórnborð | …" template.
@@ -223,16 +219,14 @@ export default async function ReportPage({
 
   const signedUrls = new Map<string, string>();
   const batchSize = 20;
-  const signedUrlOptions = isPdfMode
-    ? { transform: PDF_IMAGE_TRANSFORM }
-    : undefined;
   for (let i = 0; i < allDbPhotos.length; i += batchSize) {
     const batch = allDbPhotos.slice(i, i + batchSize);
     const results = await Promise.all(
       batch.map(async (p) => {
+        // Engin transform — myndir eru þegar web-stærð (minnkaðar við upphal).
         const { data } = await supabase.storage
           .from("inspection-photos")
-          .createSignedUrl(p.storage_path!, 3600, signedUrlOptions);
+          .createSignedUrl(p.storage_path!, 3600);
         return { id: p.id, url: data?.signedUrl ?? null };
       })
     );
@@ -322,7 +316,7 @@ export default async function ReportPage({
           /* Myndir/töflur klofna ekki milli síðna. Athugasemda-/rýmismyndir sýna FULLA
              mynd (engin klipping) — náttúrulegt hlutfall, takmarkað í hæð. */
           img, table, thead, tbody, tr, .rpt-keep { break-inside: avoid; page-break-inside: avoid; }
-          .rpt-photo { height: auto !important; max-height: 95mm !important; object-fit: contain !important; }
+          .rpt-photo { height: auto !important; max-height: 78mm !important; object-fit: contain !important; }
           /* Halda fyrirsögnum við efnið sem fylgir (engar munaðarlausar fyrirsagnir
              neðst á síðu). .rpt-obs-title = haus hverrar athugasemdar (númer + titill
              + alvarleikamerki). */
@@ -565,7 +559,7 @@ export default async function ReportPage({
                 <div className="grid grid-cols-3 gap-2 mb-4 print:break-inside-avoid">
                   {rPhotos.map((p) => (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-28 object-cover rounded rpt-photo" />
+                    <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-28 object-contain rounded rpt-photo bg-stone-100" />
                   ))}
                 </div>
               )}
@@ -631,10 +625,10 @@ export default async function ReportPage({
                           </div>
                         )}
                         {oPhotos.length > 0 && (
-                          <div className="grid grid-cols-2 gap-2 mt-3 items-start">
+                          <div className="grid grid-cols-3 gap-2 mt-3 items-start">
                             {oPhotos.map((p) => (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-36 object-cover rounded rpt-photo" />
+                              <img key={p.id} src={p.url} alt={p.caption ?? ""} className="w-full h-28 object-contain rounded rpt-photo bg-stone-100" />
                             ))}
                           </div>
                         )}
