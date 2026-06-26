@@ -76,13 +76,22 @@ export async function renderReportPdf(
     if (opts.extraHeaders) await page.setExtraHTTPHeaders(opts.extraHeaders);
     if (opts.cookies && opts.cookies.length > 0) await page.setCookie(...opts.cookies);
 
-    await page.goto(reportUrl, {
+    const response = await page.goto(reportUrl, {
       waitUntil: "networkidle2",
       timeout: opts.navigationTimeoutMs ?? NAVIGATION_TIMEOUT_MS,
     });
 
     const hasReport = (await page.$(".report-article")) !== null;
-    if (!hasReport) throw new ReportNotRenderedError();
+    if (!hasReport) {
+      // Diagnostic: what did puppeteer actually load?
+      const status = response?.status();
+      const finalUrl = page.url();
+      const title = await page.title().catch(() => "");
+      const body = (await page.content().catch(() => "")).replace(/\s+/g, " ").slice(0, 240);
+      throw new ReportNotRenderedError(
+        `.report-article fannst ekki [status=${status} url=${finalUrl} title="${title}" body=${body}]`
+      );
+    }
 
     // NAUÐSYNLEGT: öll síðuskipti/spássíu-stílun lifir undir @media print.
     await page.emulateMediaType("print");
