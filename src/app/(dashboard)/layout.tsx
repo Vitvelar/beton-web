@@ -10,6 +10,11 @@ export const metadata = {
   },
 };
 
+// The dashboard is auth-gated, user-specific content — never prerender it. This
+// also keeps /dashboard/login (which uses useSearchParams) out of static export,
+// which otherwise fails the build with a missing-suspense error.
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {
