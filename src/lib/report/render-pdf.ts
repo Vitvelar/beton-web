@@ -83,13 +83,10 @@ export async function renderReportPdf(
 
     const hasReport = (await page.$(".report-article")) !== null;
     if (!hasReport) {
-      // Diagnostic: what did puppeteer actually load?
       const status = response?.status();
-      const finalUrl = page.url();
       const title = await page.title().catch(() => "");
-      const body = (await page.content().catch(() => "")).replace(/\s+/g, " ").slice(0, 240);
       throw new ReportNotRenderedError(
-        `.report-article fannst ekki [status=${status} url=${finalUrl} title="${title}" body=${body}]`
+        `.report-article fannst ekki [status=${status} url=${page.url()} title="${title}"]`
       );
     }
 
