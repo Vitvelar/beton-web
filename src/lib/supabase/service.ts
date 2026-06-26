@@ -7,10 +7,12 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 // silently fall back to an under-privileged client.
 export function createServiceClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Accept either env name — the service-role key has gone by both in this repo.
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
   if (!url || !key) {
     throw new Error(
-      "Service-client vantar: NEXT_PUBLIC_SUPABASE_URL og SUPABASE_SERVICE_ROLE_KEY verða að vera sett (beton.is)."
+      "Service-client vantar: NEXT_PUBLIC_SUPABASE_URL og SUPABASE_SERVICE_ROLE_KEY (eða SUPABASE_SECRET_KEY) verða að vera sett (beton.is)."
     );
   }
   return createClient(url, key, {
