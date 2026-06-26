@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAllowedEmail } from "@/lib/allowed-users";
+import { isWorkerRequest, WORKER_TOKEN_HEADER } from "@/lib/report/shared";
 
 function createSupabaseProxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -33,6 +34,14 @@ function createSupabaseProxy(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const host = request.headers.get("host") ?? "";
+
+  // Bakgrunns-worker rendar skýrslu Á beton.is með x-report-worker-token. Þá
+  // MÁ EKKI redirecta /dashboard yfir á admin.beton.is (þar er hvorki Chromium
+  // né service-role env) — hleypum þeirri einu beiðni í gegn svo render keyri hér.
+  const isReportPath = /^\/dashboard\/[^/]+\/report(?:\/pdf)?$/.test(pathname);
+  if (isReportPath && isWorkerRequest(request.headers.get(WORKER_TOKEN_HEADER))) {
+    return NextResponse.next();
+  }
 
   // Stjórnborðið býr á admin.beton.is. Ef einhver opnar /dashboard á
   // markaðssíðunni (beton.is) beinum við yfir á admin-lénið.
