@@ -12,8 +12,11 @@ import {
 
 // Background PDF render worker, in-process. Pinged by Supabase pg_cron (and any
 // best-effort kick) — drains the report_jobs queue, rendering the canonical
-// report HTML to PDF and storing it. Runs only on beton.is (Docker) where a real
-// Chromium exists; on Vercel (no PUPPETEER_EXECUTABLE_PATH) it no-ops. Concurrency
+// report HTML to PDF and storing it. Renders með distro-Chromium þar sem
+// PUPPETEER_EXECUTABLE_PATH er sett (Docker/VPS) en annars @sparticuz-Chromium
+// (Vercel serverless) — sjá render-pdf.ts. Vercel-leiðin varð fær þegar myndir
+// fóru að minnka við upphal (PDF nokkur MB, ekki ~100MB) og krefst þess að
+// REPORT_WORKER_TOKEN + service-lykillinn séu sett í Vercel env. Concurrency
 // is safe via claim_next_report_job()'s FOR UPDATE SKIP LOCKED; the module flag
 // just avoids piling drains within one instance.
 export const runtime = "nodejs";
@@ -29,10 +32,6 @@ let draining = false;
 export async function POST(request: NextRequest) {
   if (!isWorkerRequest(request.headers.get(WORKER_TOKEN_HEADER))) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  if (!process.env.PUPPETEER_EXECUTABLE_PATH) {
-    // No Chromium here (e.g. accidentally hit on Vercel) — do nothing.
-    return NextResponse.json({ skipped: "no-chromium" }, { status: 503 });
   }
   if (draining) {
     return NextResponse.json({ skipped: "already-draining" }, { status: 200 });
