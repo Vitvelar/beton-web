@@ -18,13 +18,16 @@ import { randomUUID } from "node:crypto";
 // Generous: networkidle2 must wait for all report images to load (up to ~100).
 const NAVIGATION_TIMEOUT_MS = 60_000;
 
-// Chromium's page.pdf() embeds each photo at ~1MB regardless of source size, so a
-// ~100-photo report is ~100MB — over Supabase Storage's upload limit. Ghostscript
-// downsamples embedded images to 150 DPI (/ebook), which is plenty for a printed
-// A4 report (photos display ~51mm wide) and brings 100MB → ~2MB with no visible
-// loss. Falls back to the raw PDF if gs is missing or errors (e.g. on non-Docker).
+// Ghostscript er AÐEINS öryggisnet fyrir of stór PDF. Eftir að myndir fóru að
+// minnka við upphal (long edge ≤ 1600px JPEG) er hrátt Chromium-PDF venjulega
+// fáein MB, en gs-endurskrifað PDF opnast EKKI í Canva (pdfwrite endurskrifar
+// letur og streymi sem Canva-innflutningur hafnar) — og Bragi endurvinnur hverja
+// skýrslu í Canva. Þess vegna sleppum við gs alveg undir stærðarmörkunum og
+// keyrum það bara ef PDF-ið nálgast upload-mörk Supabase Storage (þá er stór
+// skrá verri en Canva-ósamhæfni). /ebook = 150 DPI myndir, nóg fyrir prentað A4.
 const GS_BIN = process.env.GHOSTSCRIPT_PATH || "gs";
 const GS_PDF_SETTINGS = process.env.REPORT_PDF_GS_SETTINGS || "/ebook";
+const GS_MIN_BYTES = Number(process.env.REPORT_PDF_GS_MIN_BYTES) || 40 * 1024 * 1024;
 
 async function compressPdf(input: Uint8Array): Promise<Uint8Array> {
   const id = randomUUID();
@@ -35,7 +38,9 @@ async function compressPdf(input: Uint8Array): Promise<Uint8Array> {
     await new Promise<void>((resolve, reject) => {
       const gs = spawn(GS_BIN, [
         "-sDEVICE=pdfwrite",
-        "-dCompatibilityLevel=1.5",
+        // 1.4 = klassískt xref, engir object-streams — mest samhæfni við
+        // vandláta PDF-lesara (Canva o.fl.) ef þjöppunin keyrir á annað borð.
+        "-dCompatibilityLevel=1.4",
         `-dPDFSETTINGS=${GS_PDF_SETTINGS}`,
         "-dNOPAUSE",
         "-dQUIET",
@@ -168,6 +173,17 @@ export async function renderReportPdf(
     if (browser) await browser.close();
   }
 
-  // Close Chromium first (free its memory), then shrink the PDF via Ghostscript.
+  // Undir mörkunum: skila hráa Chromium-PDF-inu óbreyttu (Canva-samhæft).
+  // Yfir mörkin: loka Chromium fyrst (losa minni), svo þjappa með Ghostscript.
+  if (rawPdf.length < GS_MIN_BYTES) {
+    console.log(
+      `renderReportPdf: raw ${(rawPdf.length / 1024 / 1024).toFixed(1)}MB < ` +
+        `${(GS_MIN_BYTES / 1024 / 1024).toFixed(0)}MB — sleppi gs (Canva-samhæft PDF)`
+    );
+    return rawPdf;
+  }
+  console.log(
+    `renderReportPdf: raw ${(rawPdf.length / 1024 / 1024).toFixed(1)}MB — þjappa með gs`
+  );
   return compressPdf(rawPdf);
 }
