@@ -29,6 +29,13 @@ const nextConfig: NextConfig = {
       "node_modules/@sparticuz/chromium/**",
       "node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/**",
     ],
+    // Bakgrunns-workerinn (tick) rendrar nú PDF á Vercel með @sparticuz —
+    // sama binary þarf að fylgja ÞEIRRI leið, annars: "input directory .../bin
+    // does not exist" í framleiðslu (nákvæmlega villan sem kom 2026-08-10).
+    "/api/report/worker/tick": [
+      "node_modules/@sparticuz/chromium/**",
+      "node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/**",
+    ],
   },
 };
 
