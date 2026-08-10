@@ -76,12 +76,22 @@ export function ReportActions({
         </button>
 
         {showViewReport && (
-          <Link
-            href={`/dashboard/${inspectionId}/report`}
-            className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
-          >
-            Skoða skýrslu
-          </Link>
+          <>
+            <Link
+              href={`/dashboard/${inspectionId}/report`}
+              className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
+            >
+              Skoða skýrslu
+            </Link>
+            {/* Breyta texta beint (án AI) — nýtt PDF renderast úr breytta
+                textanum, Claude er ekki keyrt aftur. */}
+            <Link
+              href={`/dashboard/${inspectionId}/report/edit`}
+              className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
+            >
+              Breyta texta
+            </Link>
+          </>
         )}
 
         {reportUrl && (

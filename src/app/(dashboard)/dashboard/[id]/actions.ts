@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { snapshotToken } from "@/lib/report/snapshot-token";
 import Anthropic from "@anthropic-ai/sdk";
 
 const ANTHROPIC_MODEL = "claude-opus-4-8";
@@ -433,6 +434,231 @@ export async function generateReport(inspectionId: string) {
     status: "success",
     ai_summary: aiSummary,
     ai_cost_usd: aiCostUsd,
+  };
+}
+
+// ── Handvirk textabreyting á skýrslu (án AI) ──
+//
+// PDF-ið renderast úr inspections.ai_report_data snapshot-inu, svo breytingar á
+// observations-töflunni einar og sér ná ALDREI inn í PDF nema Claude sé keyrt
+// aftur ("Endurgera skýrslu" = ný AI-umferð, kostnaður + textinn umskrifast).
+// Þessi aðgerð leyfir að lagfæra textann beint: hún uppfærir snapshot-ið,
+// speglar athugasemdatexta í observations-töfluna (svo appið/ritillinn sýni það
+// sama) og setur PDF-render í biðröð ÁN þess að snerta AI.
+
+export interface ReportTextEdit {
+  introduction: string;
+  property_description: string;
+  conclusion: string;
+  observations: Array<{ id: string; description: string; suggestion: string }>;
+}
+
+interface AiReportSnapshot {
+  ai_summary: {
+    introduction: string;
+    property_description: string;
+    conclusion: string;
+  };
+  rooms: Array<{
+    observations: Array<{
+      id: string;
+      description: string;
+      suggestion: string;
+      [key: string]: unknown;
+    }>;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
+export async function updateReportText(
+  inspectionId: string,
+  edit: ReportTextEdit,
+  regeneratePdf: boolean,
+  expectedToken: string
+) {
+  const supabase = await createClient();
+
+  const { data: inspection, error: fetchError } = await supabase
+    .from("inspections")
+    .select("id, status, report_error, ai_report_data")
+    .eq("id", inspectionId)
+    .maybeSingle();
+
+  if (fetchError || !inspection) {
+    return { error: fetchError?.message ?? "Skoðun fannst ekki." };
+  }
+  if (!inspection.ai_report_data) {
+    return { error: "Engin skýrsla til — búðu fyrst til skýrslu með AI." };
+  }
+
+  // Árekstravörn: ef snapshot-ið breyttist eftir að ritillinn var opnaður
+  // (ný AI-skýrslugerð, vistun úr öðrum flipa) má þessi vistun EKKI yfirskrifa
+  // nýrri textann með gömlu ritil-ástandi.
+  if (snapshotToken(inspection.ai_report_data) !== expectedToken) {
+    return {
+      error:
+        "Skýrslutextinn hefur breyst síðan ritillinn var opnaður (t.d. ný skýrslugerð eða vistun annars staðar). Endurhladdu síðuna og gerðu breytingarnar aftur.",
+    };
+  }
+
+  // Til að geta bakkað status-breytingunni ef biðraðarinnsetning klikkar —
+  // annars hangir skoðunin í 'rendering_pdf' án þess að nokkurt starf sé til.
+  let statusChanged = false;
+  // Satt þegar tryggt er að FERSKT starf (eða óhafið 'queued' starf) rendrar
+  // nýja textann — annars fær notandinn heiðarlega viðvörun í stað loforðs.
+  let queuedFresh = false;
+  // Token af VISTAÐA snapshot-inu (RETURNING á update-inu, atómískt með skrifinu).
+  // Skilað líka með villu eftir committað skrif svo ritillinn festist ekki í
+  // röngum "breytt annars staðar" villum eftir eigin vistun.
+  let committedToken: string | null = null;
+
+  const snapshot = inspection.ai_report_data as AiReportSnapshot;
+  const editById = new Map(edit.observations.map((o) => [o.id, o] as const));
+
+  try {
+    // 1) Spegla breyttan athugasemdatexta í observations-töfluna — AÐEINS reiti
+    //    sem notandinn breytti í raun (diff gegn snapshot-inu reit fyrir reit),
+    //    svo vistun hér afturkalli aldrei nýrri breytingar sem gerðar voru beint
+    //    á töfluna (ObservationForm / appið). Tómur strengur er leyfður (eyðir
+    //    tillögu) — ólíkt ObservationForm sem sleppir tómum.
+    //    Röðin skiptir máli: speglun Á UNDAN snapshot-uppfærslu — ef hluti
+    //    speglunar klikkar er snapshot-ið ósnert og endurreynd vistun ber saman
+    //    við sama grunn og keyrir speglunina aftur (idempotent, nær samræmi).
+    for (const room of snapshot.rooms ?? []) {
+      for (const obs of room.observations ?? []) {
+        const e = editById.get(obs.id);
+        if (!e) continue;
+        const changed: { description?: string; suggestion?: string } = {};
+        // ?? "" báðum megin: ritillinn normaliserar null → "" við opnun, svo
+        // ósnertur legacy-null reitur má ekki teljast breyting (myndi annars
+        // spegla "" yfir nýrri texta í töflunni).
+        if (e.description !== (obs.description ?? "")) changed.description = e.description;
+        if (e.suggestion !== (obs.suggestion ?? "")) changed.suggestion = e.suggestion;
+        if (Object.keys(changed).length === 0) continue;
+        const { error } = await supabase
+          .from("observations")
+          .update({ ...changed, updated_at: new Date().toISOString() })
+          .eq("id", obs.id);
+        if (error)
+          throw new Error(`Uppfærsla athugasemdar mistókst: ${error.message}`);
+      }
+    }
+
+    // 2) Uppfæra snapshot-ið sjálft (það sem PDF-ið renderast úr).
+    const patched: AiReportSnapshot = {
+      ...snapshot,
+      ai_summary: {
+        introduction: edit.introduction,
+        property_description: edit.property_description,
+        conclusion: edit.conclusion,
+      },
+      rooms: (snapshot.rooms ?? []).map((room) => ({
+        ...room,
+        observations: (room.observations ?? []).map((obs) => {
+          const e = editById.get(obs.id);
+          return e
+            ? { ...obs, description: e.description, suggestion: e.suggestion }
+            : obs;
+        }),
+      })),
+    };
+
+    // RETURNING (.select() á update-inu) er atómískt með skrifinu: token-ið er
+    // reiknað af jsonb-gildinu eins og grunnurinn geymdi ÞAÐ SEM VIÐ SKRIFUÐUM —
+    // sér-fetch á eftir gæti hasha snapshot annars skrifara (t.d. AI-keyrslu sem
+    // klárar í retry-biðinni) og þá myndi token-vörnin hleypa næstu vistun yfir
+    // ferskan texta.
+    const { data: saved, error: inspErr } = await supabase
+      .from("inspections")
+      .update({
+        ai_report_data: patched,
+        ai_summary: firstSentence(edit.conclusion),
+        updated_at: new Date().toISOString(),
+        ...(regeneratePdf
+          ? { status: "rendering_pdf", report_error: null }
+          : {}),
+      })
+      .eq("id", inspectionId)
+      .select("ai_report_data")
+      .maybeSingle();
+    if (inspErr)
+      throw new Error(`Uppfærsla skýrslu mistókst: ${inspErr.message}`);
+    if (saved?.ai_report_data) {
+      committedToken = snapshotToken(saved.ai_report_data);
+    }
+    statusChanged = regeneratePdf;
+
+    // 3) Setja PDF-render í biðröð. 23505 = virkt starf þegar til. Það er AÐEINS
+    //    í lagi ef starfið er enn 'queued' (worker les snapshot-ið þegar hann
+    //    byrjar) — 'running' starf gæti þegar hafa sótt skýrslusíðuna með GAMLA
+    //    textanum og myndi þá vista úrelt PDF sem "nýtt". Því bíðum við stutt og
+    //    reynum aftur ef starf er í keyrslu; takist það ekki skilum við
+    //    queued:false svo ritillinn segi satt í stað þess að lofa fersku PDF-i.
+    if (regeneratePdf) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      for (let attempt = 0; attempt < 4 && !queuedFresh; attempt++) {
+        const { error: jobErr } = await supabase
+          .from("report_jobs")
+          .insert({ inspection_id: inspectionId, requested_by: user?.id ?? null });
+        if (!jobErr) {
+          queuedFresh = true;
+          break;
+        }
+        if (jobErr.code !== "23505")
+          throw new Error(`Tókst ekki að setja PDF í biðröð: ${jobErr.message}`);
+        const { data: active, error: activeErr } = await supabase
+          .from("report_jobs")
+          .select("status")
+          .eq("inspection_id", inspectionId)
+          .in("status", ["queued", "running"])
+          .limit(1)
+          .maybeSingle();
+        if (!activeErr && active?.status === "queued") {
+          // Óhafið starf í biðröð rendrar nýja snapshot-ið þegar það er tekið.
+          queuedFresh = true;
+          break;
+        }
+        // 'running' (eða óviss staða vegna select-villu): bíða aðeins, starfið
+        // gæti klárað; þá kemst nýtt starf að í næstu tilraun. (!active án villu
+        // = kláraðist rétt í þessu → reynum insert strax aftur.) Stutt bið og
+        // sleppt í síðustu umferð: server-aðgerðin má ekki nálgast tímamörk
+        // Vercel-falla.
+        if ((activeErr || active?.status === "running") && attempt < 3) {
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+    }
+  } catch (e: unknown) {
+    console.error("updateReportText error:", e);
+    if (statusChanged) {
+      const { error: rbErr } = await supabase
+        .from("inspections")
+        .update({
+          status: inspection.status,
+          report_error: inspection.report_error,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", inspectionId);
+      if (rbErr)
+        console.error("updateReportText status rollback failed:", rbErr.message);
+    }
+    const msg = e instanceof Error ? e.message : "Óþekkt villa";
+    // committedToken fylgir með ef snapshot-skrifið var komið í gegn (villan
+    // varð t.d. í biðraðarinnsetningu) — annars situr ritillinn með úrelt token
+    // og hver einasta endurvistun stoppar á villandi "breytt annars staðar".
+    return { error: msg, token: committedToken ?? undefined };
+  }
+
+  revalidatePath(`/dashboard/${inspectionId}`);
+  revalidatePath(`/dashboard/${inspectionId}/report`);
+  revalidatePath(`/dashboard/${inspectionId}/report/edit`);
+  return {
+    success: true as const,
+    queued: queuedFresh,
+    token: committedToken ?? expectedToken,
   };
 }
 

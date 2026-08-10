@@ -333,12 +333,20 @@ export default async function ReportPage({
             prentglugga). GET á route handler sem skilar application/pdf. Gamli
             "Prenta/Vista" (window.print) hnappurinn fjarlægður til að forðast
             rugling — PrintButton-comp er áfram til ef við viljum varaleið síðar. */}
-        <a
-          href={`/dashboard/${id}/report/pdf`}
-          className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
-        >
-          Sækja PDF
-        </a>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/dashboard/${id}/report/edit`}
+            className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
+          >
+            Breyta texta
+          </Link>
+          <a
+            href={`/dashboard/${id}/report/pdf`}
+            className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
+          >
+            Sækja PDF
+          </a>
+        </div>
       </div>
 
       <article className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
