@@ -43,7 +43,7 @@ const sections: Section[] = [
     ],
     bullets: [
       "Notandaupplýsingar: netfang, auðkenni og nafn innskráðs notanda, ef nafn fylgir innskráningu.",
-      "Upplýsingar um eign: heimilisfang, póstnúmer, sveitarfélag, fastanúmer og opinberar upplýsingar úr fasteignaskrá (t.d. byggingarár og stærð).",
+      "Upplýsingar um eign sem skoðunarmaður skráir: heimilisfang, póstnúmer, sveitarfélag, fastanúmer, byggingarár og stærð.",
       "Upplýsingar um verkkaupa: nafn verkkaupa og hverjir voru viðstaddir skoðun.",
       "Skoðunargögn: rými, athugasemdir, lýsingar, tillögur, alvarleikamat, veður og dagsetning skoðunar.",
       "Ljósmyndir: myndir sem teknar eru á vettvangi og hitamyndir sem fluttar eru inn úr myndasafni.",
@@ -88,7 +88,6 @@ const sections: Section[] = [
       "Anthropic — AI-textagerð við skýrslugerð, eins og lýst er í kafla 06.",
       "Google — innskráning með Google-aðgangi (sé sú leið valin) og vistun fullbúinna PDF-skjala í Google Drive skjalasafni Beton.",
       "Vercel — hýsing vefþjónustu Beton (beton.is og admin.beton.is), þar sem endanleg PDF-útfærsla skýrslu er unnin.",
-      "Húsnæðis- og mannvirkjastofnun (hms.is) — uppfletting opinberra upplýsinga um eign út frá heimilisfangi eða fastanúmeri.",
       "Expo — appið sækir hugbúnaðaruppfærslur frá Expo-þjónustum. Með uppfærslubeiðnum fylgir fast, handahófskennt uppsetningarauðkenni appsins á tækinu, stýrikerfis- og útgáfuupplýsingar og, hafi appið stöðvast vegna villu í síðustu keyrslu, stutt villulýsing.",
     ],
     after: [

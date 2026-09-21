@@ -14,7 +14,7 @@ const workflow = [
   {
     n: "01",
     title: "Skoðun stofnuð",
-    text: "Skoðunarmaður skráir heimilisfang, verkkaupa og dagsetningu. Opinberar upplýsingar um eignina sækjast sjálfkrafa úr fasteignaskrá þegar tenging er til staðar.",
+    text: "Skoðunarmaður skráir heimilisfang, upplýsingar um eignina, verkkaupa og dagsetningu.",
   },
   {
     n: "02",
