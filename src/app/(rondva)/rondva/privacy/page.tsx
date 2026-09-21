@@ -153,8 +153,15 @@ const sections: Section[] = [
     body: (
       <>
         <p>
-          This site sets no cookies and runs no analytics or tracking scripts.
-          If that changes we will update this page first.
+          One essential cookie remembers your cookie choice. Analytics (Google
+          Analytics 4) and marketing cookies (Meta and Google ad measurement) are
+          set only if you accept them in the banner, and you can withdraw that at
+          any time. We also use Vercel Web Analytics, which sets no cookies and
+          stores no identifier about you. Details, names and lifetimes are on the{" "}
+          <Link href="/cookies" className="underline underline-offset-4">
+            cookie page
+          </Link>
+          .
         </p>
       </>
     ),

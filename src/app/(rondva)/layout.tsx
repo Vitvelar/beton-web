@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { inter } from "@/lib/fonts/rondva";
 import { BRANDS } from "@/lib/brand";
+import { RondvaAnalytics } from "@/components/rondva/RondvaAnalytics";
+import { ConsentBanner } from "@/components/rondva/ConsentBanner";
 import "./rondva.css";
 
 // Rótarútlit Rondva. Sjálfstætt frá Beton: enska, Inter, eigin metadata og
@@ -74,6 +76,8 @@ export default function RondvaRootLayout({
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-paper text-ink">
         {children}
+        <ConsentBanner />
+        <RondvaAnalytics />
       </body>
     </html>
   );
