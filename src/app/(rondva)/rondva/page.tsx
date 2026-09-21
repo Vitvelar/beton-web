@@ -1,25 +1,52 @@
+import Link from "next/link";
 import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 import { WaitlistForm } from "@/components/rondva/WaitlistForm";
+import { ReportPreview } from "@/components/rondva/ReportPreview";
+import { PhoneFrame } from "@/components/rondva/PhoneFrame";
+import { RevealObserver } from "@/components/rondva/Reveal";
+import {
+  IconProperty,
+  IconCamera,
+  IconDraft,
+  IconReview,
+  IconThermal,
+  IconExport,
+  IconLogo,
+  IconShield,
+  RondvaRing,
+} from "@/components/rondva/RondvaIcons";
+
+// Skjámyndir úr ensku útgáfunni fara í public/rondva/screens/. Þar til þær
+// eru til birtist ramminn tómur — aldrei íslensk skjámynd (birtingarregla 4).
+const SCREENS: { src?: string; alt: string }[] = [
+  { alt: "Rondva — room overview screen" },
+  { alt: "Rondva — observation with severity" },
+];
+const HAS_SCREENS = SCREENS.every((s) => !!s.src);
 
 const steps = [
   {
-    n: "1",
+    n: "01",
+    Icon: IconProperty,
     title: "Set up the property",
     body: "Address, building, and the rooms you’ll walk. Reusable between jobs of the same type.",
   },
   {
-    n: "2",
+    n: "02",
+    Icon: IconCamera,
     title: "Walk and record",
     body: "Photos, thermal images, and a note per observation. You pick the severity — always.",
   },
   {
-    n: "3",
+    n: "03",
+    Icon: IconDraft,
     title: "Rondva drafts",
     body: "It turns your notes into readable report text and an overall summary, in your structure.",
   },
   {
-    n: "4",
+    n: "04",
+    Icon: IconReview,
     title: "Review, adjust, export",
     body: "Read it. Change anything. Export the PDF with the cost estimate.",
   },
@@ -27,22 +54,32 @@ const steps = [
 
 const whatYouGet = [
   {
+    Icon: IconDraft,
     title: "A PDF your client can actually read",
-    body: "photos, thermal images and observations laid out per room.",
+    body: "Photos, thermal images and observations laid out per room.",
   },
   {
+    Icon: IconThermal,
     title: "A cost estimate",
-    body: "built from the findings you recorded.",
+    body: "Built from the findings you recorded.",
   },
   {
+    Icon: IconReview,
     title: "Your wording, not a template’s",
-    body: "the draft follows your notes and your severity ratings.",
+    body: "The draft follows your notes and your severity ratings.",
   },
   {
+    Icon: IconExport,
     title: "Edits stay free",
-    body: "rewrite any text by hand and re-export as often as you want. No charge, no quota.",
+    body: "Rewrite any text by hand and re-export as often as you want. No charge, no quota.",
   },
   {
+    Icon: IconLogo,
+    title: "Your logo on every report",
+    body: "Your company name and mark on the cover and every page. It’s your report, not ours.",
+  },
+  {
+    Icon: IconCamera,
     title: "Everything on the phone you already carry.",
     body: "",
   },
@@ -67,181 +104,241 @@ const whereAiStops = [
   },
 ];
 
+function SectionHeading({
+  eyebrow,
+  children,
+  light,
+}: {
+  eyebrow: string;
+  children: React.ReactNode;
+  light?: boolean;
+}) {
+  return (
+    <div className="rv-reveal max-w-2xl">
+      <p className={light ? "rv-eyebrow !text-paper/60" : "rv-eyebrow"}>{eyebrow}</p>
+      <h2 className={`rv-display rv-balance mt-4 text-[34px] sm:text-[44px] md:text-[52px] ${light ? "text-paper" : "text-ink"}`}>
+        {children}
+      </h2>
+    </div>
+  );
+}
+
 export default function RondvaLandingPage() {
   return (
     <>
       <RondvaHeader />
       <main className="flex-1">
-        {/* 1. Hero */}
-        <section className="px-6 py-24 md:py-32">
-          <div className="mx-auto max-w-[1120px] text-center">
-            <p className="rv-eyebrow">Pre-launch</p>
-            <h1 className="rv-balance mx-auto mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-ink md:text-6xl">
-              Walk the property. Rondva drafts the report.
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted">
-              Rondva is a field app for independent property inspectors. You record the
-              rooms, the photos, the thermal images and the severity. Rondva drafts the
-              wording and the summary — you stay the author of every judgement in it.
-            </p>
-            <div className="mt-10">
-              <a
-                href="#waitlist"
-                className="inline-flex items-center rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-blue-deep"
+        {/* 1. Hero — dökkt teikniblað, serif-fyrirsögn, skýrslusýnishorn */}
+        <section className="rv-blueprint rv-grain relative overflow-hidden text-paper">
+          <div className="pointer-events-none absolute -right-40 -top-40 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
+          <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-center gap-14 px-6 pb-24 pt-20 md:grid-cols-[1.05fr_0.95fr] md:pb-32 md:pt-28 lg:gap-20">
+            <div>
+              <p className="rv-rise rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
+                Field app for property inspectors · In development
+              </p>
+              <h1
+                className="rv-rise rv-display mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[76px]"
+                style={{ "--i": 1 } as React.CSSProperties}
               >
-                Join the waitlist
-              </a>
+                Walk the property.
+                <br />
+                <em>Rondva drafts the report.</em>
+              </h1>
+              <p
+                className="rv-rise mt-7 max-w-xl text-lg leading-relaxed text-paper/75 md:text-xl"
+                style={{ "--i": 2 } as React.CSSProperties}
+              >
+                Rondva is a field app for independent property inspectors. You record the rooms,
+                the photos, the thermal images and the severity. Rondva drafts the wording and the
+                summary — you stay the author of every judgement in it.
+              </p>
+              <div
+                className="rv-rise mt-9 flex flex-wrap items-center gap-4"
+                style={{ "--i": 3 } as React.CSSProperties}
+              >
+                <a
+                  href="#waitlist"
+                  className="inline-flex items-center gap-2 rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-[#2c62ec]"
+                >
+                  Join the waitlist
+                  <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  href="#how"
+                  className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
+                >
+                  See how it works
+                </a>
+              </div>
+              <p
+                className="rv-rise mt-6 text-sm text-paper/55"
+                style={{ "--i": 4 } as React.CSSProperties}
+              >
+                In development. We&apos;re building with working inspectors before we open sales.
+              </p>
             </div>
-            <p className="mx-auto mt-6 max-w-xl text-sm italic text-muted">
-              In development. We&apos;re building with working inspectors before we open
-              sales.
-            </p>
+
+            <div className="rv-rise relative md:justify-self-end" style={{ "--i": 3 } as React.CSSProperties}>
+              <div className="relative mx-auto w-full max-w-[520px] rotate-[-1.5deg] md:rotate-[-2deg]">
+                <ReportPreview />
+              </div>
+              <RondvaRing className="absolute -bottom-8 -left-6 h-16 w-16 text-paper/15 md:-left-10 md:h-20 md:w-20" />
+            </div>
           </div>
         </section>
 
-        {/* 2. Who it's for */}
-        <section className="bg-paper-alt px-6 py-20 md:py-28">
-          <div className="mx-auto max-w-[1120px]">
-            <h2 className="rv-balance text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-              Who it&apos;s for
-            </h2>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
-              Rondva is being built for{" "}
-              <strong className="font-semibold text-ink">
-                independent inspectors and small inspection firms
-              </strong>{" "}
-              — the one-person operation and the three-person team, not the enterprise.
-            </p>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-              If you spend the evening after an inspection retyping notes into a
-              document, that evening is the problem we&apos;re working on.
-            </p>
-          </div>
-        </section>
-
-        {/* 3. How it works */}
+        {/* 2. Who it's for — kvöldið eftir skoðun */}
         <section className="px-6 py-20 md:py-28">
-          <div className="mx-auto max-w-[1120px]">
-            <h2 className="rv-balance text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-              How it works
-            </h2>
-            <div className="mt-12 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-              {steps.map((step) => (
-                <div key={step.n}>
-                  <span className="text-sm font-semibold text-blue">{step.n}</span>
-                  <h3 className="mt-3 text-lg font-semibold tracking-tight text-ink">
-                    {step.title}
-                  </h3>
-                  <p className="mt-2 text-base leading-relaxed text-muted">{step.body}</p>
+          <div className="mx-auto grid max-w-[1180px] gap-12 md:grid-cols-[0.9fr_1.1fr] md:gap-20">
+            <SectionHeading eyebrow="Who it’s for">Built for the one-person operation, not the enterprise.</SectionHeading>
+            <div className="rv-reveal space-y-5 text-lg leading-relaxed text-muted md:pt-14" style={{ "--i": 1 } as React.CSSProperties}>
+              <p>
+                Rondva is being built for{" "}
+                <strong className="font-semibold text-ink">independent inspectors and small inspection firms</strong>{" "}
+                — the one-person operation and the three-person team, not the enterprise.
+              </p>
+              <p className="rv-display text-[26px] text-ink sm:text-[30px]">
+                If you spend the evening after an inspection retyping notes into a document,{" "}
+                <em>that evening is the problem we&apos;re working on.</em>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* 3. How it works — fjögur skref á teikniblaði með síma */}
+        <section id="how" className="rv-blueprint-light px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-[1180px]">
+            <SectionHeading eyebrow="How it works">Four steps. The fourth one is the short one.</SectionHeading>
+            <div className="mt-14 grid gap-12 lg:grid-cols-[1fr_auto] lg:gap-16">
+              <ol className="grid gap-x-10 gap-y-10 sm:grid-cols-2">
+                {steps.map((s, i) => (
+                  <li key={s.n} className="rv-reveal" style={{ "--i": i } as React.CSSProperties}>
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-paper text-ink">
+                        <s.Icon className="h-6 w-6" />
+                      </span>
+                      <span className="rv-tnum text-xs font-semibold tracking-[0.14em] text-blue">{s.n}</span>
+                    </div>
+                    <h3 className="mt-4 font-serif text-[22px] font-semibold tracking-tight text-ink">{s.title}</h3>
+                    <p className="mt-2 leading-relaxed text-muted">{s.body}</p>
+                  </li>
+                ))}
+              </ol>
+              {HAS_SCREENS ? (
+                <div className="rv-reveal relative hidden lg:block" style={{ "--i": 2 } as React.CSSProperties}>
+                  <div className="flex items-end gap-6">
+                    <PhoneFrame src={SCREENS[0].src} alt={SCREENS[0].alt} />
+                    <PhoneFrame src={SCREENS[1].src} alt={SCREENS[1].alt} className="mb-16 !w-[220px]" />
+                  </div>
                 </div>
-              ))}
+              ) : null}
             </div>
           </div>
         </section>
 
         {/* 4. What you get */}
-        <section className="bg-paper-alt px-6 py-20 md:py-28">
-          <div className="mx-auto max-w-[1120px]">
-            <h2 className="rv-balance text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-              What you get
-            </h2>
-            <ul className="mt-10 grid grid-cols-1 gap-x-10 gap-y-6 md:grid-cols-2">
-              {whatYouGet.map((item) => (
-                <li key={item.title} className="flex gap-3">
-                  <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true" />
-                  <p className="text-base leading-relaxed text-muted">
-                    <strong className="font-semibold text-ink">{item.title}</strong>
-                    {item.body ? ` — ${item.body}` : ""}
-                  </p>
+        <section className="px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-[1180px]">
+            <SectionHeading eyebrow="What you get">A report that reads like you wrote it. Because you did.</SectionHeading>
+            <ul className="mt-14 grid gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+              {whatYouGet.map((item, i) => (
+                <li key={item.title} className="rv-reveal bg-paper p-7" style={{ "--i": i } as React.CSSProperties}>
+                  <item.Icon className="h-7 w-7 text-blue" />
+                  <h3 className="mt-5 text-[17px] font-semibold tracking-tight text-ink">{item.title}</h3>
+                  {item.body ? <p className="mt-2 leading-relaxed text-muted">{item.body}</p> : null}
                 </li>
               ))}
             </ul>
           </div>
         </section>
 
-        {/* 5. Where the AI stops */}
-        <section className="bg-ink px-6 py-24 text-paper md:py-32">
-          <div className="mx-auto max-w-[1120px]">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-blue">
-              Where the AI stops
-            </h2>
-            <p className="rv-balance mt-5 max-w-2xl text-2xl font-semibold tracking-tight md:text-3xl">
-              This matters more than any feature, so we&apos;ll be direct about it.
-            </p>
-            <ul className="mt-12 grid grid-cols-1 gap-x-10 gap-y-8 md:grid-cols-2">
-              {whereAiStops.map((item) => (
-                <li key={item.title} className="border-t border-paper/20 pt-6">
-                  <p className="text-lg leading-relaxed text-paper">
-                    <strong className="font-semibold text-paper">{item.title}</strong>{" "}
-                    <span className="text-paper/75">{item.body}</span>
-                  </p>
+        {/* 5. Where the AI stops — þyngsti kaflinn */}
+        <section className="rv-blueprint rv-grain relative px-6 py-24 text-paper md:py-32">
+          <div className="relative mx-auto max-w-[1180px]">
+            <div className="flex items-start gap-5">
+              <IconShield className="mt-1 hidden h-9 w-9 shrink-0 text-blue sm:block" />
+              <SectionHeading eyebrow="Where the AI stops" light>
+                This matters more than any feature, <em className="text-paper/70">so we&apos;ll be direct about it.</em>
+              </SectionHeading>
+            </div>
+            <ol className="mt-14 grid gap-x-12 gap-y-10 md:grid-cols-2">
+              {whereAiStops.map((item, i) => (
+                <li key={item.title} className="rv-reveal border-t border-paper/15 pt-6" style={{ "--i": i } as React.CSSProperties}>
+                  <span className="rv-tnum text-xs font-semibold tracking-[0.14em] text-blue">0{i + 1}</span>
+                  <p className="mt-3 font-serif text-[24px] font-semibold leading-snug tracking-tight">{item.title}</p>
+                  <p className="mt-2 text-lg leading-relaxed text-paper/70">{item.body}</p>
                 </li>
               ))}
-            </ul>
+            </ol>
           </div>
         </section>
 
         {/* 6. Planned pricing */}
         <section className="px-6 py-20 md:py-28">
-          <div className="mx-auto max-w-[1120px]">
-            <h2 className="rv-balance text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-              Planned pricing
-            </h2>
-            <div className="mt-10 max-w-xl rounded-card border border-line p-8">
-              <p className="text-sm text-muted">
-                Pricing below is what we&apos;re planning, not a live offer. Nothing is for
-                sale yet.
+          <div className="mx-auto grid max-w-[1180px] gap-12 md:grid-cols-[1fr_1fr] md:gap-20">
+            <div>
+              <SectionHeading eyebrow="Planned pricing">One price. Edits and re-exports never count.</SectionHeading>
+              <p className="rv-reveal mt-6 max-w-lg leading-relaxed text-muted" style={{ "--i": 1 } as React.CSSProperties}>
+                Manual text edits and re-exporting a PDF never count against your quota and never
+                cost extra. When Rondva opens, purchases will run through the App Store and the price
+                you see in the app will be your local App Store price.
               </p>
-              <p className="mt-5 text-4xl font-semibold tracking-tight text-ink">
-                $99.99 <span className="text-lg font-medium text-muted">/ month</span>
+            </div>
+            <div className="rv-reveal rounded-card border border-line bg-paper p-8 shadow-[0_24px_60px_-30px_rgba(16,20,24,0.25)]" style={{ "--i": 2 } as React.CSSProperties}>
+              <p className="inline-flex rounded-full bg-paper-alt px-3 py-1 text-xs font-medium text-muted">
+                Pricing below is what we&apos;re planning, not a live offer. Nothing is for sale yet.
               </p>
-              <ul className="mt-6 space-y-2.5">
-                <li className="flex gap-3 text-base text-muted">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true" />
-                  20 AI-drafted reports per month
-                </li>
-                <li className="flex gap-3 text-base text-muted">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true" />
-                  2 AI revisions included with every report
-                </li>
-                <li className="flex gap-3 text-base text-muted">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true" />
-                  Unlimited manual editing and re-export — free
-                </li>
+              <p className="rv-tnum mt-6 font-serif text-[52px] font-semibold leading-none tracking-tight text-ink">
+                $99.99 <span className="font-sans text-lg font-medium tracking-normal text-muted">/ month</span>
+              </p>
+              <ul className="mt-7 space-y-3 text-[15px] text-ink">
+                {[
+                  "20 AI-drafted reports per month",
+                  "2 AI revisions included with every report",
+                  "Unlimited manual editing and re-export — free",
+                ].map((line) => (
+                  <li key={line} className="flex gap-3">
+                    <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true" />
+                    {line}
+                  </li>
+                ))}
               </ul>
-
-              <div className="mt-8 border-t border-line pt-6">
-                <p className="text-base font-semibold text-ink">
-                  Additional reports — $39.99
-                </p>
-                <p className="mt-2 text-base text-muted">10 extra AI-drafted reports</p>
+              <div className="mt-8 flex items-baseline justify-between border-t border-line pt-6">
+                <div>
+                  <p className="font-semibold text-ink">Additional reports</p>
+                  <p className="text-sm text-muted">10 extra AI-drafted reports</p>
+                </div>
+                <p className="rv-tnum font-serif text-2xl font-semibold text-ink">$39.99</p>
               </div>
             </div>
-            <p className="mt-8 max-w-2xl text-sm leading-relaxed text-muted">
-              Manual text edits and re-exporting a PDF never count against your quota and
-              never cost extra. When Rondva opens, purchases will run through the App
-              Store and the price you see in the app will be your local App Store price.
-            </p>
           </div>
         </section>
 
         {/* 7. Waitlist */}
-        <section id="waitlist" className="bg-paper-alt px-6 py-20 md:py-28">
+        <section id="waitlist" className="rv-blueprint-light px-6 py-20 md:py-28">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="rv-balance text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-              We&apos;re opening a small number of places first.
-            </h2>
-            <p className="mt-5 text-lg leading-relaxed text-muted">
-              Leave your email and the country you inspect in. We&apos;ll write when
-              Rondva is ready for you to try — no newsletter, no drip campaign.
-            </p>
-            <div className="mt-10 text-left">
+            <div className="rv-reveal">
+              <p className="rv-eyebrow">Waitlist</p>
+              <h2 className="rv-display rv-balance mt-4 text-[34px] text-ink sm:text-[44px]">
+                We&apos;re opening a small number of places first.
+              </h2>
+              <p className="mt-5 text-lg leading-relaxed text-muted">
+                Leave your email and the country you inspect in. We&apos;ll write when Rondva is
+                ready for you to try — no newsletter, no drip campaign.
+              </p>
+            </div>
+            <div className="rv-reveal mt-10 text-left" style={{ "--i": 1 } as React.CSSProperties}>
               <WaitlistForm />
             </div>
+            <p className="rv-reveal mt-6 text-sm text-muted" style={{ "--i": 2 } as React.CSSProperties}>
+              Questions first?{" "}
+              <Link href="/privacy" className="underline underline-offset-4">How we handle your data</Link>
+            </p>
           </div>
         </section>
       </main>
       <RondvaFooter />
+      <RevealObserver />
     </>
   );
 }
