@@ -5,7 +5,7 @@ import Link from "next/link";
 // the logo height (39 / 2 ≈ 20px) of clear space around it.
 export function RondvaHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/90 backdrop-blur supports-[backdrop-filter]:bg-paper/75">
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-paper/85 backdrop-blur supports-[backdrop-filter]:bg-paper/70">
       <div className="mx-auto flex max-w-[1120px] items-center justify-between px-6 py-5">
         <Link href="/" className="inline-flex items-center" aria-label="Rondva home">
           {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup, no optimisation needed */}

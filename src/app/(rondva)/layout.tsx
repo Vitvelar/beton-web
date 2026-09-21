@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { inter } from "@/lib/fonts/rondva";
+import { inter, sourceSerif } from "@/lib/fonts/rondva";
 import { BRANDS } from "@/lib/brand";
 import { RondvaAnalytics } from "@/components/rondva/RondvaAnalytics";
 import { ConsentBanner } from "@/components/rondva/ConsentBanner";
@@ -73,7 +73,7 @@ export default function RondvaRootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${sourceSerif.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-paper text-ink">
         {children}
         <ConsentBanner />
