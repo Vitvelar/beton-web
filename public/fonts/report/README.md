@@ -1,0 +1,1 @@
+Noto Sans static regular and bold fonts from https://github.com/notofonts/noto-fonts/tree/main/hinted/ttf/NotoSans. Bundled for predictable Icelandic PDF rendering and text extraction. Licensed under SIL Open Font License 1.1; see LICENSE.

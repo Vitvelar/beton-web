@@ -156,6 +156,17 @@ export async function renderReportPdf(
     // NAUÐSYNLEGT: öll síðuskipti/spássíu-stílun lifir undir @media print.
     await page.emulateMediaType("print");
 
+    // Printing must never silently substitute a missing font for Icelandic glyphs.
+    // CDP evaluation works even though page scripts/hydration are disabled above.
+    await page.evaluate(async () => {
+      const sample = "Þak Þþ Ðð Ææ Öö Áá Éé Íí Óó Úú Ýý";
+      for (const weight of [400, 700]) {
+        const loaded = await document.fonts.load(`${weight} 16px "Beton Report"`, sample);
+        if (loaded.length === 0) throw new Error("Skýrsluletur hlóðst ekki.");
+      }
+      await document.fonts.ready;
+    });
+
     const pdfBytes = await page.pdf({
       format: "A4",
       printBackground: true,

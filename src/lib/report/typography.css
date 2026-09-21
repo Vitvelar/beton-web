@@ -1,0 +1,26 @@
+/* Static full-glyph fonts avoid environment-dependent fallback and PDF glyph mapping.
+   Scope to reports: the marketing website keeps its existing typography. */
+@font-face {
+  font-family: "Beton Report";
+  src: url("/fonts/report/NotoSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: "Beton Report";
+  src: url("/fonts/report/NotoSans-Bold.ttf") format("truetype");
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: block;
+}
+.report-article {
+  font-family: "Beton Report", Arial, sans-serif;
+  font-feature-settings: normal;
+  font-kerning: normal;
+}
+.report-article :is(h1, h2, h3, h4) {
+  font-family: inherit;
+  letter-spacing: normal;
+  overflow: visible;
+}

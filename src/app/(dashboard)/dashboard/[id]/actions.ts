@@ -784,7 +784,7 @@ HLUTI 1 — INNGANGUR (introduction)
 
 Næstum fastur texti. Aðlagaðu nöfn, dagsetningu og staðsetningu. Notaðu ÞESSA uppbyggingu — ekki finna upp aðra:
 
-"[Nafn viðskiptavinar] hafði samband við Beton ehf. og óskaði eftir ástandsskoðun, heimilisfangið er: [heimilisfang]. Bragi Michaelsson Húsasmíðameistari framkvæmdi ástandsskoðunina þann [dagsetning skrifuð á íslensku, t.d. '15. apríl 2026']. Sér til stuðnings notaði hann hlutfallsrakamæli af gerðinni Protimeter Survey Master og hitamyndavél frá Topdon. Ytra byrðið var sjónskoðað frá jörðu og þakið skoðað frá [veldu eitt sem passar: 'svölum' / 'jörðu' / 'þakstiga'  — ef ekki er hægt að ráða af gögnum, notaðu 'jörðu']."
+"[Nafn viðskiptavinar] hafði samband við Beton ehf. og óskaði eftir ástandsskoðun, heimilisfangið er: [heimilisfang]. Bragi Michaelsson Húsasmíðameistari framkvæmdi ástandsskoðunina þann [dagsetning á forminu dd.mm.áááá, t.d. '21.09.2026'; ekki vikudagur eða mánaðarheiti]. Sér til stuðnings notaði hann hlutfallsrakamæli af gerðinni Protimeter Survey Master og hitamyndavél frá Topdon. Ytra byrðið var sjónskoðað frá jörðu og þakið skoðað frá [veldu eitt sem passar: 'svölum' / 'jörðu' / 'þakstiga'  — ef ekki er hægt að ráða af gögnum, notaðu 'jörðu']."
 
 Þrjár til fjórar setningar. Ekki bæta við aukaupplýsingum.
 
@@ -802,16 +802,18 @@ Dæmi: "Erluás 70 er parhús á tveimur hæðum, byggt árið 1985, 145 fermetr
 HLUTI 3 — NIÐURSTAÐA (conclusion)
 ═══════════════════════════════════════════════════════════
 
-Fjórar til sex setningar sem draga saman helstu niðurstöður skoðunarinnar.
+Skrifaðu samfellda, hnitmiðaða heildarsamantekt fyrir eiganda eða kaupanda sem hefur ekki lesið skýrsluna. Byggðu hana á ÖLLUM athugasemdum, lýsingum, tillögum og skráðum takmörkunum skoðunarinnar; veldu síðan það sem skiptir mestu máli. Þetta er ritstýrð niðurstaða skýrslunnar, ekki efnisyfirlit eða upptalning athugasemda.
 
-Uppbygging:
-1. Ein opnunarsetning sem nefnir fjölda athugasemda eða heildarástand.
-2. Nefndu fyrst MJÖG ALVARLEGAR athugasemdir (ef einhverjar). Lýstu þeim hvað varðar hættu eða skemmdir.
-3. Síðan ALVARLEGAR athugasemdir í stuttu máli.
-4. Stutt tilvísun í minniháttar athugasemdir sem hópur.
-5. Hlutlaust lokaorð — ekki ráðleggingar um kaup eða verð. Eitthvað í líkingu við: "Mælt er með að ráðist verði í úrbætur á alvarlegustu atriðunum sem fyrst." eða "Eignin er í eðlilegu ástandi miðað við aldur."
+- Fjórar til sex samhangandi setningar, yfirleitt 90–140 orð. Styttra ef fáar niðurstöður liggja fyrir; ekki fylla upp í textann.
+- Byrjaðu á helstu niðurstöðu sem gögnin styðja. Ekki byrja á fjölda athugasemda eða telja upp herbergi, titla, númer eða alla alvarleikaflokka.
+- Tengdu skyldar niðurstöður í tvö til þrjú meginþemu eftir því sem gögnin leyfa, t.d. raka/vatnsþéttingu, öryggi eða viðhald. Ekki sameina óskyld atriði í eina orsök og ekki gera ráð fyrir að galli sé útbreiddur þótt hann finnist á einum stað.
+- Settu atriði sem krefjast tafarlausra viðbragða fremst. Engin mjög alvarleg eða brýn öryggisniðurstaða má hverfa við styttingu. Lýstu í stuttu máli hvað niðurstöðurnar þýða og hvað þarf að kanna eða bæta fyrst, eingöngu samkvæmt skráðum athugunum og tillögum.
+- Minniháttar slit og frágang má taka saman í einni stuttri setningu án þess að endurtaka hvert atriði. Einstök atriði og úrbætur eru útskýrð síðar í skýrslunni.
+- Greindu á milli staðfests galla, vísbendingar og þess sem þarfnast frekari rannsóknar. Varðveittu mikilvægar takmarkanir á skoðun og óvissu.
+- Ekki lýsa eigninni sem öruggri, gallalausri eða í eðlilegu/góðu ástandi miðað við aldur nema gögnin styðji það sérstaklega. Ekki finna upp orsakir, kostnað, líftíma, nýja galla eða ráðleggingar um kaup eða verð.
+- Engir punktalistar, tölusett upptalning eða setning fyrir hverja athugasemd. Lesandi á að skilja heildarmyndina og forgang næstu skrefa.
 
-KRÍTÍSK SKORÐUR: Samantektin (allir þrír hlutar samanlagðir) verður að rúmast á EINNI A4 síðu í lokaskýrslunni. Heildarlengd ætti að vera u.þ.b. 180–260 orð. Ef þú getur ekki nefnt allt, nefndu hættulegustu atriðin og slepptu hinum.
+KRÍTÍSK SKORÐUR: Samantektin (allir þrír hlutar samanlagðir) á að rúmast á EINNI A4 síðu, yfirleitt 180–260 orð. Ekki lengja stutta skýrslu til að ná orðafjölda og aldrei stytta þannig að brýn hætta eða mikilvæg óvissa falli brott.
 
 ═══════════════════════════════════════════════════════════
 ALVARLEIKAFLOKKUN ATHUGASEMDA

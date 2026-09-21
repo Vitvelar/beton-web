@@ -1,3 +1,5 @@
+import "@/lib/report/typography.css";
+import { formatReportDate } from "@/lib/report/date";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -380,7 +382,7 @@ export default async function ReportPage({
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-fog">Skoðunardagur</p>
-                <p className="font-semibold text-ink mt-1">{report.inspection.inspection_date}</p>
+                <p className="font-semibold text-ink mt-1">{formatReportDate(report.inspection.inspection_date)}</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-fog">Skoðunarmaður</p>
@@ -533,7 +535,7 @@ export default async function ReportPage({
           <table className="w-full text-sm">
             <tbody className="divide-y divide-concrete/50">
               <InfoTableRow label="Viðskiptavinur" value={report.inspection.customer_name} />
-              <InfoTableRow label="Skoðunardagur" value={report.inspection.inspection_date} />
+              <InfoTableRow label="Skoðunardagur" value={formatReportDate(report.inspection.inspection_date)} />
               <InfoTableRow label="Skoðunarmaður" value={inspectorName} />
               {report.inspection.attendees?.length > 0 && (
                 <InfoTableRow label="Viðstaddir" value={report.inspection.attendees.join(", ")} />
@@ -788,7 +790,7 @@ export default async function ReportPage({
             <span>
               Skýrsla gerð{" "}
               {inspection.report_generated_at
-                ? new Date(inspection.report_generated_at).toLocaleString("is-IS")
+                ? formatReportDate(inspection.report_generated_at)
                 : "—"}
             </span>
           </div>

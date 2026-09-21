@@ -1,3 +1,4 @@
+import { formatReportDate } from "./date";
 // Shared helpers for the background report-PDF pipeline: worker-token auth, the
 // Storage object path, and the human-facing download filename. Kept free of
 // next/* imports so both route handlers and the worker tick can use them.
@@ -41,7 +42,7 @@ export function reportStoragePath(args: {
 // characters are preserved there.
 export function reportDownloadName(address: string | null, date: string | null): string {
   const addr = (address ?? "skýrsla").trim() || "skýrsla";
-  const tail = date ? `, ${date}` : "";
+  const tail = date ? `, ${formatReportDate(date)}` : "";
   return `Beton Ástandsskoðun - ${addr}${tail}.pdf`;
 }
 
