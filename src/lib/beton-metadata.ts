@@ -1,31 +1,10 @@
 import type { Metadata } from "next";
-import { Anton, Epilogue, Abel } from "next/font/google";
-import "./globals.css";
 import { COMPANY } from "@/lib/constants";
 
-const epilogue = Epilogue({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
-  display: "swap",
-  variable: "--font-epilogue",
-});
-
-const anton = Anton({
-  subsets: ["latin"],
-  weight: ["400"],
-  display: "swap",
-  variable: "--font-anton",
-});
-
-const abel = Abel({
-  subsets: ["latin"],
-  weight: ["400"],
-  display: "swap",
-  variable: "--font-abel",
-});
-
-export const metadata: Metadata = {
+// Sameiginleg Beton-metadata fyrir allar Beton-rótarútlitsskrár ((main),
+// (dashboard), (auth)). Flutt óbreytt úr gamla src/app/layout.tsx þegar
+// Rondva fékk eigin rótarútlit.
+export const betonMetadata: Metadata = {
   metadataBase: new URL("https://beton.is"),
   title: {
     default: "Ástandsskoðun fasteigna á höfuðborgarsvæðinu | Beton ehf.",
@@ -70,7 +49,7 @@ export const metadata: Metadata = {
   },
 };
 
-const localBusinessJsonLd = {
+export const betonLocalBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "HomeAndConstructionBusiness",
   name: COMPANY.name,
@@ -147,26 +126,3 @@ const localBusinessJsonLd = {
     ],
   },
 };
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="is" className={`${epilogue.variable} ${anton.variable} ${abel.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans bg-paper text-ink">
-        {children}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(localBusinessJsonLd).replace(
-              /</g,
-              "\\u003c"
-            ),
-          }}
-        />
-      </body>
-    </html>
-  );
-}
