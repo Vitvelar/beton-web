@@ -1,0 +1,27 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const ts = require('typescript');
+const path = require('node:path');
+const context = { exports: {}, setTimeout, clearTimeout, Date };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/lib/report/progress.ts'), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText, context);
+const { waitForReport, readWithTimeout } = context.exports;
+(async () => {
+ let time=0, calls=0;
+ let result=await waitForReport(async()=>({state:++calls===3?'ready':'pending'}), { cancelled:()=>false, now:()=>time, sleep:async ms=>{time+=ms;} });
+ assert.equal(result.state,'ready'); assert.equal(calls,3);
+ console.log('PASS queued PDF becomes ready without navigating away');
+ result=await waitForReport(async()=>({state:'error',detail:'worker failed'}),{cancelled:()=>false});assert.equal(result.detail,'worker failed');
+ console.log('PASS worker failure terminates progress');
+ time=0;
+ result=await waitForReport(async()=>({state:'pending'}),{cancelled:()=>false,now:()=>time,sleep:async ms=>{time+=ms;},timeoutMs:5000});assert.equal(result.state,'timeout');
+ console.log('PASS long-running worker stops spinner with retryable status');
+ await assert.rejects(readWithTimeout(()=>new Promise(()=>{}),5), /lang/);
+ console.log('PASS a hung individual request cannot leave progress running forever');
+ calls=0;
+ result=await waitForReport(async()=>{calls++;throw Error('offline')},{cancelled:()=>false,sleep:async()=>{}});assert.equal(result.state,'error');assert.equal(calls,3);
+ console.log('PASS repeated network failures offer status retry, not another AI request');
+ let cancel=false;
+ result=await waitForReport(async()=>{cancel=true;return {state:'ready'};},{cancelled:()=>cancel}); assert.equal(result.state,'cancelled');
+ console.log('PASS unmounted/replaced request cannot announce an old completion');
+})().catch(error=>{console.error(error);process.exitCode=1;});

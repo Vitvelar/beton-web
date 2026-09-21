@@ -12,6 +12,7 @@ import {
   updateReportText,
   type ReportTextEdit,
 } from "@/app/(dashboard)/dashboard/[id]/actions";
+import { ReportProgress } from "./ReportProgress";
 import { SeverityBadge } from "./SeverityBadge";
 import type { Severity } from "@/lib/supabase/types";
 
@@ -53,6 +54,7 @@ export function ReportTextEditor({
   initialToken: string;
 }) {
   const router = useRouter();
+  const [reportRequest, setReportRequest] = useState(0);
   const [isPending, startTransition] = useTransition();
   // Árekstravörn: token fylgir hverri vistun; server hafnar ef snapshot-ið
   // breyttist annars staðar. Uppfærist eftir hverja vistun.
@@ -112,44 +114,46 @@ export function ReportTextEditor({
 
   function handleSave(regeneratePdf: boolean) {
     setMessage(null);
+    setReportRequest(0);
     startTransition(async () => {
-      const result = await updateReportText(
-        inspectionId,
-        buildEdit(),
-        regeneratePdf,
-        token
-      );
-      // Token uppfærist ALLTAF þegar það fylgir svari — líka með villu (t.d.
-      // biðröð klikkaði eftir að textinn var kominn í grunninn); annars stoppar
-      // hver endurvistun á villandi "breytt annars staðar" villu.
-      if ("token" in result && result.token) {
-        setToken(result.token);
+      try {
+        const result = await updateReportText(
+          inspectionId,
+          buildEdit(),
+          regeneratePdf,
+          token
+        );
+        // Token uppfærist ALLTAF þegar það fylgir svari — líka með villu (t.d.
+        // biðröð klikkaði eftir að textinn var kominn í grunninn); annars stoppar
+        // hver endurvistun á villandi "breytt annars staðar" villu.
+        if ("token" in result && result.token) {
+          setToken(result.token);
+        }
+        if ("error" in result && result.error) {
+          setMessage({ type: "error", text: result.error });
+          return;
+        }
+        const queued = "queued" in result && result.queued;
+        if (!regeneratePdf) {
+          setMessage({
+            type: "success",
+            text: "Breytingar vistaðar. PDF-ið uppfærist ekki fyrr en það er endurgert.",
+          });
+        } else if (queued) {
+          setReportRequest(Date.now());
+        } else {
+          // Starf var þegar í miðri keyrslu með eldri texta — lofum ekki fersku
+          // PDF-i; notandinn ýtir aftur þegar það starf er búið.
+          setMessage({
+            type: "warning",
+            text:
+              "Vistað — en PDF-gerð var þegar í gangi með eldri texta. Ýttu aftur á „Vista og endurgera PDF“ eftir ~1 mínútu svo breytingarnar skili sér í PDF-ið.",
+          });
+        }
+        router.refresh();
+      } catch {
+        setMessage({ type: "error", text: "Ekki tókst að staðfesta vistun. Athugaðu tenginguna og reyndu aftur." });
       }
-      if ("error" in result && result.error) {
-        setMessage({ type: "error", text: result.error });
-        return;
-      }
-      const queued = "queued" in result && result.queued;
-      if (!regeneratePdf) {
-        setMessage({
-          type: "success",
-          text: "Breytingar vistaðar. PDF-ið uppfærist ekki fyrr en það er endurgert.",
-        });
-      } else if (queued) {
-        setMessage({
-          type: "success",
-          text: "Vistað — nýtt PDF er í vinnslu og verður tilbúið eftir ~1–2 mínútur.",
-        });
-      } else {
-        // Starf var þegar í miðri keyrslu með eldri texta — lofum ekki fersku
-        // PDF-i; notandinn ýtir aftur þegar það starf er búið.
-        setMessage({
-          type: "warning",
-          text:
-            "Vistað — en PDF-gerð var þegar í gangi með eldri texta. Ýttu aftur á „Vista og endurgera PDF“ eftir ~1 mínútu svo breytingarnar skili sér í PDF-ið.",
-        });
-      }
-      router.refresh();
     });
   }
 
@@ -157,7 +161,7 @@ export function ReportTextEditor({
     "w-full rounded-lg border border-concrete px-3 py-2 text-sm text-ink focus:border-navy focus:ring-1 focus:ring-navy outline-none transition-colors resize-y";
 
   return (
-    <div className="pb-24">
+    <div className={reportRequest > 0 ? "pb-80" : "pb-24"}>
       <div className="mb-6">
         <Link
           href={`/dashboard/${inspectionId}`}
@@ -289,7 +293,8 @@ export function ReportTextEditor({
       ))}
 
       {/* Fast vistunarborði neðst */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-concrete bg-white/95 backdrop-blur px-6 py-3 z-10">
+      <div className="fixed bottom-0 left-0 right-0 max-h-[45vh] overflow-y-auto border-t border-concrete bg-white/95 backdrop-blur px-6 py-3 z-10">
+        {reportRequest > 0 && <div className="max-w-4xl mx-auto mb-2"><ReportProgress key={reportRequest} inspectionId={inspectionId} requestKey={reportRequest} /></div>}
         <div className="max-w-4xl mx-auto flex items-center gap-3 flex-wrap">
           <button
             onClick={() => handleSave(true)}

@@ -28,7 +28,7 @@ const CLAUDE_IMAGE_TRANSFORM = {
 const REPORT_TOOL: Anthropic.Tool = {
   name: "skila_skyrslu",
   description:
-    "Skilar fullunninni AI-samantekt fyrir ástandsskoðunarskýrslu: þrískiptan inngangstexta og snyrta lýsingu, tillögu og staðfestan alvarleika fyrir hverja athugasemd.",
+    "Skilar fullunninni AI-samantekt fyrir ástandsskoðunarskýrslu: þrískiptan inngangstexta og snyrta lýsingu, tillögu og óbreyttan alvarleika skoðunarmanns fyrir hverja athugasemd.",
   input_schema: {
     type: "object",
     properties: {
@@ -42,6 +42,7 @@ const REPORT_TOOL: Anthropic.Tool = {
           properties: {
             id: { type: "string" },
             severity: {
+              description: "Afrita nákvæmlega alvarleikaflokk skoðunarmanns; aldrei breyta honum.",
               type: "string",
               enum: ["athugasemd", "alvarleg", "mjog_alvarleg"],
             },
@@ -66,7 +67,6 @@ const REPORT_TOOL: Anthropic.Tool = {
   },
 };
 
-const VALID_SEVERITIES = new Set(["athugasemd", "alvarleg", "mjog_alvarleg"]);
 
 export async function updateObservation(
   obsId: string,
@@ -325,15 +325,13 @@ export async function generateReport(inspectionId: string) {
     claudeResult.outputTokens
   );
 
-  // Verja gegn ógildum alvarleika frá líkaninu (DB-dálkurinn er þvingaður).
+  // Preserve the inspector-selected severity. AI only edits prose.
   const origSeverityById = new Map<string, string>();
   for (const r of sortedRooms) {
     for (const o of r.observations ?? []) origSeverityById.set(o.id, o.severity);
   }
-  const safeSeverity = (id: string, sev: unknown): string =>
-    typeof sev === "string" && VALID_SEVERITIES.has(sev)
-      ? sev
-      : origSeverityById.get(id) ?? "athugasemd";
+  const safeSeverity = (id: string): string =>
+    origSeverityById.get(id) ?? "athugasemd";
 
   const polishById = new Map(
     claudeResult.output.observations.map((p) => [p.id, p] as const)
@@ -366,7 +364,7 @@ export async function generateReport(inspectionId: string) {
               polish?.polished_description ?? o.description ?? "",
             suggestion:
               polish?.polished_suggestion ?? o.suggestion ?? "",
-            severity: safeSeverity(o.id, polish?.severity),
+            severity: safeSeverity(o.id),
           };
         }),
     })),
@@ -383,7 +381,6 @@ export async function generateReport(inspectionId: string) {
         .update({
           description: obs.polished_description,
           suggestion: obs.polished_suggestion,
-          severity: safeSeverity(obs.id, obs.severity),
           updated_at: new Date().toISOString(),
         })
         .eq("id", obs.id);
@@ -662,6 +659,21 @@ export async function updateReportText(
   };
 }
 
+// Cookie-auth and owner RLS apply to this status read, just like the editor.
+export async function getReportProgress(inspectionId: string): Promise<import("@/lib/report/progress").ReportProgressResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { state: "error", detail: "Skráðu þig inn aftur til að sjá stöðu skýrslunnar." };
+  const { data, error } = await supabase.from("inspections")
+    .select("status, report_url, report_error").eq("id", inspectionId).maybeSingle();
+  if (error) throw new Error("Tókst ekki að sækja stöðu skýrslunnar.");
+  if (!data) return { state: "error", detail: "Skoðunin fannst ekki eða aðgangur er ekki lengur til staðar." };
+  if (data.status === "report_ready" && data.report_url) return { state: "ready" };
+  if (data.status === "error") return { state: "error", detail: data.report_error || "Skýrslugerð mistókst. Opnaðu skoðunina til að reyna aftur." };
+  if (data.status === "generating" || data.status === "rendering_pdf") return { state: "pending" };
+  return { state: "error", detail: "Engin tilbúin PDF-skrá fannst fyrir núverandi stöðu. Opnaðu skoðunina til að athuga hana." };
+}
+
 export async function sendToDrive(inspectionId: string) {
   const supabase = await createClient();
 
@@ -761,7 +773,7 @@ const SYSTEM_PROMPT = `Þú ert faglegur ritstjóri fyrir Beton ehf., íslenskt 
 
 1) Þrískiptan inngangstexta sem birtist á samantektarsíðu skýrslunnar (síða 4).
 2) Snyrtu, faglega lýsingu og tillögu fyrir hverja athugasemd.
-3) Staðfestan alvarleikaflokk fyrir hverja athugasemd.
+3) ÓBREYTTAN alvarleikaflokk skoðunarmanns fyrir hverja athugasemd.
 
 INNTAK: Fyrst kemur eignar- og rýmissamhengi sem JSON. Síðan kemur HVER athugasemd á eftir öðrum, merkt "── Athugasemd <id>", með rými, flokki, alvarleika, titli og hrátexta skoðunarmanns — og þar á eftir koma LJÓSMYNDIRNAR af þeirri athugasemd. Skoðaðu myndirnar vandlega; þær sýna oft það sem skoðunarmaður er að benda á. Mappaðu hverja niðurstöðu við rétt "id".
 
@@ -819,20 +831,10 @@ KRÍTÍSK SKORÐUR: Samantektin (allir þrír hlutar samanlagðir) á að rúmas
 ALVARLEIKAFLOKKUN ATHUGASEMDA
 ═══════════════════════════════════════════════════════════
 
-Fyrir HVERJA athugasemd skaltu staðfesta einn af þremur flokkum. Fylgdu þessum reglum nákvæmlega:
-
-| Flokkur          | Merking                                                                                              |
-|------------------|------------------------------------------------------------------------------------------------------|
-| athugasemd       | Minniháttar galli, slit eða frágangur sem hefur EKKI áhrif á virkni eða öryggi.                       |
-| alvarleg         | Galli sem getur haft áhrif á virkni, öryggi eða valdið kostnaði til lengri tíma ef ekki er sinnt.    |
-| mjog_alvarleg    | Veldur eða mun valda alvarlegri hættu, skemmdum á burðarvirki, vatnsskemmdum eða öryggisbresti.       |
-
-Dæmi:
-- Stíft fag á glugga, slitin lökkun, lítilsháttar slit á gólfefni → athugasemd
-- Rakaskemmd á vegg, skortur á þéttingu sem getur leitt til leka, eldri raflagnir án jarðtengingar → alvarleg
-- Vatnsleki inn í burðarvirki, alvarleg mygla, gallað rafmagnstöfla, fall- eða brunahætta → mjog_alvarleg
-
-Þú færð núverandi alvarleikaflokk í gögnunum. Ef þú telur að flokkunin sé röng samkvæmt reglunum hér að ofan skaltu breyta henni. Annars heldur þú honum óbreyttum. Ekki færa niður (gera vægari) nema augljóst sé að upphafleg flokkun var of harkaleg.
+Alvarleikaflokkun er ákvörðun skoðunarmanns, EKKI verkefni gervigreindarinnar.
+Afritaðu gildið í severity nákvæmlega úr inntakinu fyrir sömu athugasemd: athugasemd, alvarleg eða mjog_alvarleg.
+ALDREI hækka, lækka, endurmeta eða leiðrétta flokkinn, jafnvel þótt þú teljir annan flokk eiga betur við. Ekki endurflokka óbeint í samantektinni heldur.
+Lýsing og tillaga mega skýrast en verða að varðveita merkingu, óvissu og valinn alvarleikaflokk. Ekki fullyrða nýja hættu eða nýjan galla til að réttlæta annan flokk.
 
 ═══════════════════════════════════════════════════════════
 SNYRTING ATHUGASEMDA (polished_description, polished_suggestion)

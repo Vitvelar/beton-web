@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ReportProgress } from "@/components/dashboard/ReportProgress";
 import { generateReport, sendToDrive } from "./actions";
 
 export function ReportActions({
@@ -13,6 +14,7 @@ export function ReportActions({
   reportUrl: string | null;
   hasAiReport: boolean;
 }) {
+  const [reportRequest, setReportRequest] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
   const [justGenerated, setJustGenerated] = useState(false);
@@ -24,14 +26,18 @@ export function ReportActions({
   async function handleGenerate() {
     setGenerating(true);
     setMessage(null);
-    const result = await generateReport(inspectionId);
-    setGenerating(false);
-    if (result.error) {
-      setMessage({ type: "error", text: result.error });
-    } else {
-      setJustGenerated(true);
-      setMessage({ type: "success", text: "Skýrsla búin til." });
-    }
+    setReportRequest(0);
+    try {
+      const result = await generateReport(inspectionId);
+      if (result.error) {
+        setMessage({ type: "error", text: result.error });
+      } else {
+        setJustGenerated(true);
+        setReportRequest(Date.now());
+      }
+    } catch {
+      setMessage({ type: "error", text: "Ekki tókst að staðfesta skýrslugerðina. Athugaðu tenginguna og stöðu skoðunarinnar." });
+    } finally { setGenerating(false); }
   }
 
   async function handleSendToDrive() {
@@ -125,6 +131,8 @@ export function ReportActions({
           </p>
         </div>
       )}
+
+      {reportRequest > 0 && <ReportProgress key={reportRequest} inspectionId={inspectionId} requestKey={reportRequest} />}
 
       {message && (
         <p
