@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { waitlistSchema, type WaitlistFormData } from "@/lib/schemas";
+import { trackLead } from "@/lib/rondva-consent";
 
 const fieldClass =
   "w-full rounded-lg border border-line bg-paper px-4 py-3 text-base text-ink placeholder:text-muted/60 focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue/20";
@@ -35,6 +36,7 @@ export function WaitlistForm() {
         throw new Error(body.error || "Something went wrong. Please try again.");
       }
       setSubmitted(true);
+      trackLead("waitlist");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     }

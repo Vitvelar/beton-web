@@ -5,6 +5,7 @@ export const dynamic = "force-static";
 const PAGES: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
   { path: "/privacy", priority: "0.3", changefreq: "yearly" },
+  { path: "/cookies", priority: "0.2", changefreq: "yearly" },
 ];
 
 export function GET() {

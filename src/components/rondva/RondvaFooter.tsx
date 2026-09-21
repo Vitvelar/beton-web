@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
+import { CookieChoicesButton } from "@/components/rondva/CookieChoicesButton";
 
 // Dark footer for the Rondva landing page.
 export function RondvaFooter() {
@@ -15,6 +16,10 @@ export function RondvaFooter() {
           <Link href="/privacy" className="text-paper/80 transition-colors hover:text-paper">
             Privacy
           </Link>
+          <Link href="/cookies" className="text-paper/80 transition-colors hover:text-paper">
+            Cookies
+          </Link>
+          <CookieChoicesButton className="text-paper/80 transition-colors hover:text-paper" />
           <a
             href={`mailto:${BRANDS.rondva.contactEmail}`}
             className="text-paper/80 transition-colors hover:text-paper"
