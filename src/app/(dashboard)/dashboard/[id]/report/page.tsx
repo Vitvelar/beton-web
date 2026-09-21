@@ -403,7 +403,7 @@ export default async function ReportPage({
               <TocRow key={room.slug} num={String(idx + 2)} name={`Rými — ${room.name}`} />
             ))}
             {rankedObs.length > 0 && (
-              <TocRow num={String(report.rooms.length + 2)} name="Verkefnalisti — forgangsröð" />
+              <TocRow num={String(report.rooms.length + 2)} name="Verkefnalisti" />
             )}
             <TocRow
               num={String(report.rooms.length + 2 + (rankedObs.length > 0 ? 1 : 0))}
@@ -658,11 +658,10 @@ export default async function ReportPage({
           <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
             <h2 className="text-lg font-bold text-navy mb-2">
               <span className="text-sev-calm font-bold mr-2">{report.rooms.length + 2}.</span>
-              Verkefnalisti — forgangsröð
+              Verkefnalisti
             </h2>
             <p className="text-sm text-ink/80 mb-4">
-              Hér eru helstu atriði sem þarf að taka á, raðað eftir alvarleika frá mestu til minnstu.
-              Listinn er ætlaður til leiðsagnar fyrir kaupanda eða eiganda við áætlanagerð.
+              Hér er verkefnalisti yfir atriði sem þarf að taka á.
             </p>
             <div className="space-y-3">
               {rankedObs.map(({ obs, roomName }, i) => {
