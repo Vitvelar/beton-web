@@ -78,11 +78,13 @@ export function Footer() {
           <FCol title="Þjónusta">
             <FLink href="/samband">Ástandsskoðun</FLink>
             <FLink href="/samband">Kostnaðarmat</FLink>
+            <FLink href="/app">Skoðunarappið</FLink>
           </FCol>
           <FCol title="Fyrirtækið">
             <FLink href="/umokkur">Um okkur</FLink>
             <FLink href="/verdskra">Verðskrá</FLink>
             <FLink href="/skilmalar">Skilmálar</FLink>
+            <FLink href="/personuvernd">Persónuvernd</FLink>
             <FLink href="/samband">Hafa samband</FLink>
           </FCol>
           <FCol title="Hafðu samband">
