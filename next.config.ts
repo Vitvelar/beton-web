@@ -25,10 +25,13 @@ const nextConfig: NextConfig = {
   // raunverulegu skrárnar undir node_modules/.pnpm/...; toppstigs slóðin er
   // symlink. Við tökum bæði til öryggis svo chromium.br (~64MB) fylgi með.
   outputFileTracingIncludes: {
-    "/dashboard/**": [
-      "node_modules/@sparticuz/chromium/**",
-      "node_modules/.pnpm/@sparticuz+chromium@*/node_modules/@sparticuz/chromium/**",
-    ],
+    // ATH 2026-09-22: "/dashboard/**" var áður hér líka, frá því að PDF var
+    // rendrað í report/pdf-leiðinni. Sú leið sækir nú tilbúið PDF úr Storage
+    // (sjá report/pdf/route.ts) og ekkert undir /dashboard flytur inn
+    // render-pdf.ts lengur — aðeins tick-leiðin hér að neðan. Að hafa
+    // Chromium (~64MB) með í HVERRI dashboard-function fyllti "Functions
+    // Storage" (16 GB af 10 GB á Vercel). Ef PDF-render flyst aftur undir
+    // /dashboard þarf færsluna aftur.
     // Bakgrunns-workerinn (tick) rendrar nú PDF á Vercel með @sparticuz —
     // sama binary þarf að fylgja ÞEIRRI leið, annars: "input directory .../bin
     // does not exist" í framleiðslu (nákvæmlega villan sem kom 2026-08-10).
