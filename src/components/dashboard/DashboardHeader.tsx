@@ -22,6 +22,9 @@ export function DashboardHeader({ email }: { email: string }) {
         </Link>
 
         <div className="flex items-center gap-4">
+          <Link href="/dashboard/settings" className="text-sm text-fog hover:text-ink transition-colors">
+            Stillingar
+          </Link>
           <span className="text-sm text-fog hidden sm:block">{email}</span>
           <form action={signOut}>
             <button
