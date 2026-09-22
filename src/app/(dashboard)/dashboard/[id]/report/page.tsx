@@ -15,6 +15,7 @@ import {
   reportDownloadName,
 } from "@/lib/report/shared";
 import type { Severity } from "@/lib/supabase/types";
+import { resolveBranding } from "@/lib/report/branding";
 import type { Metadata } from "next";
 
 interface ReportData {
@@ -111,18 +112,23 @@ export async function generateMetadata({
       : await createClient();
     let q = supabase
       .from("inspections")
-      .select("address, inspection_date, local_id")
+      .select("address, inspection_date, local_id, inspectors ( company_name )")
       .limit(1);
     q = authorization ? q.or(`id.eq.${id},local_id.eq.${id}`) : q.eq("id", id);
     const { data } = await q.maybeSingle();
     if (data?.address) {
-      const name = reportDownloadName(data.address, data.inspection_date).replace(/\.pdf$/, "");
+      const insp = Array.isArray(data.inspectors) ? data.inspectors[0] : data.inspectors;
+      const name = reportDownloadName(
+        data.address,
+        data.inspection_date,
+        (insp as { company_name?: string | null } | null)?.company_name ?? null
+      ).replace(/\.pdf$/, "");
       return { title: { absolute: name } };
     }
   } catch {
     // fall back to a generic title below
   }
-  return { title: { absolute: "Beton Ástandsskoðun" } };
+  return { title: { absolute: "Ástandsskoðun" } };
 }
 
 export default async function ReportPage({
@@ -158,6 +164,7 @@ export default async function ReportPage({
       customer_name, inspection_date, weather, attendees,
       property_data, ai_report_data, ai_summary,
       ai_cost_usd, ai_model, report_generated_at,
+      inspectors ( full_name, company_name, company_logo_url, company_terms_url ),
       rooms (
         id, name, slug, sort_order, ratings, notes,
         observations (
@@ -271,9 +278,13 @@ export default async function ReportPage({
     .slice(0, 10);
 
   const propData = report.inspection.property_data ?? {};
-  const inspectorName = (propData.inspectorName as string) ?? "Bragi Michaelsson";
-
-  const logoSrc = "/images/beton-logo.webp";
+  // Fyrirtækjamerki/-nafn skoðunarmanns (white-label); Beton-sjálfgildi ef ekkert skráð.
+  const inspectorRow = Array.isArray(inspection.inspectors)
+    ? inspection.inspectors[0]
+    : inspection.inspectors;
+  const brand = resolveBranding(inspectorRow ?? null, propData.inspectorName);
+  const inspectorName = brand.inspectorName;
+  const logoSrc = brand.logoUrl;
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -356,11 +367,13 @@ export default async function ReportPage({
         {/* ═══ PAGE 1: COVER ═══ */}
         <section className="rpt-cover">
           <div className="flex flex-col items-center text-center px-8 py-12 print:py-0">
-            <div className="mb-5 print:mb-8">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoSrc} alt="Beton ehf." className="h-20 w-auto print:h-24" />
-            </div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-navy mb-2">BETON EHF.</p>
+            {logoSrc ? (
+              <div className="mb-5 print:mb-8">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={logoSrc} alt={brand.name} className="h-20 w-auto print:h-24" />
+              </div>
+            ) : null}
+            <p className="text-xs font-semibold tracking-[0.2em] text-navy mb-2">{brand.nameUpper}</p>
             <h1 className="text-3xl font-bold text-navy mb-3">Ástandsskoðun</h1>
             <p className="text-xl text-ink mb-6">{report.inspection.address}</p>
 
@@ -415,20 +428,22 @@ export default async function ReportPage({
         {/* ═══ PAGE 3: INTRO + MATSKERFI ═══ */}
         <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <div className="border-l-4 border-navy bg-stone-50 rounded-sm px-6 py-5 mb-8">
-            <h2 className="text-lg font-bold text-navy mb-3">Ástandsskoðun Beton ehf.</h2>
+            <h2 className="text-lg font-bold text-navy mb-3">Ástandsskoðun {brand.name}</h2>
             <p className="text-sm text-ink/80 leading-relaxed mb-3">
               Markmið ástandsskoðunar er að veita verkkaupa upplýsingar um almennt og sýnilegt ástand
               fasteignar á þeim tímapunkti sem skoðun fer fram. Ástandsskoðun byggir á hlutlausri skoðun og
-              stöðluðum verkferlum Beton ehf. og er ætluð til upplýsingaöflunar vegna fasteignaviðskipta eða
+              stöðluðum verkferlum {brand.name} og er ætluð til upplýsingaöflunar vegna fasteignaviðskipta eða
               mats á ástandi eigin eignar. Ástandsskoðun og skýrsla eiga eingöngu við um þá fasteign sem
               skoðuð er og taka einungis til þeirra atriða sem sérstaklega eru nefnd í skýrslu.
             </p>
-            <p className="text-sm text-ink/80">
-              Allar ástandsskoðanir falla undir{" "}
-              <a href="https://www.betonehf.is/s/skilmalarbetonehf.pdf" className="text-navy underline">
-                skilmála Beton ehf.
-              </a>
-            </p>
+            {brand.termsUrl ? (
+              <p className="text-sm text-ink/80">
+                Allar ástandsskoðanir falla undir{" "}
+                <a href={brand.termsUrl} className="text-navy underline">
+                  skilmála {brand.name}
+                </a>
+              </p>
+            ) : null}
           </div>
 
           <h2 className="text-lg font-bold text-navy mb-3">
@@ -698,7 +713,7 @@ export default async function ReportPage({
         {/* ═══ SKILMÁLAR OG FYRIRVARAR ═══ */}
         <section className="rpt-terms px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <h2 className="text-base font-bold text-navy mb-1">
-            Skilmálar og fyrirvarar ástandsskoðunar Beton ehf.
+            Skilmálar og fyrirvarar ástandsskoðunar {brand.name}
           </h2>
           <div className="h-0.5 bg-navy mb-4" />
 
@@ -706,7 +721,7 @@ export default async function ReportPage({
             <TermsSection n={1} title="Markmið og gildissvið">
               Markmið ástandsskoðunar er að veita verkkaupa upplýsingar um almennt og sýnilegt ástand fasteignar á
               þeim tímapunkti sem skoðun fer fram. Ástandsskoðun byggir á hlutlausri skoðun og stöðluðum verkferlum
-              Beton ehf. og er ætluð til upplýsingaöflunar vegna fasteignaviðskipta eða mats á ástandi eigin eignar.
+              {" "}{brand.name} og er ætluð til upplýsingaöflunar vegna fasteignaviðskipta eða mats á ástandi eigin eignar.
               Ástandsskoðun og skýrsla eiga eingöngu við um þá fasteign sem skoðuð er og taka einungis til þeirra
               atriða sem sérstaklega eru nefnd í skýrslu.
             </TermsSection>
@@ -745,10 +760,10 @@ export default async function ReportPage({
               réttar og fullnægjandi og takmarkast við þá dagsetningu sem fasteign var skoðuð. Varast skal að byggja
               ákvarðanir um fasteignakaup eingöngu á efni skýrslunnar. Skýrslan má ekki vera notuð í öðrum tilgangi
               en í tengslum við ákvarðanatöku um fasteignakaup eða til upplýsingaöflunar um ástand eigin eignar.
-              Dreifing eða afhending skýrslu til þriðja aðila er óheimil nema með skriflegu samþykki Beton ehf.
+              Dreifing eða afhending skýrslu til þriðja aðila er óheimil nema með skriflegu samþykki {brand.name}
             </TermsSection>
             <TermsSection n={7} title="Takmörkun ábyrgðar">
-              Ábyrgð Beton ehf. og starfsmanna þess vegna ástandsskoðunar, skýrslugerðar eða athugasemda takmarkast,
+              Ábyrgð {brand.name} og starfsmanna þess vegna ástandsskoðunar, skýrslugerðar eða athugasemda takmarkast,
               að hámarki, við þá heildarþóknun sem greitt var fyrir viðkomandi skoðun. Skoðunarmaður veitir enga
               ábyrgð, hvorki beina né óbeina, á því: að allir gallar hafi fundist, að skoðaðir byggingarhlutir séu
               rétt hannaðir eða framkvæmdir í samræmi við faglega verkhætti, að byggingarhlutir muni halda áfram að
@@ -762,7 +777,7 @@ export default async function ReportPage({
             </TermsSection>
             <TermsSection n={9} title="Frekari athuganir">
               Nánari athugun eða viðgerð á göllum sem nefndir eru í skýrslu getur leitt í ljós frekari galla sem voru
-              ekki sýnilegir eða aðgengilegir á skoðunartíma. Slíkir gallar falla utan ábyrgðar Beton ehf.
+              ekki sýnilegir eða aðgengilegir á skoðunartíma. Slíkir gallar falla utan ábyrgðar {brand.name}
             </TermsSection>
             <TermsSection n={10} title="Hlutleysi og fagmennska">
               Skoðunarmaður starfar sem hlutlaus matsaðili, af heilindum og fagmennsku, og hefur engra annarra
@@ -772,15 +787,17 @@ export default async function ReportPage({
               Greitt er fyrir ástandsskoðun ásamt skýrslu ekki seinna en 24 klst. fyrir áætlaða skoðun og fer
               ástandsskoðun ekki fram nema greiðsla hafi borist að fullu innan tilskilins frests. Skýrsla vegna
               ástandsskoðunar er afhent innan 48 klst. frá framkvæmd skoðunar, nema um annað hafi verið samið
-              skriflega. Skilmálar þessir gilda fyrir allar ástandsskoðanir sem Beton ehf. framkvæmir nema annað sé
+              skriflega. Skilmálar þessir gilda fyrir allar ástandsskoðanir sem {brand.name} framkvæmir nema annað sé
               sérstaklega samið skriflega.
             </TermsSection>
           </div>
 
-          <div className="text-center mt-8 print:mt-5 print:break-inside-avoid print:break-before-avoid">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoSrc} alt="Beton ehf." className="h-16 w-auto mx-auto print:h-14" />
-          </div>
+          {logoSrc ? (
+            <div className="text-center mt-8 print:mt-5 print:break-inside-avoid print:break-before-avoid">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logoSrc} alt={brand.name} className="h-16 w-auto mx-auto print:h-14" />
+            </div>
+          ) : null}
         </section>
 
         {/* Footer */}

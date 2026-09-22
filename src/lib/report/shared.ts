@@ -40,10 +40,16 @@ export function reportStoragePath(args: {
 // Human-facing download name: "Beton Ástandsskoðun - <heimilisfang>, <dags>.pdf".
 // Forced via the signed-URL `download` option / Content-Disposition; Icelandic
 // characters are preserved there.
-export function reportDownloadName(address: string | null, date: string | null): string {
+export function reportDownloadName(
+  address: string | null,
+  date: string | null,
+  companyName: string | null = null
+): string {
   const addr = (address ?? "skýrsla").trim() || "skýrsla";
   const tail = date ? `, ${formatReportDate(date)}` : "";
-  return `Beton Ástandsskoðun - ${addr}${tail}.pdf`;
+  // Fyrsta orð fyrirtækisheitis (án "ehf."), sjálfgefið Beton fyrir eldri gögn.
+  const company = (companyName ?? "").trim().split(/\s+/)[0] || "Beton";
+  return `${company} Ástandsskoðun - ${addr}${tail}.pdf`;
 }
 
 // A report_url is a signable Storage object path only if it has no URI scheme.
