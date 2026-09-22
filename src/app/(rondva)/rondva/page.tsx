@@ -20,8 +20,8 @@ import {
 // Skjámyndir úr ensku útgáfunni fara í public/rondva/screens/. Þar til þær
 // eru til birtist ramminn tómur — aldrei íslensk skjámynd (birtingarregla 4).
 const SCREENS: { src?: string; alt: string }[] = [
-  { alt: "Rondva — room overview screen" },
-  { alt: "Rondva — observation with severity" },
+  { src: "/rondva/screens/overview.webp", alt: "Rondva — inspection overview with property details and severity counts" },
+  { src: "/rondva/screens/room.webp", alt: "Rondva — room screen with ratings and observations" },
 ];
 const HAS_SCREENS = SCREENS.every((s) => !!s.src);
 
@@ -225,7 +225,7 @@ export default function RondvaLandingPage() {
                 ))}
               </ol>
               {HAS_SCREENS ? (
-                <div className="rv-reveal relative hidden lg:block" style={{ "--i": 2 } as React.CSSProperties}>
+                <div className="rv-reveal relative hidden md:block" style={{ "--i": 2 } as React.CSSProperties}>
                   <div className="flex items-end gap-6">
                     <PhoneFrame src={SCREENS[0].src} alt={SCREENS[0].alt} />
                     <PhoneFrame src={SCREENS[1].src} alt={SCREENS[1].alt} className="mb-16 !w-[220px]" />
