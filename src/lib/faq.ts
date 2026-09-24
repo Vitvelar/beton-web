@@ -9,7 +9,7 @@ export const FAQ = [
   },
   {
     q: "Hvað er skoðað í ástandsskoðun?",
-    a: "Farið er yfir þak, klæðningar, lagnir, raka, burðarvirki og frágang eignarinnar. Þar sem hægt er að mæla er mælt — með rakamælum og hitamyndavél — og niðurstöður flokkaðar eftir alvarleika með skýrum tillögum að úrbótum.",
+    a: "Farið er yfir þak, klæðningar, raka, burðarvirki og frágang eignarinnar. Þar sem hægt er að mæla er mælt — með rakamælum og hitamyndavél — og niðurstöður flokkaðar eftir alvarleika með skýrum tillögum að úrbótum.",
   },
   {
     q: "Hvaða svæði þjónustar Beton?",

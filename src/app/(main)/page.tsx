@@ -8,7 +8,7 @@ import { FAQ } from "@/lib/faq";
 const SERVICES = [
   {
     title: "Ástandsskoðun",
-    body: "Ítarleg úttekt á ástandi fasteignar — þak, klæðningar, lagnir, raki og burðarvirki. Niðurstöður flokkaðar eftir alvarleika með skýrum tillögum að úrbótum.",
+    body: "Ítarleg úttekt á ástandi fasteignar — þak, klæðningar, raki og burðarvirki. Niðurstöður flokkaðar eftir alvarleika með skýrum tillögum að úrbótum.",
   },
   {
     title: "Kostnaðaráætlun",

@@ -139,7 +139,7 @@ export default function Verdskra() {
           <TilbodCard
             n="03"
             label="Húsfélög"
-            body="Sameignir, fjölbýli og raðhúsalengjur. Yfirlitsskoðun á húsasameigninni með áherslu á þök, klæðningar, lagnir og frágang sameignarrýma."
+            body="Sameignir, fjölbýli og raðhúsalengjur. Yfirlitsskoðun á húsasameigninni með áherslu á þök, klæðningar og frágang sameignarrýma."
           />
         </div>
       </section>
