@@ -11,8 +11,20 @@ const SERVICES = [
     body: "Ítarleg úttekt á ástandi fasteignar — þak, klæðningar, lagnir, raki og burðarvirki. Niðurstöður flokkaðar eftir alvarleika með skýrum tillögum að úrbótum.",
   },
   {
-    title: "Kostnaðarmat",
-    body: "Mat á áætluðum kostnaði við þær úrbætur sem skoðun leiðir í ljós, svo þú hafir skýra mynd af því sem framundan er áður en gengið er frá kaupum.",
+    title: "Kostnaðaráætlun",
+    body: "Áætlun um kostnað við þær úrbætur sem skoðun leiðir í ljós, svo þú hafir skýra mynd af því sem framundan er áður en gengið er frá kaupum.",
+  },
+  {
+    title: "Gerð útboðsgagna",
+    body: "Útboðsgögn fyrir viðhaldsverk — verklýsingar, magnskrár og kostnaðaráætlanir — svo verktakar bjóði í sama verkið og tilboðin verði samanburðarhæf.",
+  },
+  {
+    title: "Útboð viðhaldsverka",
+    body: "Umsjón með útboði viðhaldsverka fyrir húsfélög og eigendur, frá auglýsingu til yfirferðar tilboða og ráðgjafar við val á verktaka.",
+  },
+  {
+    title: "Eftirlit með framkvæmdum",
+    body: "Faglegt eftirlit á verktíma sem tryggir að verkið sé unnið samkvæmt útboðsgögnum, með góðum frágangi og innan kostnaðaráætlunar.",
   },
 ];
 
@@ -81,6 +93,17 @@ export default function Home() {
               <br />
               <span className="italic-accent">ástandsskoðun.</span>
             </h1>
+            <a
+              href={COMPANY.phoneHref}
+              className="group inline-flex items-baseline gap-3 mb-8 text-ink"
+            >
+              <span className="text-xs font-mono tracking-[0.1em] uppercase text-fog">
+                Sími
+              </span>
+              <span className="text-[28px] lg:text-[32px] font-medium tracking-[-0.02em] border-b-2 border-copper group-hover:border-ink transition-colors">
+                {COMPANY.phone}
+              </span>
+            </a>
             <div className="text-[17px] lg:text-[18px] leading-[1.65] text-ink/80 max-w-[560px] mb-10 space-y-4">
               <p>
                 Við sérhæfum okkur í ástandsskoðunum fasteigna og veitum faglega og
@@ -142,7 +165,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {SERVICES.map((s, i) => (
               <div key={s.title} className="bg-paper border border-concrete-dk px-8 py-9">
                 <div className="font-mono text-[12px] tracking-[0.1em] text-copper uppercase mb-5">
@@ -280,6 +303,13 @@ export default function Home() {
                 className="text-paper underline underline-offset-4 decoration-paper/40 hover:decoration-paper transition-colors"
               >
                 {COMPANY.email}
+              </a>{" "}
+              eða hringdu í síma{" "}
+              <a
+                href={COMPANY.phoneHref}
+                className="text-paper underline underline-offset-4 decoration-paper/40 hover:decoration-paper transition-colors whitespace-nowrap"
+              >
+                {COMPANY.phone}
               </a>
               .
             </p>

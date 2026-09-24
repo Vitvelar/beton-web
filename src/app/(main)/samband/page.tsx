@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { Eyebrow } from "@/components/Editorial";
 import { ContactForm } from "@/components/ContactForm";
+import { COMPANY } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Hafa samband",
   description:
-    "Hafðu samband við Beton ehf. fyrir ástandsskoðun fasteigna á höfuðborgarsvæðinu. Sendu fyrirspurn eða hafðu samband á beton@beton.is",
+    "Hafðu samband við Beton ehf. fyrir ástandsskoðun fasteigna á höfuðborgarsvæðinu. Sendu fyrirspurn á beton@beton.is eða hringdu í síma 899-8600.",
   alternates: { canonical: "https://beton.is/samband" },
 };
 
@@ -32,8 +33,26 @@ export default function Samband() {
               </h1>
               <p className="text-[17.5px] leading-[1.55] text-fog max-w-[640px]">
                 Spurningar um skoðun, verðskrá eða tímasetningu? Fylltu út formið eða
-                sendu beint á netfangið okkar.
+                sendu beint á netfangið okkar,{" "}
+                <a
+                  href={`mailto:${COMPANY.email}`}
+                  className="text-ink underline underline-offset-4 decoration-ink/30 hover:decoration-ink transition-colors"
+                >
+                  {COMPANY.email}
+                </a>
+                .
               </p>
+              <a
+                href={COMPANY.phoneHref}
+                className="inline-flex items-baseline gap-3 mt-8 text-ink"
+              >
+                <span className="text-xs font-mono tracking-[0.1em] uppercase text-fog">
+                  Sími
+                </span>
+                <span className="text-[26px] font-medium tracking-[-0.02em] border-b-2 border-copper hover:border-ink transition-colors">
+                  {COMPANY.phone}
+                </span>
+              </a>
             </div>
           </div>
 

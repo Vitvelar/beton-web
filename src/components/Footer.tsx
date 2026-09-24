@@ -77,7 +77,7 @@ export function Footer() {
           </div>
           <FCol title="Þjónusta">
             <FLink href="/samband">Ástandsskoðun</FLink>
-            <FLink href="/samband">Kostnaðarmat</FLink>
+            <FLink href="/samband">Kostnaðaráætlun</FLink>
             <FLink href="/app">Skoðunarappið</FLink>
           </FCol>
           <FCol title="Fyrirtækið">
@@ -91,6 +91,10 @@ export function Footer() {
             <div className="text-[12px] leading-[1.6] text-paper/70">
               <a href={`mailto:${COMPANY.email}`} className="hover:text-paper">
                 {COMPANY.email}
+              </a>
+              <br />
+              <a href={COMPANY.phoneHref} className="hover:text-paper">
+                Sími {COMPANY.phone}
               </a>
               <br />
               {COMPANY.location}

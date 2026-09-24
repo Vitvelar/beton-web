@@ -7,8 +7,8 @@ import { COMPANY } from "@/lib/constants";
 export const betonMetadata: Metadata = {
   metadataBase: new URL("https://beton.is"),
   title: {
-    default: "Ástandsskoðun fasteigna á höfuðborgarsvæðinu | Beton ehf.",
-    template: "%s | Beton ehf.",
+    default: "Beton ehf. | Ástandsskoðun fasteigna á höfuðborgarsvæðinu",
+    template: "Beton ehf. | %s",
   },
   description:
     "Fagleg ástandsskoðun fasteigna á höfuðborgarsvæðinu. Beton ehf. veitir hlutlausa ráðgjöf fyrir kaupendur og seljendur. Hafnarfjörður, Ísland.",
@@ -59,6 +59,7 @@ export const betonLocalBusinessJsonLd = {
   description:
     "Fagleg ástandsskoðun fasteigna á höfuðborgarsvæðinu. Traust, hlutlaus ráðgjöf fyrir kaupendur og seljendur.",
   email: COMPANY.email,
+  telephone: "+354 899 8600",
   address: {
     "@type": "PostalAddress",
     addressLocality: "Hafnarfjörður",
