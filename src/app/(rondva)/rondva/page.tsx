@@ -2,7 +2,7 @@ import Link from "next/link";
 import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 import { WaitlistForm } from "@/components/rondva/WaitlistForm";
-import { ReportPreview } from "@/components/rondva/ReportPreview";
+import { HeroFilm } from "@/components/rondva/HeroFilm";
 import { PhoneFrame } from "@/components/rondva/PhoneFrame";
 import { RevealObserver } from "@/components/rondva/Reveal";
 import {
@@ -14,7 +14,6 @@ import {
   IconExport,
   IconLogo,
   IconShield,
-  RondvaRing,
 } from "@/components/rondva/RondvaIcons";
 
 // Skjámyndir úr ensku útgáfunni fara í public/rondva/screens/. Þar til þær
@@ -128,11 +127,11 @@ export default function RondvaLandingPage() {
     <>
       <RondvaHeader />
       <main className="flex-1">
-        {/* 1. Hero — dökkt teikniblað, serif-fyrirsögn, skýrslusýnishorn */}
+        {/* 1. Hero — dökkt teikniblað, serif-fyrirsögn, kynningarmynd */}
         <section className="rv-blueprint rv-grain relative overflow-hidden text-paper">
-          <div className="pointer-events-none absolute -right-40 -top-40 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
-          <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-center gap-14 px-6 pb-24 pt-20 md:grid-cols-[1.05fr_0.95fr] md:pb-32 md:pt-28 lg:gap-20">
-            <div>
+          <div className="pointer-events-none absolute -right-64 -top-72 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
+          <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 items-center gap-12 px-6 pb-24 pt-20 md:pb-32 md:pt-28 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
+            <div className="relative z-20">
               <p className="rv-rise rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
                 Field app for property inspectors · In development
               </p>
@@ -178,11 +177,9 @@ export default function RondvaLandingPage() {
               </p>
             </div>
 
-            <div className="rv-rise relative md:justify-self-end" style={{ "--i": 3 } as React.CSSProperties}>
-              <div className="relative mx-auto w-full max-w-[520px] rotate-[-1.5deg] md:rotate-[-2deg]">
-                <ReportPreview />
-              </div>
-              <RondvaRing className="absolute -bottom-8 -left-6 h-16 w-16 text-paper/15 md:-left-10 md:h-20 md:w-20" />
+            {/* Kynningarmyndin: aldrei inni í snúnum ramma (merkið má ekki hallast). */}
+            <div className="rv-rise relative z-10 w-full" style={{ "--i": 3 } as React.CSSProperties}>
+              <HeroFilm className="w-full" />
             </div>
           </div>
         </section>
