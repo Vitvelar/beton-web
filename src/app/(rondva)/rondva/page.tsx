@@ -130,56 +130,65 @@ export default function RondvaLandingPage() {
         {/* 1. Hero — dökkt teikniblað, serif-fyrirsögn, kynningarmynd */}
         <section className="rv-blueprint rv-grain relative overflow-hidden text-paper">
           <div className="pointer-events-none absolute -right-64 -top-72 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
-          <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 items-center gap-12 px-6 pb-24 pt-20 md:pb-32 md:pt-28 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
-            <div className="relative z-20">
-              <p className="rv-rise rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
-                Field app for property inspectors · In development
-              </p>
-              <h1
-                className="rv-rise rv-display mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[76px]"
-                style={{ "--i": 1 } as React.CSSProperties}
-              >
-                Walk the property.
-                <br />
-                <em>Rondva drafts the report.</em>
-              </h1>
-              <p
-                className="rv-rise mt-7 max-w-xl text-lg leading-relaxed text-paper/75 md:text-xl"
-                style={{ "--i": 2 } as React.CSSProperties}
-              >
-                Rondva is a field app for independent property inspectors. You record the rooms,
-                the photos, the thermal images and the severity. Rondva drafts the wording and the
-                summary — you stay the author of every judgement in it.
-              </p>
-              <div
-                className="rv-rise mt-9 flex flex-wrap items-center gap-4"
-                style={{ "--i": 3 } as React.CSSProperties}
-              >
-                <a
-                  href="#waitlist"
-                  className="inline-flex items-center gap-2 rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-[#2c62ec]"
+          <div className="relative mx-auto max-w-[1320px] px-6 pb-20 pt-12 md:pb-28 md:pt-16">
+            <div className="grid grid-cols-1 gap-x-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+              <div className="relative z-20">
+                <p className="rv-rise rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
+                  Field app for property inspectors · In development
+                </p>
+                <h1
+                  className="rv-rise rv-display mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[72px] xl:text-[80px]"
+                  style={{ "--i": 1 } as React.CSSProperties}
                 >
-                  Join the waitlist
-                  <span aria-hidden="true">→</span>
-                </a>
-                <a
-                  href="#how"
-                  className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
-                >
-                  See how it works
-                </a>
+                  Walk the property.
+                  <br />
+                  <em>Rondva drafts the report.</em>
+                </h1>
+                {/* Sími: skammsniðið (4:5) beint undir fyrirsögninni, frá brún til brúnar. */}
+                <div className="rv-rise relative z-10 -mx-6 mt-8 md:hidden" style={{ "--i": 2 } as React.CSSProperties}>
+                  <HeroFilm variant="portrait" />
+                </div>
               </div>
-              <p
-                className="rv-rise mt-6 text-sm text-paper/55"
-                style={{ "--i": 4 } as React.CSSProperties}
-              >
-                In development. We&apos;re building with working inspectors before we open sales.
-              </p>
+              <div className="relative z-20 lg:pb-3">
+                <p
+                  className="rv-rise mt-7 max-w-xl text-lg leading-relaxed text-paper/75 md:text-xl lg:mt-0"
+                  style={{ "--i": 2 } as React.CSSProperties}
+                >
+                  Rondva is a field app for independent property inspectors. You record the rooms,
+                  the photos, the thermal images and the severity. Rondva drafts the wording and the
+                  summary — you stay the author of every judgement in it.
+                </p>
+                <div
+                  className="rv-rise mt-9 flex flex-wrap items-center gap-4"
+                  style={{ "--i": 3 } as React.CSSProperties}
+                >
+                  <a
+                    href="#waitlist"
+                    className="inline-flex items-center gap-2 rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-[#2c62ec]"
+                  >
+                    Join the waitlist
+                    <span aria-hidden="true">→</span>
+                  </a>
+                  <a
+                    href="#how"
+                    className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
+                  >
+                    See how it works
+                  </a>
+                </div>
+                <p
+                  className="rv-rise mt-6 text-sm text-paper/55"
+                  style={{ "--i": 4 } as React.CSSProperties}
+                >
+                  In development. We&apos;re building with working inspectors before we open sales.
+                </p>
+              </div>
             </div>
 
-            {/* Kynningarmyndin: aldrei inni í snúnum ramma (merkið má ekki hallast). */}
-            <div className="rv-rise relative z-10 w-full" style={{ "--i": 3 } as React.CSSProperties}>
-              <HeroFilm className="w-full" />
+            {/* Spjaldtölva og tölva: breiða útgáfan í fullri breidd undir textanum.
+                Aldrei inni í snúnum ramma (merkið má ekki hallast). */}
+            <div className="rv-rise relative z-10 mt-12 hidden md:block lg:mt-11" style={{ "--i": 4 } as React.CSSProperties}>
+              <HeroFilm variant="wide" className="w-full" />
             </div>
           </div>
         </section>
