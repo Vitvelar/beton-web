@@ -299,6 +299,7 @@ export default function RondvaLandingPage() {
               </p>
               <ul className="mt-7 space-y-3 text-[15px] text-ink">
                 {[
+                  "Your first 2 AI-drafted reports are free",
                   "20 AI-drafted reports per month",
                   "2 AI revisions included with every report",
                   "Unlimited manual editing and re-export — free",
