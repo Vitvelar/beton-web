@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { snapshotToken } from "@/lib/report/snapshot-token";
+import { abortWebCreditRun, beginWebCreditRun, finishWebCreditRun } from "@/lib/report/credits";
 import Anthropic from "@anthropic-ai/sdk";
 
 const ANTHROPIC_MODEL = "claude-opus-4-8";
@@ -98,6 +99,9 @@ export async function generateReport(inspectionId: string) {
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: inspection, error: fetchError } = await supabase
     .from("inspections")
@@ -155,6 +159,15 @@ export async function generateReport(inspectionId: string) {
       error: "Engar athugasemdir skráðar — ekki er hægt að búa til skýrslu.",
     };
   }
+
+  // Skýrsluinneign (REPORT_CREDITS_MODE; sjá lib/report/credits.ts). Áður en nokkuð breytist.
+  const credit = await beginWebCreditRun({
+    supabase,
+    userId: user?.id ?? null,
+    email: user?.email ?? null,
+    inspectionId,
+  });
+  if (!credit.ok) return { error: credit.error };
 
   await supabase
     .from("inspections")
@@ -312,6 +325,7 @@ export async function generateReport(inspectionId: string) {
     claudeResult = { output: parsed, inputTokens, outputTokens };
   } catch (e: unknown) {
     console.error("Claude error:", e);
+    await abortWebCreditRun(credit.runId);
     await supabase
       .from("inspections")
       .update({ status: "error", updated_at: new Date().toISOString() })
@@ -407,9 +421,6 @@ export async function generateReport(inspectionId: string) {
 
     // Setja PDF-render í biðröð. 23505 = virkt starf þegar til fyrir þessa skoðun
     // (partial unique index) → í lagi, það er nú þegar í biðröð.
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
     const { error: jobErr } = await supabase
       .from("report_jobs")
       .insert({ inspection_id: inspectionId, requested_by: user?.id ?? null });
@@ -417,6 +428,7 @@ export async function generateReport(inspectionId: string) {
       throw new Error(`Tókst ekki að setja PDF í biðröð: ${jobErr.message}`);
   } catch (e: unknown) {
     console.error("DB write error:", e);
+    await abortWebCreditRun(credit.runId);
     await supabase
       .from("inspections")
       .update({ status: "error", updated_at: new Date().toISOString() })
@@ -424,6 +436,9 @@ export async function generateReport(inspectionId: string) {
     const msg = e instanceof Error ? e.message : "Óþekkt villa";
     return { error: `Villa við vistun skýrslu: ${msg}` };
   }
+
+  // AI-textinn er vistaður → keyrslan telst.
+  await finishWebCreditRun(credit.runId, ANTHROPIC_MODEL, aiCostUsd);
 
   revalidatePath(`/dashboard/${inspectionId}`);
   revalidatePath("/dashboard");
