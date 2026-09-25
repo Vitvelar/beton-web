@@ -388,6 +388,7 @@ export async function generateReport(inspectionId: string) {
 
   // Skrif í gagnagrunn umlukin try/catch: ef eitthvað klikkar setjum við
   // status='error' svo skýrslan festist EKKI í 'generating' (spinner sem hangir).
+  let textStored = false; // ai_report_data vistað → keyrslan telst þótt biðröðin bili
   try {
     for (const obs of claudeResult.output.observations) {
       const { error } = await supabase
@@ -418,6 +419,7 @@ export async function generateReport(inspectionId: string) {
       .eq("id", inspectionId);
     if (inspErr)
       throw new Error(`Uppfærsla skoðunar mistókst: ${inspErr.message}`);
+    textStored = true;
 
     // Setja PDF-render í biðröð. 23505 = virkt starf þegar til fyrir þessa skoðun
     // (partial unique index) → í lagi, það er nú þegar í biðröð.
@@ -428,7 +430,8 @@ export async function generateReport(inspectionId: string) {
       throw new Error(`Tókst ekki að setja PDF í biðröð: ${jobErr.message}`);
   } catch (e: unknown) {
     console.error("DB write error:", e);
-    await abortWebCreditRun(credit.runId);
+    if (textStored) await finishWebCreditRun(credit.runId, ANTHROPIC_MODEL, aiCostUsd);
+    else await abortWebCreditRun(credit.runId);
     await supabase
       .from("inspections")
       .update({ status: "error", updated_at: new Date().toISOString() })

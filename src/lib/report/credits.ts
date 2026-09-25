@@ -19,9 +19,14 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 type CreditsMode = "off" | "shadow" | "enforce";
 
+// Bókhaldskall má aldrei hanga: eftir 5 s telst það bilað (skuggahamur/undanþegnir halda áfram).
+const RPC_TIMEOUT_MS = 5_000;
+
 function creditsMode(): CreditsMode {
-  const m = (process.env.REPORT_CREDITS_MODE ?? "").trim().toLowerCase();
-  return m === "shadow" || m === "enforce" ? m : "off";
+  const raw = (process.env.REPORT_CREDITS_MODE ?? "").trim().toLowerCase();
+  if (raw === "shadow" || raw === "enforce") return raw;
+  if (raw && raw !== "off") console.warn(`[credits] unrecognized REPORT_CREDITS_MODE "${raw}" → off`);
+  return "off";
 }
 
 type BeginDecision = {
@@ -46,7 +51,12 @@ const DENIAL_TEXT: Record<string, string> = {
 async function isExemptFallback(supabase: SupabaseClient, email: string | null): Promise<boolean> {
   if (isAllowedEmail(email)) return true;
   try {
-    const { data } = await supabase.from("companies").select("billing_exempt, entitlement").limit(1).maybeSingle();
+    const { data } = await supabase
+      .from("companies")
+      .select("billing_exempt, entitlement")
+      .limit(1)
+      .abortSignal(AbortSignal.timeout(RPC_TIMEOUT_MS))
+      .maybeSingle();
     return !!data && (data.billing_exempt === true || data.entitlement === "partner" || data.entitlement === "internal");
   } catch {
     return false;
@@ -56,7 +66,9 @@ async function isExemptFallback(supabase: SupabaseClient, email: string | null):
 async function releaseRun(runId: string | null | undefined): Promise<void> {
   if (!runId) return;
   try {
-    const { error } = await createServiceClient().rpc("abort_ai_report_run", { p_run_id: runId });
+    const { error } = await createServiceClient()
+      .rpc("abort_ai_report_run", { p_run_id: runId })
+      .abortSignal(AbortSignal.timeout(RPC_TIMEOUT_MS));
     if (error) console.error("[credits] abort_ai_report_run failed:", error);
   } catch (e) {
     console.error("[credits] abort_ai_report_run threw:", e);
@@ -80,7 +92,7 @@ export async function beginWebCreditRun(opts: {
       p_inspection_id: opts.inspectionId,
       p_path: "web",
       p_confirm_additional: false,
-    });
+    }).abortSignal(AbortSignal.timeout(RPC_TIMEOUT_MS));
     if (error) throw error;
     if (!data || typeof data !== "object") throw new Error("begin_ai_report_run returned no decision");
     decision = data as BeginDecision;
@@ -117,7 +129,7 @@ export async function finishWebCreditRun(runId: string | null, aiModel: string, 
       p_run_id: runId,
       p_ai_model: aiModel,
       p_ai_cost_usd: aiCostUsd,
-    });
+    }).abortSignal(AbortSignal.timeout(RPC_TIMEOUT_MS));
     if (error) console.error("[credits] finish_ai_report_run failed:", error);
   } catch (e) {
     console.error("[credits] finish_ai_report_run threw:", e);
