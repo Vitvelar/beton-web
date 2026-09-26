@@ -1,7 +1,10 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-@theme inline {
+/* Litir eru EKKI `inline`: nytjaklasar vísa í var(--color-*) svo stjórnborðið
+   á app.rondva.com geti skipt um litaspjald með html[data-brand="rondva"]
+   (neðst). Gildin sjálf eru óbreytt → Beton-síðurnar líta eins út. */
+@theme {
   /* Exact palette extracted from betonehf.is (Squarespace HSL → HEX) */
   --color-ink: #000000;                /* black */
   --color-navy: #003fba;               /* accent — primary blue */
@@ -20,7 +23,10 @@
   --color-sev-calm: #003fba;
   --color-sev-warn: #c98a2e;
   --color-sev-danger: #b53d3d;
+}
 
+/* Letur vísa í next/font-breytur á <html> og verða því að vera `inline`. */
+@theme inline {
   --font-sans: var(--font-epilogue), "Epilogue", system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-abel), "Abel", ui-monospace, monospace;
   --font-display: var(--font-anton), "Anton", "Impact", sans-serif;
@@ -86,3 +92,65 @@ body {
   opacity: 0.85;
 }
 
+
+/* --- Rondva: stjórnborðið á app.rondva.com --------------------------------
+   Sama app og admin.beton.is; (dashboard)/layout.tsx setur data-brand="rondva"
+   á <html> þegar hýsillinn er Rondva. Beton-táknanöfnin fá Rondva-gildi
+   (plan/rondva/brand/USAGE.md) svo allir skjáir skipta um útlit án þess að
+   Beton-kóðinn breytist. Inter kemur í stað Epilogue/Abel, Source Serif 4 í
+   stað Anton. */
+html[data-brand="rondva"] {
+  --color-ink: #101418;
+  --color-navy: #1b4fd8;       /* Rondva Blue */
+  --color-navy-deep: #163fae;
+  --color-navy-soft: #3a67e0;
+  --color-paper: #fafbfc;
+  --color-paper-alt: #f1f3f6;
+  --color-concrete: #e2e6eb;   /* line */
+  --color-concrete-dk: #c9d0d8; /* line-strong */
+  --color-fog: #5a6672;        /* muted */
+  --color-gold: #1b4fd8;
+  --color-gold-soft: #163fae;
+  --color-copper: #1b4fd8;
+  --color-copper-dk: #163fae;
+  --color-sev-calm: #4a6b8a;
+  --color-sev-warn: #c08a2e;
+  --color-sev-danger: #a32020;
+
+  --font-epilogue: var(--font-inter);
+  --font-abel: var(--font-inter);
+  --font-anton: var(--font-source-serif);
+}
+
+html[data-brand="rondva"] body {
+  font-feature-settings: "cv11", "ss01", "tnum";
+}
+
+html[data-brand="rondva"] ::selection {
+  background: color-mix(in srgb, #1b4fd8 18%, transparent);
+}
+
+/* Skýrslan er skjal viðskiptavinarins (white-label), ekki hluti af Rondva-
+   viðmótinu: hún heldur Beton-gildunum svo forskoðun á app.rondva.com sé eins
+   og PDF-ið sem worker rendar á beton.is. */
+html[data-brand="rondva"] .report-article {
+  --color-ink: #000000;
+  --color-navy: #003fba;
+  --color-navy-deep: #002e87;
+  --color-navy-soft: #1a55c4;
+  --color-paper: #e0e0db;
+  --color-paper-alt: #d6d6d1;
+  --color-concrete: #c5c5bf;
+  --color-concrete-dk: #a8a8a2;
+  --color-fog: #4a4a44;
+  --color-sev-calm: #003fba;
+  --color-sev-warn: #c98a2e;
+  --color-sev-danger: #b53d3d;
+}
+
+/* Fyrirsagnaletur Rondva (Source Serif 4) — aðeins notað á Rondva-skjám. */
+.rv-serif {
+  font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}

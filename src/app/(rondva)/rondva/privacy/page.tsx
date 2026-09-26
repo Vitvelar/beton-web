@@ -7,7 +7,7 @@ import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 export const metadata: Metadata = {
   title: "Privacy",
   description:
-    "How Vitvélar ehf. handles the personal data you leave on the Rondva waitlist, and what changes when the app itself launches.",
+    "How Vitvélar ehf. handles the personal data you leave on the Rondva waitlist or when you sign in to the Rondva dashboard.",
   alternates: { canonical: `${BRANDS.rondva.marketingUrl}/privacy` },
 };
 
@@ -40,11 +40,12 @@ const sections: Section[] = [
     body: (
       <>
         <p>
-          Right now rondva.com is a pre-launch site with a waitlist. The only
-          personal data we collect here is what you type into the waitlist form.
-          The Rondva app is not yet available to the public; before it is, a
-          separate privacy policy for the app will be published at this address
-          and linked from the app.
+          Right now rondva.com is a pre-launch site with a waitlist, and
+          app.rondva.com is a dashboard for a small group of approved beta
+          customers. This page covers the waitlist form and signing in to that
+          dashboard. The Rondva app is not yet available to the public; before
+          it is, a full privacy policy for the app will be published at this
+          address and linked from the app.
         </p>
       </>
     ),
@@ -80,6 +81,32 @@ const sections: Section[] = [
     ),
   },
   {
+    title: "Signing in to the dashboard",
+    body: (
+      <>
+        <p>
+          Approved beta customers sign in at app.rondva.com with Google or
+          Apple. When you do, the provider tells us your name, your email
+          address and a stable account identifier. With Apple you can choose to
+          share a private relay address instead of your real one. We never see
+          or store your Google or Apple password.
+        </p>
+        <p>
+          We use this only to recognise you, keep you signed in and connect you
+          to your company&apos;s Rondva account. Staying signed in relies on a
+          session cookie that is strictly necessary for the dashboard to work.
+          The legal basis is the agreement with you or your company (GDPR art.
+          6(1)(b)). Google and Apple handle the sign-in step itself under their
+          own privacy policies.
+        </p>
+        <p>
+          Account details are kept for as long as the account is active and are
+          deleted when you or your company ask us to close it.
+        </p>
+      </>
+    ),
+  },
+  {
     title: "Where the data is stored and who processes it",
     body: (
       <>
@@ -87,7 +114,8 @@ const sections: Section[] = [
         <ul className="list-disc pl-5 space-y-2">
           <li>
             <strong>Supabase</strong> — database hosting in the European Union
-            (AWS, Ireland). This is where the waitlist entries live.
+            (AWS, Ireland). This is where the waitlist entries and dashboard
+            accounts live.
           </li>
           <li>
             <strong>Vercel</strong> — hosts this website and the form endpoint.
@@ -204,7 +232,7 @@ export default function RondvaPrivacyPage() {
           </div>
 
           <p className="mt-16 text-sm text-muted">
-            Last revised 21 September 2026.{" "}
+            Last revised 26 September 2026.{" "}
             <Link href="/" className="underline underline-offset-4">
               Back to the front page
             </Link>
