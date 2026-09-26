@@ -11,7 +11,7 @@ const src = fs.readFileSync(path.join(__dirname, '../src/lib/i18n/dashboard.ts')
 const context = { exports: {}, Intl };
 context.module = { exports: context.exports };
 vm.runInNewContext(ts.transpileModule(src, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText, context);
-const { DASHBOARD_COPY, DASHBOARD_LOCALES, fill, plural, localeForBrand, dashboardCopy, categoryLabel } = context.module.exports;
+const { DASHBOARD_COPY, DASHBOARD_LOCALES, LOCALE_NAMES, USER_LOCALE_KEY, fill, plural, localeForBrand, dashboardCopy, categoryLabel } = context.module.exports;
 
 let n = 0;
 const pass = (name) => { n++; console.log(`PASS ${name}`); };
@@ -68,5 +68,11 @@ assert.equal(categoryLabel(dashboardCopy('en'), 'Óþekkt'), 'Óþekkt');
 assert.equal(dashboardCopy('en').severity.athugasemd, 'Minor');
 assert.equal(dashboardCopy('en').severity.mjog_alvarleg, 'Very serious');
 pass('severity and category labels match beton-app lib/i18n/labels.ts; unknown categories show the stored value');
+
+for (const locale of DASHBOARD_LOCALES) assert.ok(LOCALE_NAMES[locale], `LOCALE_NAMES.${locale}`);
+assert.deepEqual(Object.keys(LOCALE_NAMES).sort(), [...DASHBOARD_LOCALES].sort());
+// Samningur við beton-app (lib/i18n): sama lykill í user_metadata.
+assert.equal(USER_LOCALE_KEY, 'ui_locale');
+pass('every locale has a picker name; the preference key matches the app (user_metadata.ui_locale)');
 
 console.log(`${n} dashboard-copy checks passed.`);

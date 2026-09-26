@@ -1,6 +1,9 @@
+import { cache } from "react";
 import { headers } from "next/headers";
+import type { User } from "@supabase/supabase-js";
 import { resolveHost, type Brand } from "@/lib/brand";
-import { localeForBrand, type DashboardLocale } from "@/lib/i18n/dashboard";
+import { localeForBrand, USER_LOCALE_KEY, type DashboardLocale } from "@/lib/i18n/dashboard";
+import { createClient } from "@/lib/supabase/server";
 
 // Vörumerki núverandi beiðni, lesið úr host-haus (sama kort og proxy.ts notar).
 // Aðeins fyrir server components / route handlers — brand.ts sjálft má ekki
@@ -12,8 +15,25 @@ export async function getRequestBrand(): Promise<Brand> {
   return resolveHost(h.get("host"))?.brand ?? "beton";
 }
 
-// Tungumál stjórnborðsins fyrir núverandi beiðni. Eini staðurinn sem velur það:
-// notendaval (þegar það kemur) tengist hér inn sem annað viðfang localeForBrand.
-export async function getDashboardLocale(): Promise<DashboardLocale> {
-  return localeForBrand(await getRequestBrand());
-}
+// Innskráður notandi beiðninnar, sóttur EINU sinni á hverja render-umferð
+// (React cache) — útlitið og tungumálavalið deila sama getUser-kalli.
+// Hvers kyns villa (t.d. tómar NEXT_PUBLIC_* á beton.is Docker-myndinni) = enginn notandi.
+export const getRequestUser = cache(async (): Promise<User | null> => {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    return data.user;
+  } catch {
+    return null;
+  }
+});
+
+// Tungumál stjórnborðsins fyrir núverandi beiðni — eini staðurinn sem velur það.
+// Beton les aldrei notandann (alltaf íslenska); Rondva notar val notandans
+// (user_metadata.ui_locale, stillt á stillingasíðunni eða í appinu) eða ensku.
+export const getDashboardLocale = cache(async (): Promise<DashboardLocale> => {
+  const brand = await getRequestBrand();
+  if (brand !== "rondva") return localeForBrand(brand);
+  const user = await getRequestUser();
+  return localeForBrand(brand, user?.user_metadata?.[USER_LOCALE_KEY]);
+});

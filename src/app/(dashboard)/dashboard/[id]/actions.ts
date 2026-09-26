@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { isAllowedEmail } from "@/lib/allowed-users";
 import { snapshotToken } from "@/lib/report/snapshot-token";
 import { abortWebCreditRun, beginWebCreditRun, finishWebCreditRun } from "@/lib/report/credits";
-import { getDashboardLocale } from "@/lib/request-brand";
-import { dashboardCopy } from "@/lib/i18n/dashboard";
+import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
+import { dashboardCopy, localeForBrand, USER_LOCALE_KEY } from "@/lib/i18n/dashboard";
 import Anthropic from "@anthropic-ai/sdk";
 
 const ANTHROPIC_MODEL = "claude-opus-4-8";
@@ -687,9 +687,11 @@ export async function updateReportText(
 
 // Cookie-auth and owner RLS apply to this status read, just like the editor.
 export async function getReportProgress(inspectionId: string): Promise<import("@/lib/report/progress").ReportProgressResult> {
-  const t = (await actionCopy()).actions;
+  const brand = await getRequestBrand();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  // Kannað á ~4 s fresti: tungumálið lesið af notandanum sem þegar var sóttur (ekkert aukakall).
+  const t = dashboardCopy(localeForBrand(brand, user?.user_metadata?.[USER_LOCALE_KEY])).actions;
   if (!user) return { state: "error", detail: t.signInAgain };
   const { data, error } = await supabase.from("inspections")
     .select("status, report_url, report_error").eq("id", inspectionId).maybeSingle();
