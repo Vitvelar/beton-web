@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
+import { getDashboardLocale } from "@/lib/request-brand";
+import { dashboardCopy } from "@/lib/i18n/dashboard";
 import type { InspectionStatus } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
+  const locale = await getDashboardLocale();
+  const t = dashboardCopy(locale).list;
   const supabase = await createClient();
 
   const { data: inspections, error } = await supabase
@@ -27,7 +31,7 @@ export default async function DashboardPage() {
   if (error) {
     return (
       <div className="rounded-xl bg-sev-danger/10 p-6 text-sev-danger">
-        Villa við að sækja skoðanir: {error.message}
+        {t.loadError(error.message)}
       </div>
     );
   }
@@ -36,10 +40,10 @@ export default async function DashboardPage() {
     return (
       <div className="text-center py-20">
         <h2 className="text-lg font-semibold text-ink mb-2">
-          Engar skoðanir fundust
+          {t.emptyTitle}
         </h2>
         <p className="text-fog">
-          Skoðanir sem eru samstilltar úr appinu birtast hér.
+          {t.emptyBody}
         </p>
       </div>
     );
@@ -47,26 +51,26 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-ink mb-6">Skoðanir</h1>
+      <h1 className="text-xl font-semibold text-ink mb-6">{t.title}</h1>
 
       <div className="overflow-hidden rounded-xl border border-concrete bg-white">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-concrete bg-paper-alt">
-              <th className="px-4 py-3 font-medium text-fog">Heimilisfang</th>
+              <th className="px-4 py-3 font-medium text-fog">{t.address}</th>
               <th className="px-4 py-3 font-medium text-fog hidden sm:table-cell">
-                Viðskiptavinur
+                {t.customer}
               </th>
               <th className="px-4 py-3 font-medium text-fog hidden md:table-cell">
-                Dagsetning
+                {t.date}
               </th>
               <th className="px-4 py-3 font-medium text-fog text-center">
-                Rými
+                {t.rooms}
               </th>
               <th className="px-4 py-3 font-medium text-fog text-center hidden sm:table-cell">
-                Ath.
+                {t.observations}
               </th>
-              <th className="px-4 py-3 font-medium text-fog">Staða</th>
+              <th className="px-4 py-3 font-medium text-fog">{t.status}</th>
             </tr>
           </thead>
           <tbody>
@@ -101,6 +105,7 @@ export default async function DashboardPage() {
                 <td className="px-4 py-3">
                   <StatusBadge
                     status={inspection.status as InspectionStatus}
+                    locale={locale}
                   />
                 </td>
               </tr>

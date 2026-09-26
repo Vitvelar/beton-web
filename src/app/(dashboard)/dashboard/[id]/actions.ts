@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { isAllowedEmail } from "@/lib/allowed-users";
 import { snapshotToken } from "@/lib/report/snapshot-token";
 import { abortWebCreditRun, beginWebCreditRun, finishWebCreditRun } from "@/lib/report/credits";
+import { getDashboardLocale } from "@/lib/request-brand";
+import { dashboardCopy } from "@/lib/i18n/dashboard";
 import Anthropic from "@anthropic-ai/sdk";
 
 const ANTHROPIC_MODEL = "claude-opus-4-8";
@@ -93,10 +95,17 @@ export async function updateObservation(
   return { success: true };
 }
 
+// Villutextar á tungumáli stjórnborðsins (sama val og síðurnar, getDashboardLocale).
+async function actionCopy() {
+  return dashboardCopy(await getDashboardLocale());
+}
+
 export async function generateReport(inspectionId: string) {
+  const copy = await actionCopy();
+  const t = copy.actions;
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return { error: "ANTHROPIC_API_KEY vantar í umhverfisbreytur." };
+    return { error: t.missingApiKey };
   }
 
   const supabase = await createClient();
@@ -122,7 +131,7 @@ export async function generateReport(inspectionId: string) {
     .maybeSingle();
 
   if (fetchError || !inspection) {
-    return { error: fetchError?.message ?? "Skoðun fannst ekki." };
+    return { error: fetchError?.message ?? t.inspectionNotFound };
   }
 
   const rooms = (inspection.rooms ?? []) as Array<{
@@ -157,7 +166,7 @@ export async function generateReport(inspectionId: string) {
   );
   if (obsCount === 0) {
     return {
-      error: "Engar athugasemdir skráðar — ekki er hægt að búa til skýrslu.",
+      error: t.noObservations,
     };
   }
 
@@ -168,7 +177,7 @@ export async function generateReport(inspectionId: string) {
     email: user?.email ?? null,
     inspectionId,
   });
-  if (!credit.ok) return { error: credit.error };
+  if (!credit.ok) return { error: copy.credits[credit.reason] };
 
   await supabase
     .from("inspections")
@@ -306,23 +315,21 @@ export async function generateReport(inspectionId: string) {
     });
 
     if (response.stop_reason === "max_tokens") {
-      throw new Error(
-        "Svar varð of langt og slitnaði (max_tokens). Hækkaðu CLAUDE_MAX_TOKENS."
-      );
+      throw new Error(t.aiTruncated);
     }
 
     const toolUse = response.content.find(
       (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
     );
     if (!toolUse) {
-      throw new Error("Claude skilaði ekki skipulögðu svari (tool_use vantar).");
+      throw new Error(t.aiNoToolUse);
     }
 
     const inputTokens = response.usage?.input_tokens ?? 0;
     const outputTokens = response.usage?.output_tokens ?? 0;
 
     // toolUse.input er þegar parse-að af SDK-inu — engin frítexta-JSON greining.
-    const parsed = validateReportOutput(toolUse.input);
+    const parsed = validateReportOutput(toolUse.input, t.aiMissingFields);
     claudeResult = { output: parsed, inputTokens, outputTokens };
   } catch (e: unknown) {
     console.error("Claude error:", e);
@@ -331,8 +338,8 @@ export async function generateReport(inspectionId: string) {
       .from("inspections")
       .update({ status: "error", updated_at: new Date().toISOString() })
       .eq("id", inspectionId);
-    const msg = e instanceof Error ? e.message : "Óþekkt villa";
-    return { error: `Villa við gerð AI samantektar: ${msg}` };
+    const msg = e instanceof Error ? e.message : t.unknownError;
+    return { error: t.aiFailed(msg) };
   }
 
   const aiCostUsd = computeCostUsd(
@@ -401,7 +408,7 @@ export async function generateReport(inspectionId: string) {
         })
         .eq("id", obs.id);
       if (error)
-        throw new Error(`Uppfærsla athugasemdar mistókst: ${error.message}`);
+        throw new Error(t.observationUpdateFailed(error.message));
     }
 
     // AI er búið; PDF-render fer í biðröð (bakgrunns-worker). status='report_ready',
@@ -419,7 +426,7 @@ export async function generateReport(inspectionId: string) {
       })
       .eq("id", inspectionId);
     if (inspErr)
-      throw new Error(`Uppfærsla skoðunar mistókst: ${inspErr.message}`);
+      throw new Error(t.inspectionUpdateFailed(inspErr.message));
     textStored = true;
 
     // Setja PDF-render í biðröð. 23505 = virkt starf þegar til fyrir þessa skoðun
@@ -428,7 +435,7 @@ export async function generateReport(inspectionId: string) {
       .from("report_jobs")
       .insert({ inspection_id: inspectionId, requested_by: user?.id ?? null });
     if (jobErr && jobErr.code !== "23505")
-      throw new Error(`Tókst ekki að setja PDF í biðröð: ${jobErr.message}`);
+      throw new Error(t.queueFailed(jobErr.message));
   } catch (e: unknown) {
     console.error("DB write error:", e);
     if (textStored) await finishWebCreditRun(credit.runId, ANTHROPIC_MODEL, aiCostUsd);
@@ -437,8 +444,8 @@ export async function generateReport(inspectionId: string) {
       .from("inspections")
       .update({ status: "error", updated_at: new Date().toISOString() })
       .eq("id", inspectionId);
-    const msg = e instanceof Error ? e.message : "Óþekkt villa";
-    return { error: `Villa við vistun skýrslu: ${msg}` };
+    const msg = e instanceof Error ? e.message : t.unknownError;
+    return { error: t.saveReportFailed(msg) };
   }
 
   // AI-textinn er vistaður → keyrslan telst.
@@ -493,6 +500,7 @@ export async function updateReportText(
   regeneratePdf: boolean,
   expectedToken: string
 ) {
+  const t = (await actionCopy()).actions;
   const supabase = await createClient();
 
   const { data: inspection, error: fetchError } = await supabase
@@ -502,10 +510,10 @@ export async function updateReportText(
     .maybeSingle();
 
   if (fetchError || !inspection) {
-    return { error: fetchError?.message ?? "Skoðun fannst ekki." };
+    return { error: fetchError?.message ?? t.inspectionNotFound };
   }
   if (!inspection.ai_report_data) {
-    return { error: "Engin skýrsla til — búðu fyrst til skýrslu með AI." };
+    return { error: t.noAiReport };
   }
 
   // Árekstravörn: ef snapshot-ið breyttist eftir að ritillinn var opnaður
@@ -513,8 +521,7 @@ export async function updateReportText(
   // nýrri textann með gömlu ritil-ástandi.
   if (snapshotToken(inspection.ai_report_data) !== expectedToken) {
     return {
-      error:
-        "Skýrslutextinn hefur breyst síðan ritillinn var opnaður (t.d. ný skýrslugerð eða vistun annars staðar). Endurhladdu síðuna og gerðu breytingarnar aftur.",
+      error: t.textChangedElsewhere,
     };
   }
 
@@ -557,7 +564,7 @@ export async function updateReportText(
           .update({ ...changed, updated_at: new Date().toISOString() })
           .eq("id", obs.id);
         if (error)
-          throw new Error(`Uppfærsla athugasemdar mistókst: ${error.message}`);
+          throw new Error(t.observationUpdateFailed(error.message));
       }
     }
 
@@ -599,7 +606,7 @@ export async function updateReportText(
       .select("ai_report_data")
       .maybeSingle();
     if (inspErr)
-      throw new Error(`Uppfærsla skýrslu mistókst: ${inspErr.message}`);
+      throw new Error(t.reportUpdateFailed(inspErr.message));
     if (saved?.ai_report_data) {
       committedToken = snapshotToken(saved.ai_report_data);
     }
@@ -624,7 +631,7 @@ export async function updateReportText(
           break;
         }
         if (jobErr.code !== "23505")
-          throw new Error(`Tókst ekki að setja PDF í biðröð: ${jobErr.message}`);
+          throw new Error(t.queueFailed(jobErr.message));
         const { data: active, error: activeErr } = await supabase
           .from("report_jobs")
           .select("status")
@@ -661,7 +668,7 @@ export async function updateReportText(
       if (rbErr)
         console.error("updateReportText status rollback failed:", rbErr.message);
     }
-    const msg = e instanceof Error ? e.message : "Óþekkt villa";
+    const msg = e instanceof Error ? e.message : t.unknownError;
     // committedToken fylgir með ef snapshot-skrifið var komið í gegn (villan
     // varð t.d. í biðraðarinnsetningu) — annars situr ritillinn með úrelt token
     // og hver einasta endurvistun stoppar á villandi "breytt annars staðar".
@@ -680,20 +687,22 @@ export async function updateReportText(
 
 // Cookie-auth and owner RLS apply to this status read, just like the editor.
 export async function getReportProgress(inspectionId: string): Promise<import("@/lib/report/progress").ReportProgressResult> {
+  const t = (await actionCopy()).actions;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { state: "error", detail: "Skráðu þig inn aftur til að sjá stöðu skýrslunnar." };
+  if (!user) return { state: "error", detail: t.signInAgain };
   const { data, error } = await supabase.from("inspections")
     .select("status, report_url, report_error").eq("id", inspectionId).maybeSingle();
-  if (error) throw new Error("Tókst ekki að sækja stöðu skýrslunnar.");
-  if (!data) return { state: "error", detail: "Skoðunin fannst ekki eða aðgangur er ekki lengur til staðar." };
+  if (error) throw new Error(t.statusFetchFailed);
+  if (!data) return { state: "error", detail: t.inspectionGone };
   if (data.status === "report_ready" && data.report_url) return { state: "ready" };
-  if (data.status === "error") return { state: "error", detail: data.report_error || "Skýrslugerð mistókst. Opnaðu skoðunina til að reyna aftur." };
+  if (data.status === "error") return { state: "error", detail: data.report_error || t.reportFailed };
   if (data.status === "generating" || data.status === "rendering_pdf") return { state: "pending" };
-  return { state: "error", detail: "Engin tilbúin PDF-skrá fannst fyrir núverandi stöðu. Opnaðu skoðunina til að athuga hana." };
+  return { state: "error", detail: t.noPdfForStatus };
 }
 
 export async function sendToDrive(inspectionId: string) {
+  const t = (await actionCopy()).actions;
   const supabase = await createClient();
 
   // upload-to-drive skrifar í sameiginlega Drive-möppu Beton ehf. með service
@@ -704,7 +713,7 @@ export async function sendToDrive(inspectionId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!isAllowedEmail(user?.email)) {
-    return { error: "Google Drive er aðeins í boði fyrir Beton." };
+    return { error: t.driveBetonOnly };
   }
 
   const { data: inspection } = await supabase
@@ -714,7 +723,7 @@ export async function sendToDrive(inspectionId: string) {
     .single();
 
   if (!inspection?.report_url) {
-    return { error: "Engin skýrsla til. Búðu til skýrslu fyrst." };
+    return { error: t.noReportForDrive };
   }
 
   const { data: fileData, error: downloadError } = await supabase.storage
@@ -722,7 +731,7 @@ export async function sendToDrive(inspectionId: string) {
     .download(inspection.report_url);
 
   if (downloadError || !fileData) {
-    return { error: `Gat ekki sótt skýrslu: ${downloadError?.message}` };
+    return { error: t.reportDownloadFailed(downloadError?.message) };
   }
 
   const buffer = await fileData.arrayBuffer();
@@ -771,7 +780,7 @@ interface ClaudeReportOutput {
  * Staðfestir lögun á skipulagða svarinu úr tólkallinu (toolUse.input er þegar
  * gilt JSON-objekt frá SDK-inu — við tékkum bara að nauðsynlegir reitir séu til).
  */
-function validateReportOutput(input: unknown): ClaudeReportOutput {
+function validateReportOutput(input: unknown, missingFieldsMessage: string): ClaudeReportOutput {
   const obj = input as Record<string, unknown> | null;
   if (
     !obj ||
@@ -780,7 +789,7 @@ function validateReportOutput(input: unknown): ClaudeReportOutput {
     typeof obj.conclusion !== "string" ||
     !Array.isArray(obj.observations)
   ) {
-    throw new Error("Skipulagt svar vantar nauðsynlega reiti.");
+    throw new Error(missingFieldsMessage);
   }
   return obj as unknown as ClaudeReportOutput;
 }

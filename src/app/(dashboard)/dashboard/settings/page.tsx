@@ -1,10 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CompanyBrandingForm } from "@/components/dashboard/CompanyBrandingForm";
+import { getDashboardLocale } from "@/lib/request-brand";
+import { dashboardCopy } from "@/lib/i18n/dashboard";
 
-export const metadata = { title: "Stillingar" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: dashboardCopy(await getDashboardLocale()).settings.metaTitle };
+}
 
 export default async function SettingsPage() {
+  const locale = await getDashboardLocale();
+  const t = dashboardCopy(locale).settings;
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,11 +28,11 @@ export default async function SettingsPage() {
     <div className="max-w-2xl">
       <div className="mb-6 flex items-baseline justify-between">
         <div>
-          <p className="text-xs font-mono uppercase tracking-wider text-fog">Stillingar</p>
-          <h1 className="text-2xl font-bold text-ink">Fyrirtæki og merki</h1>
+          <p className="text-xs font-mono uppercase tracking-wider text-fog">{t.eyebrow}</p>
+          <h1 className="text-2xl font-bold text-ink">{t.title}</h1>
         </div>
         <Link href="/dashboard" className="text-sm text-fog hover:text-ink">
-          ← Skoðanir
+          {t.backToList}
         </Link>
       </div>
 
@@ -37,17 +44,16 @@ export default async function SettingsPage() {
             company_logo_url: inspector.company_logo_url ?? "",
             company_terms_url: inspector.company_terms_url ?? "",
           }}
+          locale={locale}
         />
       ) : (
         <p className="rounded-xl border border-concrete bg-white p-6 text-sm text-fog">
-          Enginn skoðunarmaður er skráður á þennan aðgang ennþá. Opnaðu appið einu sinni svo
-          skoðunarmannsprófíllinn verði til, og komdu svo aftur hingað.
+          {t.noInspector}
         </p>
       )}
 
       <p className="mt-6 text-xs text-fog">
-        Skoðunarmaður: {inspector?.full_name ?? user.email}. Nafnið á skýrslunni kemur úr
-        skoðuninni sjálfri ef það er skráð þar.
+        {t.inspectorNote(inspector?.full_name ?? user.email ?? "")}
       </p>
     </div>
   );

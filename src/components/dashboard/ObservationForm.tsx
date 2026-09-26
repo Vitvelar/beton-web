@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { updateObservation } from "@/app/(dashboard)/dashboard/[id]/actions";
 import { SeverityBadge } from "./SeverityBadge";
 import type { Observation, Severity } from "@/lib/supabase/types";
+import { categoryLabel, dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
 
+// Geymd gildi (íslenska) — birtingarheitið kemur úr katalóginu.
 const CATEGORIES = [
   "Veggir",
   "Gólfefni",
@@ -28,10 +30,14 @@ const SEVERITIES: Severity[] = ["athugasemd", "alvarleg", "mjog_alvarleg"];
 export function ObservationForm({
   observation,
   inspectionId,
+  locale,
 }: {
   observation: Observation;
   inspectionId: string;
+  locale: DashboardLocale;
 }) {
+  const copy = dashboardCopy(locale);
+  const t = copy.observation;
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -73,7 +79,7 @@ export function ObservationForm({
       {/* Title */}
       <div>
         <label className="block text-sm font-medium text-ink mb-1.5">
-          Titill
+          {t.title}
         </label>
         <input
           type="text"
@@ -87,17 +93,17 @@ export function ObservationForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5">
-            Flokkur
+            {t.category}
           </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-lg border border-concrete px-3 py-2 text-sm text-ink bg-white focus:border-navy focus:ring-1 focus:ring-navy outline-none transition-colors"
           >
-            <option value="">— Veldu flokk —</option>
+            <option value="">{t.chooseCategory}</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {categoryLabel(copy, c)}
               </option>
             ))}
           </select>
@@ -105,7 +111,7 @@ export function ObservationForm({
 
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5">
-            Alvarleiki
+            {t.severity}
           </label>
           <div className="flex gap-2">
             {SEVERITIES.map((s) => (
@@ -119,7 +125,7 @@ export function ObservationForm({
                     : "opacity-60 hover:opacity-100"
                 }`}
               >
-                <SeverityBadge severity={s} />
+                <SeverityBadge severity={s} locale={locale} />
               </button>
             ))}
           </div>
@@ -129,13 +135,13 @@ export function ObservationForm({
       {/* Description */}
       <div>
         <label className="block text-sm font-medium text-ink mb-1.5">
-          Lýsing
+          {t.description}
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={8}
-          placeholder="Ítarleg lýsing á athugasemd..."
+          placeholder={t.descriptionPlaceholder}
           className="w-full rounded-lg border border-concrete px-3 py-2 text-sm text-ink focus:border-navy focus:ring-1 focus:ring-navy outline-none transition-colors resize-y"
         />
       </div>
@@ -143,13 +149,13 @@ export function ObservationForm({
       {/* Suggestion */}
       <div>
         <label className="block text-sm font-medium text-ink mb-1.5">
-          Tillaga
+          {t.suggestion}
         </label>
         <textarea
           value={suggestion}
           onChange={(e) => setSuggestion(e.target.value)}
           rows={6}
-          placeholder="Tillaga að úrbótum..."
+          placeholder={t.suggestionPlaceholder}
           className="w-full rounded-lg border border-concrete px-3 py-2 text-sm text-ink focus:border-navy focus:ring-1 focus:ring-navy outline-none transition-colors resize-y"
         />
       </div>
@@ -161,11 +167,11 @@ export function ObservationForm({
           disabled={isPending}
           className="rounded-lg bg-navy px-6 py-2.5 text-sm font-semibold text-white hover:bg-navy-deep transition-colors disabled:opacity-50"
         >
-          {isPending ? "Vista..." : "Vista breytingar"}
+          {isPending ? t.saving : t.save}
         </button>
 
         {saved && (
-          <span className="text-sm text-emerald-700">Vistað</span>
+          <span className="text-sm text-emerald-700">{t.saved}</span>
         )}
         {error && <span className="text-sm text-sev-danger">{error}</span>}
       </div>

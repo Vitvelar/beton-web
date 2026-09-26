@@ -13,6 +13,8 @@ const load = (rel, extra = {}) => {
   return context.module.exports;
 };
 const allowed = load('src/lib/allowed-users.ts');
+// Höfnunartextarnir búa í stjórnborðskatalóginu (is = Beton, en = Rondva).
+const { DASHBOARD_COPY: COPY } = load('src/lib/i18n/dashboard.ts');
 
 let service; // stillt í hverju prófi
 const quiet = { ...console, log() {}, warn() {}, error() {} };
@@ -87,18 +89,27 @@ const rpcError = () => ({ data: null, error: { message: 'boom' } });
   await check('enforce: ledger error → customer company is refused (retry text)', 'enforce', async () => {
     service = fakeService(rpcError);
     const r = await begin(ACME, userClient({ billing_exempt: false, entitlement: 'customer' }));
-    assert.equal(r.ok, false); assert.match(r.error, /Reyndu aftur/);
+    assert.equal(r.ok, false); assert.equal(r.reason, 'ledger_unavailable');
+    assert.match(COPY.is.credits[r.reason], /Reyndu aftur/); assert.match(COPY.en.credits[r.reason], /try again/);
   });
   await check('enforce: non-exempt company is sent to the app and its reservation released', 'enforce', async () => {
     service = fakeService(decision({ allowed: true, exempt: false, charge: 'new_credit', run_id: 'r2' }));
     const r = await begin(ACME);
-    assert.equal(r.ok, false); assert.match(r.error, /Rondva-appið/);
+    assert.equal(r.ok, false); assert.equal(r.reason, 'use_app');
+    assert.match(COPY.is.credits[r.reason], /Rondva-appið/); assert.match(COPY.en.credits[r.reason], /Rondva app/);
     assert.deepEqual(service.calls, ['begin_ai_report_run', 'abort_ai_report_run']);
   });
-  await check('enforce: denials carry clear Icelandic text', 'enforce', async () => {
-    for (const [reason, text] of [['no_credits', /búnar/], ['in_progress', /Verið er að/], ['company_not_active', /ekki virkur/]]) {
+  await check('enforce: denials carry clear Icelandic and English text', 'enforce', async () => {
+    for (const [reason, code, text, en] of [
+      ['no_credits', 'no_credits', /búnar/, /free AI-drafted reports/],
+      ['additional_credit_confirmation_required', 'additional_credit_confirmation_required', /endurgerðir/, /revisions/],
+      ['in_progress', 'in_progress', /Verið er að/, /already being generated/],
+      ['company_not_active', 'not_active', /ekki virkur/, /isn't active/],
+      ['something_new', 'not_active', /ekki virkur/, /isn't active/],
+    ]) {
       service = fakeService(decision({ allowed: false, reason }));
-      const r = await begin(ACME); assert.equal(r.ok, false); assert.match(r.error, text);
+      const r = await begin(ACME); assert.equal(r.ok, false); assert.equal(r.reason, code);
+      assert.match(COPY.is.credits[r.reason], text); assert.match(COPY.en.credits[r.reason], en);
     }
   });
   await check('finish/abort never throw and skip a null run', 'enforce', async () => {

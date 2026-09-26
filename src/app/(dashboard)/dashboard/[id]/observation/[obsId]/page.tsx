@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ObservationForm } from "@/components/dashboard/ObservationForm";
 import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
+import { getDashboardLocale } from "@/lib/request-brand";
+import { dashboardCopy } from "@/lib/i18n/dashboard";
 import type { Observation, Photo } from "@/lib/supabase/types";
 
 export default async function ObservationEditorPage({
@@ -11,6 +13,8 @@ export default async function ObservationEditorPage({
   params: Promise<{ id: string; obsId: string }>;
 }) {
   const { id, obsId } = await params;
+  const locale = await getDashboardLocale();
+  const copy = dashboardCopy(locale);
   const supabase = await createClient();
 
   const { data: observation, error } = await supabase
@@ -42,7 +46,7 @@ export default async function ObservationEditorPage({
           href={`/dashboard/${id}`}
           className="text-sm text-fog hover:text-ink transition-colors"
         >
-          &larr; {room?.name ?? "Til baka"}
+          &larr; {room?.name ?? copy.common.back}
         </Link>
         <h1 className="text-xl font-semibold text-ink mt-1">
           {observation.title}
@@ -57,15 +61,16 @@ export default async function ObservationEditorPage({
       {photos && photos.length > 0 && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-ink mb-3">
-            Myndir ({photos.length})
+            {copy.observation.photosHeading(photos.length)}
           </h2>
-          <PhotoGrid photos={photos as Photo[]} />
+          <PhotoGrid photos={photos as Photo[]} locale={locale} />
         </div>
       )}
 
       <ObservationForm
         observation={observation as Observation}
         inspectionId={id}
+        locale={locale}
       />
     </div>
   );
