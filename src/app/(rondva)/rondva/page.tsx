@@ -4,6 +4,7 @@ import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 import { WaitlistForm } from "@/components/rondva/WaitlistForm";
 import { HeroFilm } from "@/components/rondva/HeroFilm";
 import { HeaderReveal } from "@/components/rondva/HeaderReveal";
+import { BRANDS } from "@/lib/brand";
 import { PhoneFrame } from "@/components/rondva/PhoneFrame";
 import { RevealObserver } from "@/components/rondva/Reveal";
 import {
@@ -134,6 +135,12 @@ export default function RondvaLandingPage() {
         <section aria-label="Rondva in 15 seconds" className="rv-hero relative min-h-[320px] overflow-hidden bg-ink">
           <HeroFilm variant="wide" className="portrait:hidden" />
           <HeroFilm variant="tall" className="landscape:hidden" />
+          {/* Hausinn (með „Log in") er falinn yfir myndinni þar til skrunað er. Viðskiptavinir
+              eiga samt að komast beint inn frá fyrstu sýn: lítill glerhnappur efst til hægri,
+              sami stíll og spilunarhnappurinn neðst til hægri. */}
+          <a href={BRANDS.rondva.appUrl} className="rv-hero-login">
+            Log in
+          </a>
           <a
             href="#intro"
             className="rv-scroll-cue absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full text-paper/80 transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper portrait:hidden"
