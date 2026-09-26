@@ -17,13 +17,18 @@ export function LanguageSetting({ locale }: { locale: DashboardLocale }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Valið sést strax; fer til baka ef vistun mistekst.
+  const [selected, setSelected] = useState<string>(locale);
 
   function onChange(next: string) {
     setError(null);
+    setSelected(next);
     startTransition(async () => {
       const result = await setDashboardLocale(next);
-      if ("error" in result) setError(result.error);
-      else router.refresh();
+      if ("error" in result) {
+        setError(result.error);
+        setSelected(locale);
+      } else router.refresh();
     });
   }
 
@@ -37,7 +42,7 @@ export function LanguageSetting({ locale }: { locale: DashboardLocale }) {
       </label>
       <select
         id="dashboard_locale"
-        value={locale}
+        value={selected}
         disabled={isPending}
         onChange={(e) => onChange(e.target.value)}
         className="w-full max-w-xs rounded-md border border-concrete-dk bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none disabled:opacity-60"
