@@ -1,32 +1,41 @@
 "use client";
 
-// Kynningarmynd Rondva, á fullum skjá efst á forsíðu (15 s, 60 fps, hljóðlaus, lykkja).
-// Tvær útgáfur af sömu mynd, valdar eftir stefnu skjásins: "wide" (16:9, liggjandi skjár)
-// og "tall" (9:16, standandi — sími/spjaldtölva; sýndarmyndavél rammar hvert skot upp á
-// nýtt og kaflaheitin eru í borða neðst með öruggri spássíu). Frumskrár og endurgerð:
-// plan/rondva/hero-film/.
+// Kynningarmynd Rondva í hetjuhlutanum (15 s, 60 fps, hljóðlaus, lykkja). Myndin situr
+// VIÐ HLIÐ fyrirsagnarinnar á breiðum skjá og UNDIR henni á síma — aldrei yfir texta og
+// aldrei með texta yfir sér (sýndarmyndavélin notar allan rammann). Tvær útgáfur af sömu
+// mynd, valdar eftir skjá: "wide" (16:9 — hliðardálkur á ≥1024 px og liggjandi skjáir) og
+// "mobile" (4:5 — standandi sími/spjaldtölva; kaflaheitin í borða neðst). Frumskrár og
+// endurgerð: plan/rondva/hero-film/.
 //
-// - Fyllir kassann sinn (cover) en sker aldrei meira en ~3,5 % af hvorri hlið (sjá .rv-film
-//   í rondva.css); víki skjárinn meira frá hlutföllunum fyllir blekflöturinn afganginn.
+// - Spilun hefst þegar myndin er komin í sýn (IntersectionObserver) og stöðvast þegar hún
+//   fer úr sýn — á síma, þar sem hún er fyrir neðan textann, byrjar lykkjan því alltaf á
+//   byrjuninni þegar skrunað er niður að henni. Ekkert `autoplay`-eigindi: vafrinn má ekki
+//   ræsa hana utan skjás.
 // - Veggspjaldið (merkið, rammi 0) liggur ALLTAF undir myndbandinu. Myndbandið byrjar á
 //   ramma 0 — engin tímasetning (seek) — og birtist ekki fyrr en það spilar, svo hvergi sést
-//   svartur flötur. (iOS sækir engin gögn í myndband í hléi: fyrri útgáfa beið eftir `seeked`
-//   sem kom aldrei.) `muted` er sett sem eigind, iOS krefst þess fyrir sjálfspilun.
+//   svartur flötur. (iOS sækir engin gögn í myndband í hléi: eldri útgáfa beið eftir `seeked`
+//   sem kom aldrei.) `muted` er sett sem eigind, iOS krefst þess fyrir spilun án snertingar.
 // - Hindruð spilun (orkusparnaður, bakgrunnsflipi): veggspjaldið stendur; play() er kallað
 //   beint í næstu snertingu/smelli/lyklaborði og þegar síðan sést aftur.
-// - Hnappur til að gera hlé/spila (WCAG 2.2.2). Val notandans heldur.
+// - Hnappur til að gera hlé/spila (WCAG 2.2.2). Val notandans heldur, líka við skrun.
 // - Þjónninn velur mynd eftir media (<picture>): sími sækir aldrei breiða veggspjaldið og
 //   prefers-reduced-motion fær kyrrmyndina strax, án JavaScript. Þá er myndbandið aldrei sótt.
-// - Ef útgáfan hættir að passa (snúningur) er niðurhali myndbandsins hætt.
+// - Ef útgáfan hættir að passa (snúningur, gluggi stækkaður) er niðurhali myndbandsins hætt.
+// - Myndin situr á blekmottu með mjúkum jöðrum (.rv-film-matte): 48 px teikniblaðsnet
+//   kaflans fjarar út áður en eigið net myndarinnar tekur við, svo netin lendi aldrei tvöfalt.
 import { useEffect, useRef, useState } from "react";
 
 const BASE = "/rondva/hero";
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 const REDUCE = "(prefers-reduced-motion: reduce)";
 
+// Sömu skilyrði og .rv-film-wide / .rv-film-mobile í rondva.css.
+export const WIDE_MEDIA = "(orientation: landscape), (min-width: 1024px)";
+export const MOBILE_MEDIA = "(orientation: portrait) and (max-width: 1023px)";
+
 const VARIANTS = {
   wide: {
-    media: "(orientation: landscape)",
+    media: WIDE_MEDIA,
     ratio: 16 / 9,
     width: 1920,
     height: 1080,
@@ -38,17 +47,19 @@ const VARIANTS = {
       { src: "rondva-hero-1080p60.mp4", type: "video/mp4" },
     ],
   },
-  tall: {
-    media: "(orientation: portrait)",
-    ratio: 9 / 16,
+  mobile: {
+    media: MOBILE_MEDIA,
+    ratio: 4 / 5,
     width: 1080,
-    height: 1920,
-    poster: "rondva-hero-tall-poster-lockup",
-    still: "rondva-hero-tall-reduced-motion",
-    // Stærri standandi skjáir (spjaldtölvur) fá 1080p; símar 720p (1,8 MB).
+    height: 1350,
+    poster: "rondva-hero-mobile-poster-lockup",
+    still: "rondva-hero-mobile-reduced-motion",
+    // Stærri standandi skjáir (spjaldtölvur) fá 1080×1350 (WebM 2,1 MB / MP4 3,3 MB);
+    // símar 720×900 (1,6 MB).
     sources: [
-      { src: "rondva-hero-tall-1080x1920.mp4", type: "video/mp4", media: "(min-width: 600px)" },
-      { src: "rondva-hero-tall-720x1280.mp4", type: "video/mp4" },
+      { src: "rondva-hero-mobile-1080x1350.webm", type: "video/webm", media: "(min-width: 600px)" },
+      { src: "rondva-hero-mobile-1080x1350.mp4", type: "video/mp4", media: "(min-width: 600px)" },
+      { src: "rondva-hero-mobile-720x900.mp4", type: "video/mp4" },
     ],
   },
 } as const;
@@ -69,6 +80,7 @@ export function HeroFilm({ variant, className }: { variant: keyof typeof VARIANT
   const V = VARIANTS[variant];
   const ref = useRef<HTMLVideoElement>(null);
   const userPaused = useRef(false);
+  const inView = useRef(false);
   const [mode, setMode] = useState<Mode>("pending");
   const [started, setStarted] = useState(false); // hefur spilað → myndbandið sést
   const [playing, setPlaying] = useState(false);
@@ -93,7 +105,7 @@ export function HeroFilm({ variant, className }: { variant: keyof typeof VARIANT
     v.defaultMuted = true;
     v.setAttribute("muted", "");
     const tryPlay = () => {
-      if (userPaused.current || !v.paused) return;
+      if (userPaused.current || !inView.current || !v.paused) return;
       v.play()?.catch(() => {
         // Hindrað (orkusparnaður/bakgrunnur): veggspjaldið stendur; reynt aftur hér að neðan.
       });
@@ -114,8 +126,34 @@ export function HeroFilm({ variant, className }: { variant: keyof typeof VARIANT
     window.addEventListener("click", onGesture);
     window.addEventListener("keydown", onGesture);
     document.addEventListener("visibilitychange", onVisible);
-    tryPlay();
+
+    // Spilar þegar a.m.k. helmingur myndarinnar sést; hlé og aftur á byrjun þegar hún er
+    // alveg farin úr sýn, svo hún byrji frá upphafi næst þegar skrunað er að henni.
+    let io: IntersectionObserver | undefined;
+    if ("IntersectionObserver" in window) {
+      io = new IntersectionObserver(
+        (entries) => {
+          const e = entries[entries.length - 1];
+          if (e.intersectionRatio >= 0.5) {
+            inView.current = true;
+            tryPlay();
+          } else if (!e.isIntersecting) {
+            inView.current = false;
+            if (!v.paused) v.pause();
+            // Myndbandið hefur spilað → gögnin eru til staðar; seek er örugg hér.
+            if (v.currentTime > 0.5) v.currentTime = 0;
+          }
+        },
+        { threshold: [0, 0.5] }
+      );
+      io.observe(v);
+    } else {
+      inView.current = true;
+      tryPlay();
+    }
+
     return () => {
+      io?.disconnect();
       v.removeEventListener("playing", onPlaying);
       v.removeEventListener("pause", onPause);
       window.removeEventListener("touchend", onGesture);
@@ -124,6 +162,7 @@ export function HeroFilm({ variant, className }: { variant: keyof typeof VARIANT
       document.removeEventListener("visibilitychange", onVisible);
       // Myndbandið er farið úr DOM (snúningur, reduced motion): hættum niðurhali þess.
       if (!v.isConnected) stopDownload(v);
+      inView.current = false;
       setStarted(false);
       setPlaying(false);
     };
@@ -143,7 +182,8 @@ export function HeroFilm({ variant, className }: { variant: keyof typeof VARIANT
 
   const style = { "--ar": V.ratio } as React.CSSProperties;
   return (
-    <div className={`rv-film ${className ?? ""}`} style={style}>
+    <div className={`rv-film rv-film-${variant} ${className ?? ""}`} style={style}>
+      <div className="rv-film-matte" aria-hidden="true" />
       <picture>
         {/* media-skilyrðin: rétt útgáfa, og kyrrmynd fyrir reduced motion áður en JS keyrir */}
         <source media={`${V.media} and ${REDUCE}`} srcSet={`${BASE}/${V.still}.webp`} type="image/webp" />
@@ -168,7 +208,6 @@ export function HeroFilm({ variant, className }: { variant: keyof typeof VARIANT
             className="rv-film-media rv-film-video"
             data-started={started ? "true" : "false"}
             muted
-            autoPlay
             loop
             playsInline
             preload="auto"

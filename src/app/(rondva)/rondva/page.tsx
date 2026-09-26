@@ -3,8 +3,6 @@ import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 import { WaitlistForm } from "@/components/rondva/WaitlistForm";
 import { HeroFilm } from "@/components/rondva/HeroFilm";
-import { HeaderReveal } from "@/components/rondva/HeaderReveal";
-import { BRANDS } from "@/lib/brand";
 import { PhoneFrame } from "@/components/rondva/PhoneFrame";
 import { RevealObserver } from "@/components/rondva/Reveal";
 import {
@@ -125,85 +123,67 @@ export default function RondvaLandingPage() {
       <noscript>
         <style>{`.rv-reveal{opacity:1!important;transform:none!important}`}</style>
       </noscript>
-      <HeaderReveal>
-        <RondvaHeader />
-      </HeaderReveal>
+      <RondvaHeader />
       <main className="flex-1">
-        {/* 1. Kynningarmyndin á fullum skjá. Hausinn er falinn hér og birtist við skrun.
-            Liggjandi skjár fær 16:9 útgáfuna, standandi (sími) 9:16. Aldrei inni í snúnum
-            ramma (merkið má ekki hallast). */}
-        <section aria-label="Rondva in 15 seconds" className="rv-hero relative min-h-[320px] overflow-hidden bg-ink">
-          <HeroFilm variant="wide" className="portrait:hidden" />
-          <HeroFilm variant="tall" className="landscape:hidden" />
-          {/* Hausinn (með „Log in") er falinn yfir myndinni þar til skrunað er. Viðskiptavinir
-              eiga samt að komast beint inn frá fyrstu sýn: lítill glerhnappur efst til hægri,
-              sami stíll og spilunarhnappurinn neðst til hægri. */}
-          <a href={BRANDS.rondva.appUrl} className="rv-hero-login">
-            Log in
-          </a>
-          <a
-            href="#intro"
-            className="rv-scroll-cue absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full text-paper/80 transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper portrait:hidden"
-            aria-label="Scroll to the introduction"
-          >
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M6 9.5l6 6 6-6" />
-            </svg>
-          </a>
-        </section>
-
-        {/* 1b. Inngangur — dökkt teikniblað, serif-fyrirsögn (eins og hetjuhlutinn var) */}
-        <section id="intro" className="rv-blueprint rv-grain relative overflow-hidden text-paper">
+        {/* 1. Hetjuhlutinn — dökkt teikniblað: fyrirsögn, lína og hnappar fyrst, kynningarmyndin
+            VIÐ HLIÐINA á breiðum skjá (16:9) og UNDIR textanum á síma (4:5, spilar þegar skrunað
+            er að henni). Aldrei texti yfir myndinni og aldrei inni í snúnum ramma (merkið má
+            ekki hallast). */}
+        <section aria-labelledby="hero-title" className="rv-hero rv-blueprint rv-grain relative overflow-hidden text-paper">
           <div className="pointer-events-none absolute -right-64 -top-72 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
-          <div className="relative mx-auto max-w-[1320px] px-6 pb-20 pt-16 md:pb-28 md:pt-24">
-            <div className="grid grid-cols-1 gap-x-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-              <div className="relative">
-                <p className="rv-reveal rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
-                  Field app for property inspectors · In development
-                </p>
-                <h1
-                  className="rv-reveal rv-display mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[72px] xl:text-[80px]"
-                  style={{ "--i": 1 } as React.CSSProperties}
+          <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 sm:pt-16 md:pb-24 md:pt-20 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14 lg:pb-24 lg:pt-20 xl:grid-cols-[0.85fr_1.15fr] xl:pb-28 xl:pt-24">
+            <div className="relative z-20">
+              <p className="rv-reveal rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
+                Field app for property inspectors · In development
+              </p>
+              <h1
+                id="hero-title"
+                className="rv-reveal rv-display rv-balance mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[52px] xl:text-[60px] 2xl:text-[68px]"
+                style={{ "--i": 1 } as React.CSSProperties}
+              >
+                Walk the property.
+                <br />
+                <em>Rondva drafts the report.</em>
+              </h1>
+              <p
+                className="rv-reveal mt-7 max-w-xl text-lg leading-relaxed text-paper/75 md:text-xl"
+                style={{ "--i": 2 } as React.CSSProperties}
+              >
+                Rondva is a field app for independent property inspectors. You record the rooms,
+                the photos, the thermal images and the severity. Rondva drafts the wording and the
+                summary — you stay the author of every judgement in it.
+              </p>
+              <div
+                className="rv-reveal mt-9 flex flex-wrap items-center gap-4"
+                style={{ "--i": 3 } as React.CSSProperties}
+              >
+                <a
+                  href="#waitlist"
+                  className="inline-flex items-center gap-2 rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-[#2c62ec]"
                 >
-                  Walk the property.
-                  <br />
-                  <em>Rondva drafts the report.</em>
-                </h1>
+                  Join the waitlist
+                  <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  href="#how"
+                  className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
+                >
+                  See how it works
+                </a>
               </div>
-              <div className="relative lg:pb-3">
-                <p
-                  className="rv-reveal mt-7 max-w-xl text-lg leading-relaxed text-paper/75 md:text-xl lg:mt-0"
-                  style={{ "--i": 2 } as React.CSSProperties}
-                >
-                  Rondva is a field app for independent property inspectors. You record the rooms,
-                  the photos, the thermal images and the severity. Rondva drafts the wording and the
-                  summary — you stay the author of every judgement in it.
-                </p>
-                <div
-                  className="rv-reveal mt-9 flex flex-wrap items-center gap-4"
-                  style={{ "--i": 3 } as React.CSSProperties}
-                >
-                  <a
-                    href="#waitlist"
-                    className="inline-flex items-center gap-2 rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-[#2c62ec]"
-                  >
-                    Join the waitlist
-                    <span aria-hidden="true">→</span>
-                  </a>
-                  <a
-                    href="#how"
-                    className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
-                  >
-                    See how it works
-                  </a>
-                </div>
-                <p
-                  className="rv-reveal mt-6 text-sm text-paper/55"
-                  style={{ "--i": 4 } as React.CSSProperties}
-                >
-                  In development. We&apos;re building with working inspectors before we open sales.
-                </p>
-              </div>
+              <p
+                className="rv-reveal mt-6 text-sm text-paper/55"
+                style={{ "--i": 4 } as React.CSSProperties}
+              >
+                In development. We&apos;re building with working inspectors before we open sales.
+              </p>
+            </div>
+
+            {/* Kynningarmyndin. Báðar útgáfur eru í DOM; CSS (.rv-film-wide/.rv-film-mobile) og
+                matchMedia í HeroFilm sjá til þess að aðeins sú sem passar birtist og sækir gögn. */}
+            <div className="rv-reveal relative z-10 w-full" style={{ "--i": 2 } as React.CSSProperties}>
+              <HeroFilm variant="wide" />
+              <HeroFilm variant="mobile" />
             </div>
           </div>
         </section>
