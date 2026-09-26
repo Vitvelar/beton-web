@@ -1,4 +1,6 @@
 import { formatReportDate } from "./date";
+import { format } from "@/lib/i18n/format";
+import { reportCopy, type ReportLocale } from "./i18n";
 // Shared helpers for the background report-PDF pipeline: worker-token auth, the
 // Storage object path, and the human-facing download filename. Kept free of
 // next/* imports so both route handlers and the worker tick can use them.
@@ -37,19 +39,24 @@ export function reportStoragePath(args: {
   return `${owner}/${args.inspectionId}/Astandsskodun_${safeAddress}${datePart}.pdf`;
 }
 
-// Human-facing download name: "Beton Ástandsskoðun - <heimilisfang>, <dags>.pdf".
+// Human-facing download name in the report's language:
+//   is: "Beton Ástandsskoðun - <heimilisfang>, <dags>.pdf"
+//   en: "Acme Inspection report - <address>, <date>.pdf"
 // Forced via the signed-URL `download` option / Content-Disposition; Icelandic
 // characters are preserved there.
 export function reportDownloadName(
   address: string | null,
   date: string | null,
-  companyName: string | null = null
+  companyName: string | null = null,
+  locale: ReportLocale = "is"
 ): string {
-  const addr = (address ?? "skýrsla").trim() || "skýrsla";
+  const copy = reportCopy(locale);
+  const fallback = copy.downloadFallbackAddress;
+  const addr = (address ?? fallback).trim() || fallback;
   const tail = date ? `, ${formatReportDate(date)}` : "";
   // Fyrsta orð fyrirtækisheitis (án "ehf."), sjálfgefið Beton fyrir eldri gögn.
   const company = (companyName ?? "").trim().split(/\s+/)[0] || "Beton";
-  return `${company} Ástandsskoðun - ${addr}${tail}.pdf`;
+  return format(copy.downloadName, { company, address: addr, date: tail });
 }
 
 // A report_url is a signable Storage object path only if it has no URI scheme.

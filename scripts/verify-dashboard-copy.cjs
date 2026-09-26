@@ -7,10 +7,15 @@ const vm = require('node:vm');
 const ts = require('typescript');
 const path = require('node:path');
 
-const src = fs.readFileSync(path.join(__dirname, '../src/lib/i18n/dashboard.ts'), 'utf8');
-const context = { exports: {}, Intl };
-context.module = { exports: context.exports };
-vm.runInNewContext(ts.transpileModule(src, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText, context);
+// Hleður .ts-einingu (og innri ./-innflutning hennar) án byggingar.
+function load(rel) {
+  const file = path.join(__dirname, '..', rel);
+  const context = { exports: {}, Intl, require: (id) => (id.startsWith('./') ? load(path.join(path.dirname(rel), id) + '.ts') : require(id)) };
+  context.module = { exports: context.exports };
+  vm.runInNewContext(ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText, context);
+  return context.module.exports;
+}
+const context = { module: { exports: load('src/lib/i18n/dashboard.ts') } };
 const { DASHBOARD_COPY, DASHBOARD_LOCALES, LOCALE_NAMES, USER_LOCALE_KEY, fill, plural, localeForBrand, dashboardCopy, categoryLabel } = context.module.exports;
 
 let n = 0;

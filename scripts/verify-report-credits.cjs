@@ -14,7 +14,8 @@ const load = (rel, extra = {}) => {
 };
 const allowed = load('src/lib/allowed-users.ts');
 // Höfnunartextarnir búa í stjórnborðskatalóginu (is = Beton, en = Rondva).
-const { DASHBOARD_COPY: COPY } = load('src/lib/i18n/dashboard.ts');
+const format = load('src/lib/i18n/format.ts');
+const { DASHBOARD_COPY: COPY } = load('src/lib/i18n/dashboard.ts', { Intl, require: (id) => (id === './format' ? format : require(id)) });
 
 let service; // stillt í hverju prófi
 const quiet = { ...console, log() {}, warn() {}, error() {} };

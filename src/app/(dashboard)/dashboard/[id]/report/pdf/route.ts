@@ -12,6 +12,7 @@ import {
   isStorageObjectPath,
   reportDownloadName,
 } from "@/lib/report/shared";
+import { reportLocaleOf } from "@/lib/report/i18n";
 
 // FAST PATH. PDF rendering now happens in a background worker (see
 // /api/report/worker/tick); this route no longer launches Chromium. It just
@@ -59,7 +60,7 @@ export async function GET(
 
   let inspectionQuery = supabase
     .from("inspections")
-    .select("id, address, inspection_date, status, report_url, report_error, inspectors ( company_name )")
+    .select("id, address, inspection_date, status, report_url, report_error, report_locale:ai_report_data->>report_locale, inspectors ( company_name )")
     .limit(1);
   inspectionQuery = bearerAuthorization
     ? inspectionQuery.or(`id.eq.${id},local_id.eq.${id}`)
@@ -78,7 +79,8 @@ export async function GET(
     const download = reportDownloadName(
       inspection.address ?? null,
       inspection.inspection_date ?? null,
-      (inspectorRow as { company_name?: string | null } | null)?.company_name ?? null
+      (inspectorRow as { company_name?: string | null } | null)?.company_name ?? null,
+      reportLocaleOf(inspection)
     );
     const { data: signed, error: signErr } = await supabase.storage
       .from(REPORT_BUCKET)

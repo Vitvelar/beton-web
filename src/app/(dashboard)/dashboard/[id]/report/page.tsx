@@ -16,9 +16,20 @@ import {
 } from "@/lib/report/shared";
 import type { Severity } from "@/lib/supabase/types";
 import { resolveBranding } from "@/lib/report/branding";
+import {
+  ratingCategoryLabel,
+  reportCategoryLabel,
+  reportCopy,
+  reportLocaleOf,
+} from "@/lib/report/i18n";
+import { fill, format } from "@/lib/i18n/format";
+import { dashboardCopy } from "@/lib/i18n/dashboard";
+import { getDashboardLocale } from "@/lib/request-brand";
 import type { Metadata } from "next";
 
 interface ReportData {
+  /** Tungumál skýrslunnar, stimplað við gerð hennar; vantar = íslenska. */
+  report_locale?: string;
   inspection: {
     address: string;
     postal_code: string;
@@ -66,10 +77,10 @@ interface PhotoWithUrl {
   url: string;
 }
 
-const SEV_COLORS: Record<string, { color: string; bg: string; label: string }> = {
-  athugasemd: { color: "#3b4ec9", bg: "#eef0fb", label: "Athugasemd" },
-  alvarleg: { color: "#c98a2e", bg: "#fbf2e3", label: "Alvarleg athugasemd" },
-  mjog_alvarleg: { color: "#b53d3d", bg: "#fbeaea", label: "Mjög alvarleg athugasemd" },
+const SEV_COLORS: Record<string, { color: string; bg: string }> = {
+  athugasemd: { color: "#3b4ec9", bg: "#eef0fb" },
+  alvarleg: { color: "#c98a2e", bg: "#fbf2e3" },
+  mjog_alvarleg: { color: "#b53d3d", bg: "#fbeaea" },
 };
 
 const SEV_ICON: Record<string, string> = {
@@ -112,7 +123,7 @@ export async function generateMetadata({
       : await createClient();
     let q = supabase
       .from("inspections")
-      .select("address, inspection_date, local_id, inspectors ( company_name )")
+      .select("address, inspection_date, local_id, report_locale:ai_report_data->>report_locale, inspectors ( company_name )")
       .limit(1);
     q = authorization ? q.or(`id.eq.${id},local_id.eq.${id}`) : q.eq("id", id);
     const { data } = await q.maybeSingle();
@@ -121,7 +132,8 @@ export async function generateMetadata({
       const name = reportDownloadName(
         data.address,
         data.inspection_date,
-        (insp as { company_name?: string | null } | null)?.company_name ?? null
+        (insp as { company_name?: string | null } | null)?.company_name ?? null,
+        reportLocaleOf(data)
       ).replace(/\.pdf$/, "");
       return { title: { absolute: name } };
     }
@@ -187,6 +199,11 @@ export default async function ReportPage({
   }
 
   const report = inspection.ai_report_data as ReportData;
+  // Skýrslumálið (stimplað í skýrsluna) ræður efninu; hnapparnir efst eru hluti
+  // af stjórnborðinu og fylgja viðmótsmáli notandans.
+  const locale = reportLocaleOf(report);
+  const t = reportCopy(locale);
+  const ui = dashboardCopy(await getDashboardLocale());
 
   type RawRoom = {
     id: string; name: string; slug: string; sort_order: number;
@@ -285,6 +302,9 @@ export default async function ReportPage({
   const brand = resolveBranding(inspectorRow ?? null, propData.inspectorName);
   const inspectorName = brand.inspectorName;
   const logoSrc = brand.logoUrl;
+  // Íslenska: fullir skilmálar eins og áður. Önnur mál: aldrei lagatexti Beton —
+  // aðeins tengill á skilmála fyrirtækisins, og hlutanum sleppt ef enginn er til.
+  const showTerms = locale === "is" || !!brand.termsUrl;
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -340,7 +360,7 @@ export default async function ReportPage({
       {/* Navigation — hidden in print */}
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
-          &larr; Til baka
+          {ui.common.backLink}
         </Link>
         {/* EIN aðgerð: server-PDF (áreiðanlegar spássíur + blaðsíðunúmer, óháð
             prentglugga). GET á route handler sem skilar application/pdf. Gamli
@@ -351,13 +371,13 @@ export default async function ReportPage({
             href={`/dashboard/${id}/report/edit`}
             className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
           >
-            Breyta texta
+            {ui.reportActions.editText}
           </Link>
           <a
             href={`/dashboard/${id}/report/pdf`}
             className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
           >
-            Sækja PDF
+            {ui.reportActions.downloadPdf}
           </a>
         </div>
       </div>
@@ -374,31 +394,31 @@ export default async function ReportPage({
               </div>
             ) : null}
             <p className="text-xs font-semibold tracking-[0.2em] text-navy mb-2">{brand.nameUpper}</p>
-            <h1 className="text-3xl font-bold text-navy mb-3">Ástandsskoðun</h1>
+            <h1 className="text-3xl font-bold text-navy mb-3">{t.coverTitle}</h1>
             <p className="text-xl text-ink mb-6">{report.inspection.address}</p>
 
             {coverPhoto ? (
               <div className="w-full max-w-2xl h-64 sm:h-80 rounded-lg overflow-hidden mb-8 bg-concrete/30">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={coverPhoto.url} alt="Forsíðumynd" className="w-full h-full object-cover" />
+                <img src={coverPhoto.url} alt={t.coverPhotoAlt} className="w-full h-full object-cover" />
               </div>
             ) : (
               <div className="w-full max-w-2xl h-64 rounded-lg border-2 border-dashed border-concrete flex items-center justify-center mb-8 text-fog text-sm">
-                Engin forsíðumynd
+                {t.noCoverPhoto}
               </div>
             )}
 
             <div className="flex justify-around w-full max-w-lg text-center border-t border-concrete pt-5">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-fog">Viðskiptavinur</p>
+                <p className="text-[10px] uppercase tracking-wider text-fog">{t.customer}</p>
                 <p className="font-semibold text-ink mt-1">{report.inspection.customer_name}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-fog">Skoðunardagur</p>
+                <p className="text-[10px] uppercase tracking-wider text-fog">{t.inspectionDate}</p>
                 <p className="font-semibold text-ink mt-1">{formatReportDate(report.inspection.inspection_date)}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-fog">Skoðunarmaður</p>
+                <p className="text-[10px] uppercase tracking-wider text-fog">{t.inspector}</p>
                 <p className="font-semibold text-ink mt-1">{inspectorName}</p>
               </div>
             </div>
@@ -407,55 +427,51 @@ export default async function ReportPage({
 
         {/* ═══ PAGE 2: EFNISYFIRLIT (TOC) ═══ */}
         <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
-          <h2 className="text-2xl font-bold text-navy mb-2">Efnisyfirlit</h2>
+          <h2 className="text-2xl font-bold text-navy mb-2">{t.toc}</h2>
           <div className="h-0.5 bg-navy mb-6" />
           <div className="space-y-0">
-            <TocRow num="M" name="Inngangur og matskerfi" />
-            <TocRow num="1" name="Samantekt" />
+            <TocRow num="M" name={t.tocIntro} />
+            <TocRow num="1" name={t.tocSummary} />
             {report.rooms.map((room, idx) => (
-              <TocRow key={room.slug} num={String(idx + 2)} name={`Rými — ${room.name}`} />
+              <TocRow key={room.slug} num={String(idx + 2)} name={format(t.tocRoom, { name: room.name })} />
             ))}
             {rankedObs.length > 0 && (
-              <TocRow num={String(report.rooms.length + 2)} name="Verkefnalisti" />
+              <TocRow num={String(report.rooms.length + 2)} name={t.tocActionList} />
             )}
-            <TocRow
-              num={String(report.rooms.length + 2 + (rankedObs.length > 0 ? 1 : 0))}
-              name="Skilmálar og fyrirvarar"
-            />
+            {showTerms && (
+              <TocRow
+                num={String(report.rooms.length + 2 + (rankedObs.length > 0 ? 1 : 0))}
+                name={t.tocTerms}
+              />
+            )}
           </div>
         </section>
 
         {/* ═══ PAGE 3: INTRO + MATSKERFI ═══ */}
         <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <div className="border-l-4 border-navy bg-stone-50 rounded-sm px-6 py-5 mb-8">
-            <h2 className="text-lg font-bold text-navy mb-3">Ástandsskoðun {brand.name}</h2>
+            <h2 className="text-lg font-bold text-navy mb-3">{fill(t.introHeading, { company: brand.name })}</h2>
             <p className="text-sm text-ink/80 leading-relaxed mb-3">
-              Markmið ástandsskoðunar er að veita verkkaupa upplýsingar um almennt og sýnilegt ástand
-              fasteignar á þeim tímapunkti sem skoðun fer fram. Ástandsskoðun byggir á hlutlausri skoðun og
-              stöðluðum verkferlum {brand.name} og er ætluð til upplýsingaöflunar vegna fasteignaviðskipta eða
-              mats á ástandi eigin eignar. Ástandsskoðun og skýrsla eiga eingöngu við um þá fasteign sem
-              skoðuð er og taka einungis til þeirra atriða sem sérstaklega eru nefnd í skýrslu.
+              {fill(t.introPurpose, { company: brand.name })}
             </p>
             {brand.termsUrl ? (
               <p className="text-sm text-ink/80">
-                Allar ástandsskoðanir falla undir{" "}
+                {t.termsLinkBefore}{" "}
                 <a href={brand.termsUrl} className="text-navy underline">
-                  skilmála {brand.name}
+                  {fill(t.termsLinkText, { company: brand.name })}
                 </a>
               </p>
             ) : null}
           </div>
 
           <h2 className="text-lg font-bold text-navy mb-3">
-            <span className="text-sev-calm font-bold mr-2">M.</span>Matskerfi
+            <span className="text-sev-calm font-bold mr-2">M.</span>{t.ratingSystem}
           </h2>
           <p className="text-sm text-ink/80 leading-relaxed mb-2">
-            Svona virkar matskerfið: hver athugasemd í skýrslunni fær mat sem sýnir hversu alvarlegt tjónið er.
-            Alvarleiki tjónsins er metinn út frá hversu miklar afleiðingar það getur haft fyrir
-            byggingarhlutann/bygginguna ásamt því hversu mikilvægt er að laga það.
+            {t.ratingSystemHow}
           </p>
           <p className="text-sm text-ink/80 leading-relaxed mb-6">
-            Í skýrslunni er að finna þrjár mismunandi tegundir athugasemda.
+            {t.ratingSystemTypes}
           </p>
 
           <div className="space-y-6">
@@ -469,12 +485,10 @@ export default async function ReportPage({
                 </div>
                 <div className="pt-1">
                   <p className="font-bold text-sm" style={{ color: SEV_COLORS[sev].color }}>
-                    {SEV_COLORS[sev].label}
+                    {t.severity[sev].label}
                   </p>
                   <p className="text-sm text-ink/80 leading-relaxed mt-0.5">
-                    {sev === "athugasemd" && "Tjón sem hefur engin áhrif á virkni byggingarhlutans/byggingarinnar."}
-                    {sev === "alvarleg" && "Tjón sem veldur því að virkni byggingarhlutans er í ólagi til lengri tíma litið. Slíkt tjón getur valdið skemmdum á öðrum byggingarhlutum."}
-                    {sev === "mjog_alvarleg" && "Tjón sem þegar hefur valdið eða mun valda því að virkni byggingarhlutans verður í ólagi fljótlega. Slíkt tjón getur valdið skemmdum á öðrum byggingarhlutum eða hefur nú þegar gert það."}
+                    {t.severity[sev].description}
                   </p>
                 </div>
               </div>
@@ -485,11 +499,11 @@ export default async function ReportPage({
         {/* ═══ PAGE 4: SAMANTEKT ═══ */}
         <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <h2 className="text-lg font-bold text-navy mb-6">
-            <span className="text-sev-calm font-bold mr-2">1.</span>Samantekt
+            <span className="text-sev-calm font-bold mr-2">1.</span>{t.summary}
           </h2>
 
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-navy mb-2">Inngangur</h3>
+            <h3 className="text-sm font-semibold text-navy mb-2">{t.introduction}</h3>
             <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">
               {report.ai_summary.introduction}
             </p>
@@ -497,7 +511,7 @@ export default async function ReportPage({
 
           {report.ai_summary.property_description && (
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-navy mb-2">Eignalýsing</h3>
+              <h3 className="text-sm font-semibold text-navy mb-2">{t.propertyDescription}</h3>
               <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">
                 {report.ai_summary.property_description}
               </p>
@@ -505,7 +519,7 @@ export default async function ReportPage({
           )}
 
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-navy mb-2">Niðurstaða</h3>
+            <h3 className="text-sm font-semibold text-navy mb-2">{t.conclusion}</h3>
             <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-line">
               {report.ai_summary.conclusion}
             </p>
@@ -522,45 +536,45 @@ export default async function ReportPage({
                 <div className="text-2xl font-bold" style={{ color: SEV_COLORS[sev].color }}>
                   {sevCounts[sev]}
                 </div>
-                <div className="text-xs text-fog">{SEV_COLORS[sev].label.replace(" athugasemd", "")}</div>
+                <div className="text-xs text-fog">{t.severity[sev].short}</div>
               </div>
             ))}
           </div>
 
           {/* Property info table */}
-          <h3 className="text-sm font-semibold text-navy mb-2 mt-6">Eign</h3>
+          <h3 className="text-sm font-semibold text-navy mb-2 mt-6">{t.property}</h3>
           <table className="w-full text-sm mb-6">
             <tbody className="divide-y divide-concrete/50">
-              <InfoTableRow label="Heimilisfang" value={report.inspection.address} />
+              <InfoTableRow label={t.address} value={report.inspection.address} />
               <InfoTableRow
-                label="Póstnúmer"
+                label={t.postcode}
                 value={`${report.inspection.postal_code}${report.inspection.municipality ? " " + report.inspection.municipality : ""}`}
               />
               {report.inspection.fastanumer && (
-                <InfoTableRow label="Fastanúmer" value={report.inspection.fastanumer} />
+                <InfoTableRow label={t.propertyId} value={report.inspection.fastanumer} />
               )}
-              {propData.tegund ? <InfoTableRow label="Tegund" value={String(propData.tegund)} /> : null}
-              {propData.staerd_m2 ? <InfoTableRow label="Stærð" value={`${propData.staerd_m2} m²`} /> : null}
-              {propData.byggingarar ? <InfoTableRow label="Byggingarár" value={String(propData.byggingarar)} /> : null}
-              {propData.byggingarafangi ? <InfoTableRow label="Byggingarstig" value={String(propData.byggingarafangi)} /> : null}
+              {propData.tegund ? <InfoTableRow label={t.propertyType} value={String(propData.tegund)} /> : null}
+              {propData.staerd_m2 ? <InfoTableRow label={t.size} value={`${propData.staerd_m2} m²`} /> : null}
+              {propData.byggingarar ? <InfoTableRow label={t.yearBuilt} value={String(propData.byggingarar)} /> : null}
+              {propData.byggingarafangi ? <InfoTableRow label={t.buildStage} value={String(propData.byggingarafangi)} /> : null}
             </tbody>
           </table>
 
-          <h3 className="text-sm font-semibold text-navy mb-2">Skoðun</h3>
+          <h3 className="text-sm font-semibold text-navy mb-2">{t.inspection}</h3>
           <table className="w-full text-sm">
             <tbody className="divide-y divide-concrete/50">
-              <InfoTableRow label="Viðskiptavinur" value={report.inspection.customer_name} />
-              <InfoTableRow label="Skoðunardagur" value={formatReportDate(report.inspection.inspection_date)} />
-              <InfoTableRow label="Skoðunarmaður" value={inspectorName} />
+              <InfoTableRow label={t.customer} value={report.inspection.customer_name} />
+              <InfoTableRow label={t.inspectionDate} value={formatReportDate(report.inspection.inspection_date)} />
+              <InfoTableRow label={t.inspector} value={inspectorName} />
               {report.inspection.attendees?.length > 0 && (
-                <InfoTableRow label="Viðstaddir" value={report.inspection.attendees.join(", ")} />
+                <InfoTableRow label={t.attendees} value={report.inspection.attendees.join(", ")} />
               )}
               {report.inspection.weather && (
-                <InfoTableRow label="Veður" value={report.inspection.weather} />
+                <InfoTableRow label={t.weather} value={report.inspection.weather} />
               )}
-              <InfoTableRow label="Fjöldi rýma" value={String(report.rooms.length)} />
-              <InfoTableRow label="Fjöldi athugasemda" value={String(totalObs)} />
-              <InfoTableRow label="Fjöldi mynda" value={String(photosWithUrls.length)} />
+              <InfoTableRow label={t.roomCount} value={String(report.rooms.length)} />
+              <InfoTableRow label={t.observationCount} value={String(totalObs)} />
+              <InfoTableRow label={t.photoCount} value={String(photosWithUrls.length)} />
             </tbody>
           </table>
         </section>
@@ -596,9 +610,9 @@ export default async function ReportPage({
                     .filter(([, v]) => v && v !== "na")
                     .map(([key, value]) => (
                       <div key={key} className="flex justify-between py-0.5">
-                        <span className="text-fog capitalize">{key.replace(/_/g, " ")}</span>
+                        <span className="text-fog capitalize">{ratingCategoryLabel(t, key)}</span>
                         <span className="font-semibold" style={{ color: ratingColor(value) }}>
-                          {ratingLabel(value)}
+                          {t.rating[value] ?? value}
                         </span>
                       </div>
                     ))}
@@ -608,7 +622,7 @@ export default async function ReportPage({
               {/* Room notes */}
               {room.notes && (
                 <div className="bg-amber-50 rounded p-3 mb-4 text-sm">
-                  <strong>Athugasemdir um rýmið:</strong> {room.notes}
+                  <strong>{t.roomNotes}</strong> {room.notes}
                 </div>
               )}
 
@@ -616,7 +630,8 @@ export default async function ReportPage({
               {room.observations.length > 0 ? (
                 <div className="space-y-4 print:space-y-3">
                   {room.observations.map((obs, obsIdx) => {
-                    const sev = SEV_COLORS[obs.severity] ?? SEV_COLORS.athugasemd;
+                    const sevKey = obs.severity in SEV_COLORS ? obs.severity : "athugasemd";
+                    const sev = SEV_COLORS[sevKey];
                     const oPhotos = obsPhotos(obs.id);
                     return (
                       <div
@@ -633,11 +648,11 @@ export default async function ReportPage({
                             className="text-xs font-semibold px-2 py-0.5 rounded"
                             style={{ backgroundColor: sev.bg, color: sev.color }}
                           >
-                            {sev.label}
+                            {t.severity[sevKey].label}
                           </span>
                         </div>
                         {obs.category && (
-                          <p className="text-[10px] uppercase tracking-wider text-fog mb-2">{obs.category}</p>
+                          <p className="text-[10px] uppercase tracking-wider text-fog mb-2">{reportCategoryLabel(t, obs.category)}</p>
                         )}
                         {obs.description && (
                           <p className="text-sm text-ink/80 leading-relaxed mb-2">{obs.description}</p>
@@ -645,7 +660,7 @@ export default async function ReportPage({
                         {obs.suggestion && (
                           <div className="bg-stone-50 rounded px-3 py-2 mt-2 rpt-keep">
                             <p className="text-sm text-ink/80">
-                              <strong className="text-navy">Tillaga:</strong> {obs.suggestion}
+                              <strong className="text-navy">{t.suggestion}</strong> {obs.suggestion}
                             </p>
                           </div>
                         )}
@@ -662,7 +677,7 @@ export default async function ReportPage({
                   })}
                 </div>
               ) : (
-                <p className="text-sm text-fog italic">Engar athugasemdir í þessu rými.</p>
+                <p className="text-sm text-fog italic">{t.noObservations}</p>
               )}
             </section>
           );
@@ -673,14 +688,15 @@ export default async function ReportPage({
           <section className="px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
             <h2 className="text-lg font-bold text-navy mb-2">
               <span className="text-sev-calm font-bold mr-2">{report.rooms.length + 2}.</span>
-              Verkefnalisti
+              {t.actionList}
             </h2>
             <p className="text-sm text-ink/80 mb-4">
-              Hér er verkefnalisti yfir atriði sem þarf að taka á.
+              {t.actionListIntro}
             </p>
             <div className="space-y-3">
               {rankedObs.map(({ obs, roomName }, i) => {
-                const sev = SEV_COLORS[obs.severity] ?? SEV_COLORS.athugasemd;
+                const sevKey = obs.severity in SEV_COLORS ? obs.severity : "athugasemd";
+                const sev = SEV_COLORS[sevKey];
                 return (
                   <div
                     key={obs.id}
@@ -694,11 +710,11 @@ export default async function ReportPage({
                         className="text-xs font-semibold px-2 py-0.5 rounded"
                         style={{ backgroundColor: sev.bg, color: sev.color }}
                       >
-                        {sev.label}
+                        {t.severity[sevKey].label}
                       </span>
                     </div>
                     <p className="text-[10px] uppercase tracking-wider text-fog mb-1">
-                      {roomName}{obs.category ? ` · ${obs.category}` : ""}
+                      {roomName}{obs.category ? ` · ${reportCategoryLabel(t, obs.category)}` : ""}
                     </p>
                     {obs.suggestion && (
                       <p className="text-sm text-ink/80">{obs.suggestion}</p>
@@ -711,12 +727,14 @@ export default async function ReportPage({
         )}
 
         {/* ═══ SKILMÁLAR OG FYRIRVARAR ═══ */}
+        {showTerms && (
         <section className="rpt-terms px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <h2 className="text-base font-bold text-navy mb-1">
-            Skilmálar og fyrirvarar ástandsskoðunar {brand.name}
+            {fill(t.termsHeading, { company: brand.name })}
           </h2>
           <div className="h-0.5 bg-navy mb-4" />
 
+          {locale === "is" ? (
           <div className="space-y-1.5 text-[11px] leading-snug text-ink/90 print:text-[7.5pt] print:leading-[1.3]">
             <TermsSection n={1} title="Markmið og gildissvið">
               Markmið ástandsskoðunar er að veita verkkaupa upplýsingar um almennt og sýnilegt ástand fasteignar á
@@ -791,6 +809,14 @@ export default async function ReportPage({
               sérstaklega samið skriflega.
             </TermsSection>
           </div>
+          ) : (
+            <p className="text-sm text-ink/80">
+              {fill(t.termsLinkOnly, { company: brand.name })}{" "}
+              <a href={brand.termsUrl ?? undefined} className="text-navy underline break-all">
+                {brand.termsUrl}
+              </a>
+            </p>
+          )}
 
           {logoSrc ? (
             <div className="text-center mt-8 print:mt-5 print:break-inside-avoid print:break-before-avoid">
@@ -799,12 +825,13 @@ export default async function ReportPage({
             </div>
           ) : null}
         </section>
+        )}
 
         {/* Footer */}
         <div className="px-8 py-4 border-t border-concrete bg-stone-50/30 text-xs text-fog print:hidden">
           <div className="flex justify-between">
             <span>
-              Skýrsla gerð{" "}
+              {t.reportCreated}{" "}
               {inspection.report_generated_at
                 ? formatReportDate(inspection.report_generated_at)
                 : "—"}
@@ -841,16 +868,6 @@ function TermsSection({ n, title, children }: { n: number; title: string; childr
       <p>{children}</p>
     </div>
   );
-}
-
-function ratingLabel(value: string): string {
-  const labels: Record<string, string> = {
-    ok: "Viðunandi",
-    warn: "Athugasemd",
-    danger: "Alvarleg athugasemd",
-    mjog_alvarleg: "Mjög alvarleg athugasemd",
-  };
-  return labels[value] ?? value;
 }
 
 function ratingColor(value: string): string {
