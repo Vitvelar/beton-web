@@ -9,10 +9,12 @@ export function ReportActions({
   inspectionId,
   reportUrl,
   hasAiReport,
+  canSendToDrive,
 }: {
   inspectionId: string;
   reportUrl: string | null;
   hasAiReport: boolean;
+  canSendToDrive: boolean;
 }) {
   const [reportRequest, setReportRequest] = useState(0);
   const [generating, setGenerating] = useState(false);
@@ -111,13 +113,15 @@ export function ReportActions({
               Sækja PDF
             </a>
 
-            <button
-              onClick={handleSendToDrive}
-              disabled={sending}
-              className="rounded-lg border border-copper px-4 py-2 text-sm font-semibold text-copper-dk hover:bg-copper/5 transition-colors disabled:opacity-50"
-            >
-              {sending ? "Sendi í Drive..." : "Senda í Google Drive"}
-            </button>
+            {canSendToDrive && (
+              <button
+                onClick={handleSendToDrive}
+                disabled={sending}
+                className="rounded-lg border border-copper px-4 py-2 text-sm font-semibold text-copper-dk hover:bg-copper/5 transition-colors disabled:opacity-50"
+              >
+                {sending ? "Sendi í Drive..." : "Senda í Google Drive"}
+              </button>
+            )}
           </>
         )}
       </div>

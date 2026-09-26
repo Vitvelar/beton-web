@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isAllowedEmail } from "@/lib/allowed-users";
 import { snapshotToken } from "@/lib/report/snapshot-token";
 import { abortWebCreditRun, beginWebCreditRun, finishWebCreditRun } from "@/lib/report/credits";
 import Anthropic from "@anthropic-ai/sdk";
@@ -694,6 +695,17 @@ export async function getReportProgress(inspectionId: string): Promise<import("@
 
 export async function sendToDrive(inspectionId: string) {
   const supabase = await createClient();
+
+  // upload-to-drive skrifar í sameiginlega Drive-möppu Beton ehf. með service
+  // account. Aðeins gamli netfangalistinn má nota það — fyrirtækjaaðgangar
+  // (app.rondva.com) mega aldrei senda skýrslur viðskiptavina sinna þangað.
+  // (COMPANY_ACCOUNTS_DESIGN.md §7.1; edge-fallið sjálft þarf sömu vörn.)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!isAllowedEmail(user?.email)) {
+    return { error: "Google Drive er aðeins í boði fyrir Beton." };
+  }
 
   const { data: inspection } = await supabase
     .from("inspections")

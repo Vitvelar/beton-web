@@ -13,6 +13,9 @@ export function RondvaFooter() {
         <p className="mt-6 text-sm text-paper/70">Rondva is built by Vitvélar.</p>
 
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+          <a href={BRANDS.rondva.appUrl} className="text-paper/80 transition-colors hover:text-paper">
+            Log in
+          </a>
           <Link href="/privacy" className="text-paper/80 transition-colors hover:text-paper">
             Privacy
           </Link>
