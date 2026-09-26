@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ObservationForm } from "@/components/dashboard/ObservationForm";
 import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
 import { getDashboardLocale } from "@/lib/request-brand";
-import { dashboardCopy } from "@/lib/i18n/dashboard";
+import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 import type { Observation, Photo } from "@/lib/supabase/types";
 
 export default async function ObservationEditorPage({
@@ -61,7 +61,7 @@ export default async function ObservationEditorPage({
       {photos && photos.length > 0 && (
         <div className="mb-6">
           <h2 className="text-sm font-semibold text-ink mb-3">
-            {copy.observation.photosHeading(photos.length)}
+            {fill(copy.observation.photosHeading, { count: photos.length })}
           </h2>
           <PhotoGrid photos={photos as Photo[]} locale={locale} />
         </div>

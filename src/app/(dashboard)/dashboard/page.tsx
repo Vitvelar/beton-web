@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { getDashboardLocale } from "@/lib/request-brand";
-import { dashboardCopy } from "@/lib/i18n/dashboard";
+import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 import type { InspectionStatus } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
   if (error) {
     return (
       <div className="rounded-xl bg-sev-danger/10 p-6 text-sev-danger">
-        {t.loadError(error.message)}
+        {fill(t.loadError, { message: error.message })}
       </div>
     );
   }

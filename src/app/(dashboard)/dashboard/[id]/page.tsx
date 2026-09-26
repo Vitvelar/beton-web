@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ReportActions } from "./report-actions";
 import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
 import { getDashboardLocale } from "@/lib/request-brand";
-import { dashboardCopy } from "@/lib/i18n/dashboard";
+import { dashboardCopy, fill, plural } from "@/lib/i18n/dashboard";
 import type {
   Severity,
   InspectionStatus,
@@ -103,7 +103,7 @@ export default async function InspectionDetailPage({
             href="/dashboard"
             className="text-sm text-fog hover:text-ink transition-colors"
           >
-            &larr; {copy.common.back}
+            {copy.common.backLink}
           </Link>
           <h1 className="text-xl font-semibold text-ink mt-1">
             {inspection.address}
@@ -170,7 +170,7 @@ export default async function InspectionDetailPage({
 
       {/* Rooms */}
       <h2 className="text-lg font-semibold text-ink mt-8 mb-4">
-        {t.roomsHeading(rooms.length)}
+        {fill(t.roomsHeading, { count: rooms.length })}
       </h2>
 
       {rooms.length === 0 ? (
@@ -195,8 +195,8 @@ export default async function InspectionDetailPage({
                 <div className="flex items-center justify-between px-4 py-3 border-b border-concrete/50">
                   <h3 className="font-semibold text-ink">{room.name}</h3>
                   <div className="flex items-center gap-3 text-xs text-fog">
-                    <span>{t.roomObservations(obs.length)}</span>
-                    <span>{t.roomPhotos(photoCount)}</span>
+                    <span>{fill(t.roomObservations, { count: obs.length })}</span>
+                    <span>{fill(plural(locale, photoCount, t.roomPhotos), { count: photoCount })}</span>
                   </div>
                 </div>
 
@@ -255,7 +255,7 @@ export default async function InspectionDetailPage({
                 {photoCount > 0 && (
                   <div className="px-4 py-3 border-t border-concrete/30">
                     <p className="text-xs font-semibold text-fog mb-2">
-                      {t.photosHeading(photoCount)}
+                      {fill(t.photosHeading, { count: photoCount })}
                     </p>
                     <PhotoGrid photos={roomPhotos} locale={locale} />
                   </div>

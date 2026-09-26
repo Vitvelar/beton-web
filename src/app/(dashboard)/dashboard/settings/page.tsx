@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CompanyBrandingForm } from "@/components/dashboard/CompanyBrandingForm";
 import { getDashboardLocale } from "@/lib/request-brand";
-import { dashboardCopy } from "@/lib/i18n/dashboard";
+import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: dashboardCopy(await getDashboardLocale()).settings.metaTitle };
@@ -53,7 +53,7 @@ export default async function SettingsPage() {
       )}
 
       <p className="mt-6 text-xs text-fog">
-        {t.inspectorNote(inspector?.full_name ?? user.email ?? "")}
+        {fill(t.inspectorNote, { name: inspector?.full_name ?? user.email })}
       </p>
     </div>
   );

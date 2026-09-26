@@ -15,7 +15,7 @@ import {
 import { ReportProgress } from "./ReportProgress";
 import { SeverityBadge } from "./SeverityBadge";
 import type { Severity } from "@/lib/supabase/types";
-import { dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
+import { dashboardCopy, fill, plural, type DashboardLocale } from "@/lib/i18n/dashboard";
 
 export interface EditorReport {
   ai_summary: {
@@ -171,13 +171,13 @@ export function ReportTextEditor({
           href={`/dashboard/${inspectionId}`}
           className="text-sm text-fog hover:text-ink transition-colors"
         >
-          &larr; {copy.common.back}
+          {copy.common.backLink}
         </Link>
         <h1 className="text-xl font-semibold text-ink mt-1">
           {t.title}
         </h1>
         <p className="text-sm text-fog">
-          {t.subtitle(address, totalObs)}
+          {fill(plural(locale, totalObs, t.subtitle), { address, count: totalObs })}
         </p>
         <p className="mt-2 text-sm text-fog max-w-2xl">
           {t.intro}

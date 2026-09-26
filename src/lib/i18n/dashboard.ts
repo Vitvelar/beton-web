@@ -12,6 +12,11 @@ import type { Brand } from "@/lib/brand";
 // Nýtt tungumál = bæta kóðanum í DASHBOARD_LOCALES og einum `DashboardCopy`-
 // hlut í DASHBOARD_COPY; TypeScript krefst þá allra lykla.
 //
+// Texti með breytum sem birtist í JSX er sniðmát með {nafni} og er birtur með
+// fill() — hún skilar sömu textahnútum og JSX-ið gerði áður, svo Beton helst
+// pixla-eins. Fleirtala fer um plural() (Intl.PluralRules, form eftir tungumáli).
+// Föll eru aðeins notuð fyrir skilaboð sem verða að einum streng (villur o.þ.h.).
+//
 // Skýrslan sjálf (/dashboard/[id]/report + src/lib/report/*) er EKKI hér —
 // tungumál skýrslunnar er sér mál (plan/rondva/HANDOFF-2026-09-24.md §7.4).
 // Alvarleiki og athugasemdaflokkar fylgja beton-app lib/i18n/labels.ts svo
@@ -34,9 +39,13 @@ export function localeForBrand(brand: Brand, preferred?: string | null): Dashboa
   return isDashboardLocale(preferred) ? preferred : "en";
 }
 
+/** Fleirtöluform eftir Intl.PluralRules; `other` er alltaf til. */
+export type PluralForms = Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
+
 const is = {
   common: {
     back: "Til baka",
+    backLink: "← Til baka",
   },
   header: {
     section: "Stjórnborð",
@@ -56,7 +65,7 @@ const is = {
   // Birtingarheiti athugasemdaflokka. Íslenska birtir geymda gildið sjálft.
   categories: {} as Record<string, string>,
   list: {
-    loadError: (message: string) => `Villa við að sækja skoðanir: ${message}`,
+    loadError: "Villa við að sækja skoðanir: {message}",
     emptyTitle: "Engar skoðanir fundust",
     emptyBody: "Skoðanir sem eru samstilltar úr appinu birtast hér.",
     title: "Skoðanir",
@@ -83,12 +92,12 @@ const is = {
     inspector: "Skoðunarmaður",
     attendees: "Viðstaddir",
     weather: "Veður",
-    roomsHeading: (count: number) => `Rými (${count})`,
+    roomsHeading: "Rými ({count})",
     noRooms: "Engin rými skráð. Samstilltu skoðunina úr appinu.",
-    roomObservations: (count: number) => `${count} ath.`,
-    roomPhotos: (count: number) => `${count} myndir`,
+    roomObservations: "{count} ath.",
+    roomPhotos: { other: "{count} myndir" } as PluralForms,
     noObservations: "Engar athugasemdir í þessu rými.",
-    photosHeading: (count: number) => `Myndir (${count})`,
+    photosHeading: "Myndir ({count})",
   },
   reportActions: {
     title: "Skýrsla",
@@ -121,7 +130,7 @@ const is = {
     openInspection: "Opna skoðun",
   },
   observation: {
-    photosHeading: (count: number) => `Myndir (${count})`,
+    photosHeading: "Myndir ({count})",
     title: "Titill",
     category: "Flokkur",
     chooseCategory: "— Veldu flokk —",
@@ -141,7 +150,7 @@ const is = {
   },
   reportEditor: {
     title: "Breyta skýrslutexta",
-    subtitle: (address: string, count: number) => `${address} — ${count} athugasemdir`,
+    subtitle: { other: "{address} — {count} athugasemdir" } as PluralForms,
     intro:
       "Hér má lagfæra eða eyða texta sem AI skrifaði án þess að keyra skýrslugerðina aftur. Tóm tillaga birtist ekki í skýrslunni.",
     summary: "1. Samantekt",
@@ -168,8 +177,8 @@ const is = {
     backToList: "← Skoðanir",
     noInspector:
       "Enginn skoðunarmaður er skráður á þennan aðgang ennþá. Opnaðu appið einu sinni svo skoðunarmannsprófíllinn verði til, og komdu svo aftur hingað.",
-    inspectorNote: (name: string) =>
-      `Skoðunarmaður: ${name}. Nafnið á skýrslunni kemur úr skoðuninni sjálfri ef það er skráð þar.`,
+    inspectorNote:
+      "Skoðunarmaður: {name}. Nafnið á skýrslunni kemur úr skoðuninni sjálfri ef það er skráð þar.",
   },
   branding: {
     companyName: "Nafn fyrirtækis",
@@ -233,11 +242,10 @@ const is = {
 
 export type DashboardCopy = typeof is;
 
-const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
-
 const en: DashboardCopy = {
   common: {
     back: "Back",
+    backLink: "← Back",
   },
   header: {
     section: "Dashboard",
@@ -277,7 +285,7 @@ const en: DashboardCopy = {
     "Flísar": "Tiling",
   },
   list: {
-    loadError: (message) => `Could not load inspections: ${message}`,
+    loadError: "Could not load inspections: {message}",
     emptyTitle: "No inspections yet",
     emptyBody: "Inspections synced from the app appear here.",
     title: "Inspections",
@@ -304,12 +312,12 @@ const en: DashboardCopy = {
     inspector: "Inspector",
     attendees: "Attendees",
     weather: "Weather",
-    roomsHeading: (count) => `Rooms (${count})`,
+    roomsHeading: "Rooms ({count})",
     noRooms: "No rooms recorded. Sync the inspection from the app.",
-    roomObservations: (count) => `${count} obs.`,
-    roomPhotos: (count) => plural(count, "photo", "photos"),
+    roomObservations: "{count} obs.",
+    roomPhotos: { one: "{count} photo", other: "{count} photos" },
     noObservations: "No observations in this room.",
-    photosHeading: (count) => `Photos (${count})`,
+    photosHeading: "Photos ({count})",
   },
   reportActions: {
     title: "Report",
@@ -342,7 +350,7 @@ const en: DashboardCopy = {
     openInspection: "Open inspection",
   },
   observation: {
-    photosHeading: (count) => `Photos (${count})`,
+    photosHeading: "Photos ({count})",
     title: "Title",
     category: "Category",
     chooseCategory: "— Choose a category —",
@@ -362,7 +370,7 @@ const en: DashboardCopy = {
   },
   reportEditor: {
     title: "Edit report text",
-    subtitle: (address, count) => `${address} — ${plural(count, "observation", "observations")}`,
+    subtitle: { one: "{address} — {count} observation", other: "{address} — {count} observations" },
     intro:
       "Correct or delete text the AI wrote without running report generation again. An empty suggestion is left out of the report.",
     summary: "1. Summary",
@@ -389,8 +397,8 @@ const en: DashboardCopy = {
     backToList: "← Inspections",
     noInspector:
       "No inspector is registered on this account yet. Open the app once so your inspector profile is created, then come back here.",
-    inspectorNote: (name) =>
-      `Inspector: ${name}. The name on the report comes from the inspection itself if it's recorded there.`,
+    inspectorNote:
+      "Inspector: {name}. The name on the report comes from the inspection itself if it's recorded there.",
   },
   branding: {
     companyName: "Company name",
@@ -453,6 +461,25 @@ export const DASHBOARD_COPY: Readonly<Record<DashboardLocale, DashboardCopy>> = 
 
 export function dashboardCopy(locale: DashboardLocale): DashboardCopy {
   return DASHBOARD_COPY[locale];
+}
+
+/** Velur fleirtöluform fyrir `count` á tungumálinu `locale`. */
+export function plural(locale: DashboardLocale, count: number, forms: PluralForms): string {
+  return forms[new Intl.PluralRules(locale).select(count)] ?? forms.other;
+}
+
+type FillValue = string | number | null | undefined;
+
+/**
+ * Fyllir {nafn} í sniðmáti og skilar bútunum sem JSX-börnum: "Rými ({count})"
+ * → ["Rými (", 3, ")"], nákvæmlega sömu textahnútar og `Rými ({n})` í JSX.
+ * Tómir bútar detta út; null/undefined gildi birtast ekki (eins og í JSX).
+ */
+export function fill(template: string, values: Record<string, FillValue>): FillValue[] {
+  return template
+    .split(/\{(\w+)\}/)
+    .map((part, i) => (i % 2 === 1 ? values[part] : part))
+    .filter((part, i) => i % 2 === 1 || part !== "");
 }
 
 /** Birtingarheiti athugasemdaflokks; geymda gildið (íslenska) ef engin þýðing er til. */
