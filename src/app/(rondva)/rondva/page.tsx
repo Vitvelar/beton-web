@@ -120,6 +120,10 @@ function SectionHeading({
 export default function RondvaLandingPage() {
   return (
     <>
+      {/* Án JavaScript: allt efni sést strax (rv-reveal bíður annars eftir RevealObserver). */}
+      <noscript>
+        <style>{`.rv-reveal{opacity:1!important;transform:none!important}`}</style>
+      </noscript>
       <HeaderReveal>
         <RondvaHeader />
       </HeaderReveal>
@@ -127,12 +131,12 @@ export default function RondvaLandingPage() {
         {/* 1. Kynningarmyndin á fullum skjá. Hausinn er falinn hér og birtist við skrun.
             Liggjandi skjár fær 16:9 útgáfuna, standandi (sími) 9:16. Aldrei inni í snúnum
             ramma (merkið má ekki hallast). */}
-        <section aria-label="Rondva in 15 seconds" className="relative h-svh min-h-[320px] overflow-hidden bg-ink">
+        <section aria-label="Rondva in 15 seconds" className="rv-hero relative min-h-[320px] overflow-hidden bg-ink">
           <HeroFilm variant="wide" className="portrait:hidden" />
           <HeroFilm variant="tall" className="landscape:hidden" />
           <a
             href="#intro"
-            className="rv-scroll-cue absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full text-paper/80 transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper/70"
+            className="rv-scroll-cue absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full text-paper/80 transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper portrait:hidden"
             aria-label="Scroll to the introduction"
           >
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -142,7 +146,7 @@ export default function RondvaLandingPage() {
         </section>
 
         {/* 1b. Inngangur — dökkt teikniblað, serif-fyrirsögn (eins og hetjuhlutinn var) */}
-        <section id="intro" className="rv-blueprint rv-grain relative scroll-mt-20 overflow-hidden text-paper">
+        <section id="intro" className="rv-blueprint rv-grain relative overflow-hidden text-paper">
           <div className="pointer-events-none absolute -right-64 -top-72 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
           <div className="relative mx-auto max-w-[1320px] px-6 pb-20 pt-16 md:pb-28 md:pt-24">
             <div className="grid grid-cols-1 gap-x-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">

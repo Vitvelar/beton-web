@@ -26,6 +26,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Hausinn er fastur efst (HeaderReveal): akkeri og fókus lenda fyrir neðan hann. */
+  scroll-padding-top: 96px;
 }
 
 body {
@@ -97,18 +99,6 @@ body {
   background-size: 160px 160px;
 }
 
-/* Hleðsluhreyfing: staflað inn í röð (animation-delay stýrt með --i) */
-@keyframes rv-rise {
-  from { opacity: 0; transform: translateY(18px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.rv-rise {
-  opacity: 0;
-  animation: rv-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: calc(var(--i, 0) * 110ms);
-}
-
 /* Skrunbirting: falið þar til IntersectionObserver setur data-shown */
 .rv-reveal {
   opacity: 0;
@@ -123,7 +113,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rv-rise, .rv-reveal { animation: none; opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+  .rv-reveal { animation: none; opacity: 1; transform: none; transition: none; }
 }
 
 /* Alvarleikamerki — alltaf með texta, aldrei litur einn */
@@ -187,6 +178,48 @@ body {
 /* Háa útgáfan (9:16) á breiðari standandi skjá, t.d. spjaldtölvu: autt bil til hliða. */
 @media (orientation: portrait) and (min-aspect-ratio: 602/1000) {
   .rv-film-media { -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
+}
+
+/* Myndbandið liggur yfir veggspjaldinu og birtist fyrst þegar það spilar. */
+.rv-film-video {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.rv-film-video[data-started="true"] {
+  opacity: 1;
+}
+
+/* Hlé/spila (WCAG 2.2.2) — neðst til hægri, þar sem kaflaheitin ná aldrei. */
+.rv-film-toggle {
+  position: absolute;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: rgb(250 251 252 / 0.85);
+  background: rgb(16 20 24 / 0.45);
+  border: 1px solid rgb(250 251 252 / 0.18);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+.rv-film-toggle:hover { color: #fafbfc; border-color: rgb(250 251 252 / 0.45); }
+.rv-film-toggle:focus-visible { outline: 2px solid #fafbfc; outline-offset: 3px; }
+
+/* Hetjuhlutinn: 100 svh (100 vh þar sem svh vantar). */
+.rv-hero {
+  height: 100vh;
+  height: 100svh;
+}
+
+/* Skáletrið í fyrirsögninni á dökkum grunni: aðeins ljósari blár svo birtuskil ná 3:1. */
+#intro .rv-display em {
+  color: #2c62ec;
 }
 
 /* Haus sem birtist við skrun (HeaderReveal) */

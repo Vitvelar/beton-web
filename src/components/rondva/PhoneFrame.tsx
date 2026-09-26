@@ -18,7 +18,7 @@ export function PhoneFrame({
       <div className="relative h-full w-full overflow-hidden rounded-[34px] bg-[#0b0e12]">
         {src ? (
           // eslint-disable-next-line @next/next/no-img-element -- fixed-size screenshot
-          <img src={src} alt={alt} className="h-full w-full object-cover" />
+          <img src={src} alt={alt} loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element -- static SVG */}

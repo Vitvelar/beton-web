@@ -26,7 +26,10 @@ export function HeaderReveal({ children }: { children: React.ReactNode }) {
       <div
         className="rv-header-reveal"
         data-shown={shown ? "true" : "false"}
-        onFocus={() => {
+        onFocus={(e) => {
+          // Aðeins lyklaborðsfókus: smellur með mús (Chromium fókusar tengla) á ekki að
+          // festa hausinn yfir myndinni þegar skrunað er aftur upp.
+          if (!(e.target as Element).matches?.(":focus-visible")) return;
           focused.current = true;
           setShown(true);
         }}
