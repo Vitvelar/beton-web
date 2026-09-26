@@ -1,30 +1,36 @@
 "use client";
 
-// Kynningarmynd Rondva í hero (15 s, 60 fps, hljóðlaus, lykkja). Tvær útgáfur af
-// sömu mynd: "wide" (16:9, spjaldtölva og stærra) og "portrait" (4:5 fyrir síma —
-// sýndarmyndavél rammar hvert skot upp á nýtt og kaflaheitin eru í borða neðst).
-// Frumskrár og endurgerð: plan/rondva/hero-film/.
+// Kynningarmynd Rondva, á fullum skjá efst á forsíðu (15 s, 60 fps, hljóðlaus, lykkja).
+// Tvær útgáfur af sömu mynd, valdar eftir stefnu skjásins: "wide" (16:9, liggjandi skjár)
+// og "tall" (9:16, standandi — sími/spjaldtölva; sýndarmyndavél rammar hvert skot upp á
+// nýtt og kaflaheitin eru í borða neðst með öruggri spássíu). Frumskrár og endurgerð:
+// plan/rondva/hero-film/.
 //
-// - Þjónninn birtir veggspjaldið (ramma 165, t = 2,75 s) aðeins fyrir þá útgáfu sem
-//   passar við skjáinn (<picture> með media), svo hin sækist aldrei. Myndbandið
-//   festist aðeins þegar útgáfan passar og hreyfing er leyfð, og byrjar á sama ramma
-//   og veggspjaldið. Lykkjan lokast á kyrru merki (rammi 899 ≡ rammi 0).
-// - prefers-reduced-motion: kyrrmynd af skýrslusíðunum; myndbandið er aldrei sótt.
-// - Myndin situr á blekmottu með mjúkum 64 px jöðrum: 48 px teikniblaðsnet kaflans
-//   fjarar út áður en eigið net myndarinnar fjarar inn, svo netin lendi aldrei tvöfalt.
+// - Fyllir kassann sinn (cover) en sker aldrei meira en ~3,5 % af hvorri hlið (sjá .rv-film
+//   í rondva.css); víki skjárinn meira frá hlutföllunum fyllir blekflöturinn afganginn.
+// - Veggspjaldið (merkið, rammi 0) liggur ALLTAF undir myndbandinu. Myndbandið byrjar á
+//   ramma 0 — engin tímasetning (seek) — og birtist ekki fyrr en það spilar, svo hvergi sést
+//   svartur flötur. (iOS sækir engin gögn í myndband í hléi: fyrri útgáfa beið eftir `seeked`
+//   sem kom aldrei.) `muted` er sett sem eigind, iOS krefst þess fyrir sjálfspilun.
+// - Hindruð spilun (orkusparnaður, bakgrunnsflipi): veggspjaldið stendur; play() er kallað
+//   beint í næstu snertingu/smelli/lyklaborði og þegar síðan sést aftur.
+// - Hnappur til að gera hlé/spila (WCAG 2.2.2). Val notandans heldur.
+// - Þjónninn velur mynd eftir media (<picture>): sími sækir aldrei breiða veggspjaldið og
+//   prefers-reduced-motion fær kyrrmyndina strax, án JavaScript. Þá er myndbandið aldrei sótt.
+// - Ef útgáfan hættir að passa (snúningur) er niðurhali myndbandsins hætt.
 import { useEffect, useRef, useState } from "react";
 
 const BASE = "/rondva/hero";
-const START_AT = 2.75; // sekúndur — sami rammi og veggspjöldin
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+const REDUCE = "(prefers-reduced-motion: reduce)";
 
 const VARIANTS = {
   wide: {
-    media: "(min-width: 768px)",
-    aspect: "aspect-video",
+    media: "(orientation: landscape)",
+    ratio: 16 / 9,
     width: 1920,
     height: 1080,
-    poster: "rondva-hero-poster-product",
+    poster: "rondva-hero-poster-lockup",
     still: "rondva-hero-reduced-motion",
     // WebM fyrst (2,5 MB á móti 4,2 MB); bæði lykkjuskil innan 4 litastiga.
     sources: [
@@ -32,36 +38,44 @@ const VARIANTS = {
       { src: "rondva-hero-1080p60.mp4", type: "video/mp4" },
     ],
   },
-  portrait: {
-    media: "(max-width: 767px)",
-    aspect: "aspect-[4/5]",
+  tall: {
+    media: "(orientation: portrait)",
+    ratio: 9 / 16,
     width: 1080,
-    height: 1350,
-    poster: "rondva-hero-mobile-poster",
-    still: "rondva-hero-mobile-reduced-motion",
-    sources: [{ src: "rondva-hero-mobile-720x900.mp4", type: "video/mp4" }], // 1,6 MB
+    height: 1920,
+    poster: "rondva-hero-tall-poster-lockup",
+    still: "rondva-hero-tall-reduced-motion",
+    // Stærri standandi skjáir (spjaldtölvur) fá 1080p; símar 720p (1,8 MB).
+    sources: [
+      { src: "rondva-hero-tall-1080x1920.mp4", type: "video/mp4", media: "(min-width: 600px)" },
+      { src: "rondva-hero-tall-720x1280.mp4", type: "video/mp4" },
+    ],
   },
 } as const;
 
-const MATTE_MASK =
-  "linear-gradient(to right, transparent, #000 64px, #000 calc(100% - 64px), transparent), " +
-  "linear-gradient(to bottom, transparent, #000 64px, #000 calc(100% - 64px), transparent)";
-const MATTE_STYLE = { maskImage: MATTE_MASK, WebkitMaskImage: MATTE_MASK, maskComposite: "intersect", WebkitMaskComposite: "source-in" } as const;
-
-const POSTER_ALT = "Rondva: a phone with the rooms of a flat next to a drafted floor plan rising into 3D.";
-const STILL_ALT =
-  "Four report pages from a Rondva inspection, one per room, each with a severity label and the inspector's company name.";
+const ALT =
+  "Rondva film: an inspection is set up and walked room by room on a phone, the inspector picks the severity, and Rondva drafts the report — one page per room.";
 
 type Mode = "pending" | "off" | "reduced" | "motion";
 
-export function HeroFilm({ variant = "wide", className }: { variant?: keyof typeof VARIANTS; className?: string }) {
+function stopDownload(v: HTMLVideoElement) {
+  v.pause();
+  v.querySelectorAll("source").forEach((s) => s.remove());
+  v.removeAttribute("src");
+  v.load();
+}
+
+export function HeroFilm({ variant, className }: { variant: keyof typeof VARIANTS; className?: string }) {
   const V = VARIANTS[variant];
   const ref = useRef<HTMLVideoElement>(null);
+  const userPaused = useRef(false);
   const [mode, setMode] = useState<Mode>("pending");
+  const [started, setStarted] = useState(false); // hefur spilað → myndbandið sést
+  const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
     const fits = window.matchMedia(V.media);
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const reduce = window.matchMedia(REDUCE);
     const update = () => setMode(!fits.matches ? "off" : reduce.matches ? "reduced" : "motion");
     update();
     fits.addEventListener("change", update);
@@ -75,63 +89,118 @@ export function HeroFilm({ variant = "wide", className }: { variant?: keyof type
   useEffect(() => {
     const v = ref.current;
     if (!v || mode !== "motion") return;
-    let started = false;
-    const play = () => void v.play().catch(() => {});
-    const start = () => {
-      if (started) return;
-      started = true;
-      v.addEventListener("seeked", play, { once: true });
-      v.currentTime = START_AT;
+    v.muted = true;
+    v.defaultMuted = true;
+    v.setAttribute("muted", "");
+    const tryPlay = () => {
+      if (userPaused.current || !v.paused) return;
+      v.play()?.catch(() => {
+        // Hindrað (orkusparnaður/bakgrunnur): veggspjaldið stendur; reynt aftur hér að neðan.
+      });
     };
-    if (v.readyState >= 1) start();
-    else v.addEventListener("loadedmetadata", start, { once: true });
-    // Vafrar gera hlé á myndböndum í bakgrunnsflipa; höldum áfram þegar síðan sést aftur.
+    const onPlaying = () => {
+      setStarted(true);
+      setPlaying(true);
+    };
+    const onPause = () => setPlaying(false);
+    // Kallað beint innan snertingar/smells svo WebKit telji það leyfða spilun.
+    const onGesture = () => tryPlay();
     const onVisible = () => {
-      if (document.visibilityState === "visible" && started && v.paused) play();
+      if (document.visibilityState === "visible") tryPlay();
     };
+    v.addEventListener("playing", onPlaying);
+    v.addEventListener("pause", onPause);
+    window.addEventListener("touchend", onGesture, { passive: true });
+    window.addEventListener("click", onGesture);
+    window.addEventListener("keydown", onGesture);
     document.addEventListener("visibilitychange", onVisible);
+    tryPlay();
     return () => {
-      v.removeEventListener("loadedmetadata", start);
-      v.removeEventListener("seeked", play);
+      v.removeEventListener("playing", onPlaying);
+      v.removeEventListener("pause", onPause);
+      window.removeEventListener("touchend", onGesture);
+      window.removeEventListener("click", onGesture);
+      window.removeEventListener("keydown", onGesture);
       document.removeEventListener("visibilitychange", onVisible);
+      // Myndbandið er farið úr DOM (snúningur, reduced motion): hættum niðurhali þess.
+      if (!v.isConnected) stopDownload(v);
+      setStarted(false);
+      setPlaying(false);
     };
   }, [mode]);
 
-  const image = mode === "reduced" ? V.still : V.poster;
+  const toggle = () => {
+    const v = ref.current;
+    if (!v) return;
+    if (v.paused) {
+      userPaused.current = false;
+      v.play()?.catch(() => {});
+    } else {
+      userPaused.current = true;
+      v.pause();
+    }
+  };
+
+  const style = { "--ar": V.ratio } as React.CSSProperties;
   return (
-    <div className={`relative isolate ${className ?? ""}`}>
-      <div aria-hidden="true" className="pointer-events-none absolute -inset-16 -z-10 bg-ink" style={MATTE_STYLE} />
-      {mode === "motion" ? (
-        <video
-          ref={ref}
-          className={`block h-auto w-full ${V.aspect}`}
-          muted
-          loop
-          playsInline
-          preload="auto"
-          poster={`${BASE}/${V.poster}.webp`}
+    <div className={`rv-film ${className ?? ""}`} style={style}>
+      <picture>
+        {/* media-skilyrðin: rétt útgáfa, og kyrrmynd fyrir reduced motion áður en JS keyrir */}
+        <source media={`${V.media} and ${REDUCE}`} srcSet={`${BASE}/${V.still}.webp`} type="image/webp" />
+        <source media={`${V.media} and ${REDUCE}`} srcSet={`${BASE}/${V.still}.jpg`} />
+        <source media={V.media} srcSet={`${BASE}/${V.poster}.webp`} type="image/webp" />
+        <source media={V.media} srcSet={`${BASE}/${V.poster}.jpg`} />
+        <img
+          src={BLANK}
+          alt={mode === "motion" ? "" : ALT}
+          aria-hidden={mode === "motion" ? true : undefined}
           width={V.width}
           height={V.height}
-          aria-label="Rondva in 15 seconds: set up the property, walk and record, the inspector picks the severity, Rondva drafts the report around the inspector's notes, review and export."
-        >
-          {V.sources.map((s) => (
-            <source key={s.src} src={`${BASE}/${s.src}`} type={s.type} />
-          ))}
-        </video>
-      ) : (
-        <picture>
-          {/* media-skilyrðin tryggja að sími sæki aldrei breiða veggspjaldið og öfugt */}
-          <source media={V.media} srcSet={`${BASE}/${image}.webp`} type="image/webp" />
-          <source media={V.media} srcSet={`${BASE}/${image}.jpg`} />
-          <img
-            src={BLANK}
-            alt={mode === "reduced" ? STILL_ALT : POSTER_ALT}
+          fetchPriority="high"
+          decoding="async"
+          className="rv-film-media"
+        />
+      </picture>
+      {mode === "motion" ? (
+        <>
+          <video
+            ref={ref}
+            className="rv-film-media rv-film-video"
+            data-started={started ? "true" : "false"}
+            muted
+            autoPlay
+            loop
+            playsInline
+            preload="auto"
+            disablePictureInPicture
+            disableRemotePlayback
             width={V.width}
             height={V.height}
-            className={`block h-auto w-full ${V.aspect}`}
-          />
-        </picture>
-      )}
+            aria-label={ALT}
+          >
+            {V.sources.map((s) => (
+              <source key={s.src} src={`${BASE}/${s.src}`} type={s.type} media={"media" in s ? s.media : undefined} />
+            ))}
+          </video>
+          <button
+            type="button"
+            onClick={toggle}
+            className="rv-film-toggle"
+            aria-label={playing ? "Pause film" : "Play film"}
+          >
+            {playing ? (
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor">
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor">
+                <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" />
+              </svg>
+            )}
+          </button>
+        </>
+      ) : null}
     </div>
   );
 }

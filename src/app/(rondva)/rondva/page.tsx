@@ -3,6 +3,7 @@ import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 import { WaitlistForm } from "@/components/rondva/WaitlistForm";
 import { HeroFilm } from "@/components/rondva/HeroFilm";
+import { HeaderReveal } from "@/components/rondva/HeaderReveal";
 import { PhoneFrame } from "@/components/rondva/PhoneFrame";
 import { RevealObserver } from "@/components/rondva/Reveal";
 import {
@@ -10,7 +11,6 @@ import {
   IconCamera,
   IconDraft,
   IconReview,
-  IconThermal,
   IconExport,
   IconLogo,
   IconShield,
@@ -47,7 +47,7 @@ const steps = [
     n: "04",
     Icon: IconReview,
     title: "Review, adjust, export",
-    body: "Read it. Change anything. Export the PDF with the cost estimate.",
+    body: "Read it. Change anything. Export the PDF.",
   },
 ];
 
@@ -56,11 +56,6 @@ const whatYouGet = [
     Icon: IconDraft,
     title: "A PDF your client can actually read",
     body: "Photos, thermal images and observations laid out per room.",
-  },
-  {
-    Icon: IconThermal,
-    title: "A cost estimate",
-    body: "Built from the findings you recorded.",
   },
   {
     Icon: IconReview,
@@ -125,33 +120,52 @@ function SectionHeading({
 export default function RondvaLandingPage() {
   return (
     <>
-      <RondvaHeader />
+      {/* Án JavaScript: allt efni sést strax (rv-reveal bíður annars eftir RevealObserver). */}
+      <noscript>
+        <style>{`.rv-reveal{opacity:1!important;transform:none!important}`}</style>
+      </noscript>
+      <HeaderReveal>
+        <RondvaHeader />
+      </HeaderReveal>
       <main className="flex-1">
-        {/* 1. Hero — dökkt teikniblað, serif-fyrirsögn, kynningarmynd */}
-        <section className="rv-blueprint rv-grain relative overflow-hidden text-paper">
+        {/* 1. Kynningarmyndin á fullum skjá. Hausinn er falinn hér og birtist við skrun.
+            Liggjandi skjár fær 16:9 útgáfuna, standandi (sími) 9:16. Aldrei inni í snúnum
+            ramma (merkið má ekki hallast). */}
+        <section aria-label="Rondva in 15 seconds" className="rv-hero relative min-h-[320px] overflow-hidden bg-ink">
+          <HeroFilm variant="wide" className="portrait:hidden" />
+          <HeroFilm variant="tall" className="landscape:hidden" />
+          <a
+            href="#intro"
+            className="rv-scroll-cue absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-10 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full text-paper/80 transition-colors hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-paper portrait:hidden"
+            aria-label="Scroll to the introduction"
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 9.5l6 6 6-6" />
+            </svg>
+          </a>
+        </section>
+
+        {/* 1b. Inngangur — dökkt teikniblað, serif-fyrirsögn (eins og hetjuhlutinn var) */}
+        <section id="intro" className="rv-blueprint rv-grain relative overflow-hidden text-paper">
           <div className="pointer-events-none absolute -right-64 -top-72 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
-          <div className="relative mx-auto max-w-[1320px] px-6 pb-20 pt-12 md:pb-28 md:pt-16">
+          <div className="relative mx-auto max-w-[1320px] px-6 pb-20 pt-16 md:pb-28 md:pt-24">
             <div className="grid grid-cols-1 gap-x-16 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-              <div className="relative z-20">
-                <p className="rv-rise rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
+              <div className="relative">
+                <p className="rv-reveal rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
                   Field app for property inspectors · In development
                 </p>
                 <h1
-                  className="rv-rise rv-display mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[72px] xl:text-[80px]"
+                  className="rv-reveal rv-display mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[72px] xl:text-[80px]"
                   style={{ "--i": 1 } as React.CSSProperties}
                 >
                   Walk the property.
                   <br />
                   <em>Rondva drafts the report.</em>
                 </h1>
-                {/* Sími: skammsniðið (4:5) beint undir fyrirsögninni, frá brún til brúnar. */}
-                <div className="rv-rise relative z-10 -mx-6 mt-8 md:hidden" style={{ "--i": 2 } as React.CSSProperties}>
-                  <HeroFilm variant="portrait" />
-                </div>
               </div>
-              <div className="relative z-20 lg:pb-3">
+              <div className="relative lg:pb-3">
                 <p
-                  className="rv-rise mt-7 max-w-xl text-lg leading-relaxed text-paper/75 md:text-xl lg:mt-0"
+                  className="rv-reveal mt-7 max-w-xl text-lg leading-relaxed text-paper/75 md:text-xl lg:mt-0"
                   style={{ "--i": 2 } as React.CSSProperties}
                 >
                   Rondva is a field app for independent property inspectors. You record the rooms,
@@ -159,7 +173,7 @@ export default function RondvaLandingPage() {
                   summary — you stay the author of every judgement in it.
                 </p>
                 <div
-                  className="rv-rise mt-9 flex flex-wrap items-center gap-4"
+                  className="rv-reveal mt-9 flex flex-wrap items-center gap-4"
                   style={{ "--i": 3 } as React.CSSProperties}
                 >
                   <a
@@ -177,18 +191,12 @@ export default function RondvaLandingPage() {
                   </a>
                 </div>
                 <p
-                  className="rv-rise mt-6 text-sm text-paper/55"
+                  className="rv-reveal mt-6 text-sm text-paper/55"
                   style={{ "--i": 4 } as React.CSSProperties}
                 >
                   In development. We&apos;re building with working inspectors before we open sales.
                 </p>
               </div>
-            </div>
-
-            {/* Spjaldtölva og tölva: breiða útgáfan í fullri breidd undir textanum.
-                Aldrei inni í snúnum ramma (merkið má ekki hallast). */}
-            <div className="rv-rise relative z-10 mt-12 hidden md:block lg:mt-11" style={{ "--i": 4 } as React.CSSProperties}>
-              <HeroFilm variant="wide" className="w-full" />
             </div>
           </div>
         </section>
@@ -248,7 +256,11 @@ export default function RondvaLandingPage() {
             <SectionHeading eyebrow="What you get">A report that reads like you wrote it. Because you did.</SectionHeading>
             <ul className="mt-14 grid gap-px overflow-hidden rounded-card border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
               {whatYouGet.map((item, i) => (
-                <li key={item.title} className="rv-reveal bg-paper p-7" style={{ "--i": i } as React.CSSProperties}>
+                <li
+                  key={item.title}
+                  className={`rv-reveal bg-paper p-7 ${i === whatYouGet.length - 1 ? "sm:col-span-2" : ""}`}
+                  style={{ "--i": i } as React.CSSProperties}
+                >
                   <item.Icon className="h-7 w-7 text-blue" />
                   <h3 className="mt-5 text-[17px] font-semibold tracking-tight text-ink">{item.title}</h3>
                   {item.body ? <p className="mt-2 leading-relaxed text-muted">{item.body}</p> : null}
