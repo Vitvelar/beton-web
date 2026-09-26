@@ -13,6 +13,11 @@ import { toLinkErrorCode } from "@/lib/sign-in-methods";
 function settingsRedirect(origin: string, param?: { name: string; value: string }) {
   const url = new URL("/dashboard/settings", origin);
   if (param) url.searchParams.set(param.name, param.value);
+  // Skrunar beint að spjaldinu (neðst á Stillingum), þar sem skilaboðin og
+  // uppfærði listinn eru. Eigið brot í Location kemur líka í veg fyrir að
+  // vafrinn beri áfram brot Supabase (#error=…&error_description=…): þá færi
+  // hrár villutexti í slóðina og auth-js læsi hann sem innskráningarsvar.
+  url.hash = "sign-in-methods";
   return NextResponse.redirect(url);
 }
 

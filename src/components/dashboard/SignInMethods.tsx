@@ -21,7 +21,8 @@ import {
 //
 // Tenging fer um OAuth (PKCE): linkIdentity sendir vafrann til Google/Apple,
 // sem skilar honum á /dashboard/auth/link, og sú leið vísar alltaf hingað aftur
-// með ?linked=1 eða ?link_error=<þekktur kóði>.
+// með ?linked=1 eða ?link_error=<þekktur kóði> og #sign-in-methods (skrunar
+// að þessu spjaldi).
 
 type LinkProvider = "google" | "apple";
 
@@ -85,7 +86,10 @@ export function SignInMethods({ locale, identities, appleEnabled }: Props) {
     "rounded-full border border-concrete-dk bg-white px-5 py-2 text-sm font-semibold text-ink hover:border-ink/40 disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
-    <section className="mt-6 space-y-4 rounded-xl border border-concrete bg-white p-6">
+    <section
+      id="sign-in-methods"
+      className="mt-6 scroll-mt-6 space-y-4 rounded-xl border border-concrete bg-white p-6"
+    >
       <div>
         <h2 className="text-xs font-mono uppercase tracking-wider text-fog">{t.title}</h2>
         <p className="mt-1.5 text-sm text-fog">{t.intro}</p>
