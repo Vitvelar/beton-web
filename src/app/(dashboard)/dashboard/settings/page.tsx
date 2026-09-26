@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CompanyBrandingForm } from "@/components/dashboard/CompanyBrandingForm";
-import { getDashboardLocale } from "@/lib/request-brand";
+import { SignInMethods } from "@/components/dashboard/SignInMethods";
+import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
+import { linkedIdentities } from "@/lib/sign-in-methods";
 import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -55,6 +57,7 @@ export default async function SettingsPage() {
       <p className="mt-6 text-xs text-fog">
         {fill(t.inspectorNote, { name: inspector?.full_name ?? user.email })}
       </p>
+      {(await getRequestBrand()) === "rondva" && <SignInMethods locale={locale} identities={linkedIdentities(user.identities)} appleEnabled={process.env.RONDVA_APPLE_SIGNIN === "1"} />}
     </div>
   );
 }

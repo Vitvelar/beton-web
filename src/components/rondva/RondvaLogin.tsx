@@ -31,7 +31,8 @@ const ERRORS: Record<string, { title: string; body: React.ReactNode }> = {
         <a href={`${R.marketingUrl}/#waitlist`} className="font-semibold text-ink underline underline-offset-4">
           join the waitlist
         </a>
-        .
+        . Used Rondva before with a different sign-in method? Sign in with that one, then link
+        this one in Settings.
       </>
     ),
   },
@@ -179,16 +180,25 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
             </button>
 
             {appleEnabled && (
-              <button
-                type="button"
-                onClick={() => signIn("apple")}
-                disabled={busy}
-                aria-busy={loading === "apple"}
-                className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-colors hover:bg-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <AppleMark />
-                {loading === "apple" ? "Opening Apple…" : "Continue with Apple"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => signIn("apple")}
+                  disabled={busy}
+                  aria-busy={loading === "apple"}
+                  className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-colors hover:bg-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <AppleMark />
+                  {loading === "apple" ? "Opening Apple…" : "Continue with Apple"}
+                </button>
+                {/* D7 (plan/rondva/INNSKRANINGARLEIDIR-HONNUN.md): hlutlaus ábending —
+                    „Hide My Email" má alltaf velja (leiðbeining 4.8), þá er Apple tengt í Stillingum. */}
+                <p className="px-2 text-center text-xs leading-relaxed text-fog">
+                  Used Rondva with Google before? Choose &ldquo;Share My Email&rdquo; and Apple opens
+                  the same account if your Apple ID uses that email. To keep your email hidden, sign
+                  in with Google first and link Apple in Settings.
+                </p>
+              </>
             )}
           </div>
 
