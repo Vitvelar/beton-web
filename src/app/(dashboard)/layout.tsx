@@ -7,7 +7,7 @@ import { BetonHtml } from "@/components/BetonHtml";
 import { RondvaAppHtml } from "@/components/rondva/RondvaAppHtml";
 import { betonMetadata } from "@/lib/beton-metadata";
 import { checkDashboardAccess } from "@/lib/access";
-import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
+import { getDashboardLocale, getRequestBrand, getRequestUser } from "@/lib/request-brand";
 import { BRANDS } from "@/lib/brand";
 
 // Sama stjórnborð þjónar tveimur vörumerkjum eftir hýsli (src/lib/brand.ts):
@@ -74,12 +74,10 @@ export default async function DashboardLayout({
   let user: User | null = null;
   let allowed = false;
   try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    user = data.user;
+    user = await getRequestUser();
     // Innskráður en án aðgangs (t.d. fyrirtæki bíður samþykkis) sér aðeins
     // innskráningarsíðuna með skilaboðum — ekki stjórnborðshausinn.
-    if (user) allowed = (await checkDashboardAccess(supabase, user.email, brand)).allowed;
+    if (user) allowed = (await checkDashboardAccess(await createClient(), user.email, brand)).allowed;
   } catch {
     user = null;
   }

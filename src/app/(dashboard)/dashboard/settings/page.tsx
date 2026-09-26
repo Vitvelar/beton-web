@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CompanyBrandingForm } from "@/components/dashboard/CompanyBrandingForm";
+import { LanguageSetting } from "@/components/dashboard/LanguageSetting";
 import { SignInMethods } from "@/components/dashboard/SignInMethods";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { linkedIdentities } from "@/lib/sign-in-methods";
@@ -13,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function SettingsPage() {
   const locale = await getDashboardLocale();
+  const brand = await getRequestBrand();
   const t = dashboardCopy(locale).settings;
   const supabase = await createClient();
   const {
@@ -37,6 +39,9 @@ export default async function SettingsPage() {
           {t.backToList}
         </Link>
       </div>
+
+      {/* Beton er alltaf á íslensku — tungumálavalið er aðeins á app.rondva.com. */}
+      {brand === "rondva" ? <LanguageSetting locale={locale} /> : null}
 
       {inspector ? (
         <CompanyBrandingForm

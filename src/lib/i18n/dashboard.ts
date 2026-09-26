@@ -25,14 +25,27 @@ import type { Brand } from "@/lib/brand";
 export const DASHBOARD_LOCALES = ["is", "en"] as const;
 export type DashboardLocale = (typeof DASHBOARD_LOCALES)[number];
 
+/** Heiti hvers tungumáls á því sjálfu (birt í tungumálavalinu, aldrei þýtt). */
+export const LOCALE_NAMES: Readonly<Record<DashboardLocale, string>> = {
+  is: "Íslenska",
+  en: "English",
+};
+
+/**
+ * Lykill tungumálavalsins í user_metadata Supabase-notandans. Appið (beton-app
+ * lib/i18n) les og skrifar SAMA lykil svo val á öðrum staðnum gildi á hinum.
+ * Aðeins birtingarval — notandinn getur breytt user_metadata sjálfur, svo
+ * aðgangur eða auðkenni má aldrei byggja á því.
+ */
+export const USER_LOCALE_KEY = "ui_locale";
+
 export function isDashboardLocale(value: unknown): value is DashboardLocale {
   return (DASHBOARD_LOCALES as readonly unknown[]).includes(value);
 }
 
 /**
  * Tungumál stjórnborðsins. Beton er alltaf á íslensku. Rondva er á ensku nema
- * notandinn hafi valið annað studd tungumál (`preferred`, t.d. úr stillingum —
- * ekki enn tengt).
+ * notandinn hafi valið annað studd tungumál (`preferred` = user_metadata.ui_locale).
  */
 export function localeForBrand(brand: Brand, preferred?: string | null): DashboardLocale {
   if (brand !== "rondva") return "is";
@@ -51,6 +64,11 @@ const is = {
     section: "Stjórnborð",
     settings: "Stillingar",
     signOut: "Útskrá",
+  },
+  language: {
+    title: "Tungumál",
+    hint: "Notað í stjórnborðinu og í Rondva-appinu.",
+    saveFailed: "Ekki tókst að vista tungumálið. Reyndu aftur.",
   },
   status: {
     draft: "Drög",
@@ -281,6 +299,11 @@ const en: DashboardCopy = {
     section: "Dashboard",
     settings: "Settings",
     signOut: "Sign out",
+  },
+  language: {
+    title: "Language",
+    hint: "Used in the dashboard and the Rondva app.",
+    saveFailed: "Could not save the language. Please try again.",
   },
   status: {
     draft: "Draft",
