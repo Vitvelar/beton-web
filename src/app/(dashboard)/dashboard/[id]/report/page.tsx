@@ -382,7 +382,8 @@ export default async function ReportPage({
         </div>
       </div>
 
-      <article className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
+      {/* lang = tungumál skýrslunnar (getur verið annað en stjórnborðsins/hýsilsins). */}
+      <article lang={locale} className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
 
         {/* ═══ PAGE 1: COVER ═══ */}
         <section className="rpt-cover">
