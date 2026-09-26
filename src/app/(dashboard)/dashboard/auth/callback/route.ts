@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkDashboardAccess, loginErrorFor } from "@/lib/access";
+import { getRequestBrand } from "@/lib/request-brand";
 
 function loginRedirect(origin: string, error?: string) {
   const loginUrl = new URL("/dashboard/login", origin);
@@ -29,13 +30,15 @@ export async function GET(request: Request) {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const access = await checkDashboardAccess(supabase, user?.email);
+      const brand = await getRequestBrand();
+      const access = await checkDashboardAccess(supabase, user?.email, brand);
       if (access.allowed) {
         return NextResponse.redirect(new URL("/dashboard", origin));
       }
 
       await supabase.auth.signOut({ scope: "local" });
-      return loginRedirect(origin, loginErrorFor(access));
+      // Beton-innskráningin þekkir aðeins „unauthorized".
+      return loginRedirect(origin, brand === "rondva" ? loginErrorFor(access) : "unauthorized");
     }
     return loginRedirect(origin, "oauth");
   }

@@ -85,11 +85,14 @@ const sections: Section[] = [
     body: (
       <>
         <p>
-          Approved beta customers sign in at app.rondva.com with Google or
-          Apple. When you do, the provider tells us your name, your email
-          address and a stable account identifier. With Apple you can choose to
+          Approved beta customers sign in at app.rondva.com with Google or,
+          where it is offered, Apple. When you do, the provider tells us your
+          name, your email address, a stable account identifier and (with
+          Google) a link to your profile picture. With Apple you can choose to
           share a private relay address instead of your real one. We never see
-          or store your Google or Apple password.
+          or store your Google or Apple password. For security, our
+          authentication service also records the time, IP address and browser
+          of each sign-in.
         </p>
         <p>
           We use this only to recognise you, keep you signed in and connect you
@@ -215,11 +218,13 @@ export default function RondvaPrivacyPage() {
         <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">
           <p className="rv-eyebrow">Privacy</p>
           <h1 className="mt-4 text-4xl md:text-5xl font-semibold tracking-tight rv-balance">
-            How we handle your data on the Rondva waitlist
+            How we handle your data on the Rondva waitlist and dashboard
           </h1>
           <p className="mt-6 text-lg text-muted leading-relaxed">
             Short version: we store your email and country, we use them only to
-            tell you when Rondva is ready, and you can leave in one message.
+            tell you when Rondva is ready, and you can leave in one message. If
+            you sign in to the dashboard, we use your Google or Apple name and
+            email only to let you in.
           </p>
 
           <div className="mt-14 space-y-12">

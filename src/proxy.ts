@@ -8,9 +8,10 @@ import { BRANDS, resolveHost, RONDVA_ROUTE_PREFIX } from "@/lib/brand";
 // Stuttar innskráningarslóðir sem fólk slær inn eða tenglar vísa á.
 const LOGIN_ALIASES = new Set(["/login", "/signin", "/sign-in"]);
 
-// Kyrrstæðar skrár úr public/ (t.d. /rondva/logo.svg) sem stjórnborðið á
-// app.rondva.com hleður. Þær mega ekki fá tilvísun yfir á rondva.com.
-const STATIC_FILE = /^\/rondva\/[^?]*\.(?:svg|png|ico|webp|jpg|jpeg)$/i;
+// Kyrrstæðar skrár úr public/ sem stjórnborðið á app.rondva.com hleður: merki
+// og favicon (/rondva/*) og skýrsluletrið (/fonts/report/*). Þær mega ekki fá
+// tilvísun yfir á rondva.com.
+const STATIC_FILE = /^\/(?:rondva|fonts)\/[^?]*\.(?:svg|png|ico|webp|jpg|jpeg|ttf|otf|woff2?)$/i;
 
 function createSupabaseProxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -149,10 +150,12 @@ export async function proxy(request: NextRequest) {
     }
 
     // Netfangalistinn fyrst (óbreytt hraðleið), svo virk fyrirtækjaaðild.
-    const access = await checkDashboardAccess(supabase, user.email);
+    // Beton-lén: aðeins listinn og alltaf error=unauthorized, eins og áður.
+    const brand = hostConfig?.brand ?? "beton";
+    const access = await checkDashboardAccess(supabase, user.email, brand);
     if (!access.allowed) {
       const loginUrl = new URL("/dashboard/login", request.url);
-      loginUrl.searchParams.set("error", loginErrorFor(access));
+      loginUrl.searchParams.set("error", brand === "rondva" ? loginErrorFor(access) : "unauthorized");
       return NextResponse.redirect(loginUrl);
     }
 

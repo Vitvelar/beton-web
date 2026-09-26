@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isAllowedEmail } from "@/lib/allowed-users";
 import { SeverityBadge } from "@/components/dashboard/SeverityBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ReportActions } from "./report-actions";
@@ -29,6 +30,12 @@ export default async function InspectionDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  // „Senda í Google Drive" skrifar í Drive Beton ehf. — aðeins fyrir gamla
+  // netfangalistann, aldrei fyrir fyrirtækjaaðganga á app.rondva.com.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const canSendToDrive = isAllowedEmail(user?.email);
 
   const { data: inspection, error } = await supabase
     .from("inspections")
@@ -152,6 +159,7 @@ export default async function InspectionDetailPage({
         inspectionId={inspection.id}
         reportUrl={reportSignedUrl}
         hasAiReport={!!inspection.ai_report_data}
+        canSendToDrive={canSendToDrive}
       />
 
       {/* Rooms */}

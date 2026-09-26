@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isAllowedEmail } from "@/lib/allowed-users";
+import { checkDashboardAccess } from "@/lib/access";
+import { getRequestBrand } from "@/lib/request-brand";
 import {
   createBearerClient,
   getBearerAuthorization,
@@ -32,7 +33,8 @@ export async function GET(
 ) {
   const { id } = await ctx.params;
 
-  // Admin notar Supabase cookies + allowlist; appið sendir Bearer access token
+  // Stjórnborðið notar Supabase cookies + aðgangshliðið (src/lib/access.ts);
+  // appið sendir Bearer access token
   // og RLS sér um eignarhald.
   const bearerAuthorization = getBearerAuthorization(
     request.headers.get("authorization")
@@ -48,7 +50,10 @@ export async function GET(
   if (userError || !user) {
     return NextResponse.json({ error: "Óheimill aðgangur" }, { status: 401 });
   }
-  if (!bearerAuthorization && !isAllowedEmail(user.email)) {
+  if (
+    !bearerAuthorization &&
+    !(await checkDashboardAccess(supabase, user.email, await getRequestBrand())).allowed
+  ) {
     return NextResponse.json({ error: "Óheimill aðgangur" }, { status: 401 });
   }
 

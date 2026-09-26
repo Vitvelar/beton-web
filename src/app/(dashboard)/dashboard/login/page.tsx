@@ -51,7 +51,7 @@ async function hasActiveSession(): Promise<boolean> {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return false;
-    return (await checkDashboardAccess(supabase, user.email)).allowed;
+    return (await checkDashboardAccess(supabase, user.email, "rondva")).allowed;
   } catch {
     return false;
   }

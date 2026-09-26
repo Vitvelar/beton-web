@@ -1,4 +1,4 @@
-import { inter, sourceSerif } from "@/lib/fonts/rondva";
+import { interApp, sourceSerifApp } from "@/lib/fonts/rondva-app";
 import "@/app/globals.css";
 
 // <html>/<body>-skel stjórnborðsins á app.rondva.com. Notar sama stílblað og
@@ -10,7 +10,7 @@ export function RondvaAppHtml({ children }: { children: React.ReactNode }) {
     <html
       lang="en"
       data-brand="rondva"
-      className={`${inter.variable} ${sourceSerif.variable} h-full antialiased`}
+      className={`${interApp.variable} ${sourceSerifApp.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-paper text-ink">
         {children}

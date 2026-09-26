@@ -73,7 +73,7 @@ export default async function DashboardLayout({
     user = data.user;
     // Innskráður en án aðgangs (t.d. fyrirtæki bíður samþykkis) sér aðeins
     // innskráningarsíðuna með skilaboðum — ekki stjórnborðshausinn.
-    if (user) allowed = (await checkDashboardAccess(supabase, user.email)).allowed;
+    if (user) allowed = (await checkDashboardAccess(supabase, user.email, brand)).allowed;
   } catch {
     user = null;
   }

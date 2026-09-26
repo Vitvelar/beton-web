@@ -37,7 +37,7 @@ const ERRORS: Record<string, { title: string; body: React.ReactNode }> = {
   },
   pending: {
     title: "Your company is awaiting approval",
-    body: "We review every new company before opening access. You'll get an email as soon as your account is active.",
+    body: "We review every new company before opening access, and we'll let you know as soon as your account is active.",
   },
   suspended: {
     title: "This company account is paused",
@@ -120,14 +120,17 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
           <p className="rv-serif text-[38px] leading-[1.06] xl:text-[46px]">
             Walk the property.
             <br />
-            <em className="font-normal italic text-navy">Rondva drafts the report.</em>
+            {/* Ljósari blár en Rondva Blue: #1b4fd8 nær ekki 3:1 á #101418. */}
+            <em className="font-normal italic" style={{ color: "#8fb0ff" }}>
+              Rondva drafts the report.
+            </em>
           </p>
           <p className="mt-6 text-base leading-relaxed text-white/65">
             Your inspections, photos and report drafts, synced from the field app.
           </p>
         </div>
 
-        <p className="relative text-xs text-white/40">
+        <p className="relative text-xs text-white/60">
           &copy; 2026 {R.company}
         </p>
       </aside>
@@ -143,7 +146,8 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy">Dashboard</p>
           <h1 className="rv-serif mt-3 text-[34px] leading-tight text-ink">Sign in to Rondva</h1>
           <p className="mt-3 text-[15px] leading-relaxed text-fog">
-            Use the Google or Apple account your company was approved with.
+            Use the {appleEnabled ? "Google or Apple" : "Google"} account your company was approved
+            with.
           </p>
 
           {queryError && !error && (
@@ -199,7 +203,7 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
           </div>
         </div>
 
-        <p className="mx-auto mt-10 w-full max-w-[400px] text-xs leading-relaxed text-fog/80">
+        <p className="mx-auto mt-10 w-full max-w-[400px] text-xs leading-relaxed text-fog">
           By signing in you agree to how we handle your data in the{" "}
           <a href={`${R.marketingUrl}/privacy`} className="underline underline-offset-2 hover:text-ink">
             privacy policy

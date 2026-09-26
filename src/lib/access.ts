@@ -1,11 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isAllowedEmail } from "@/lib/allowed-users";
+import type { Brand } from "@/lib/brand";
 
-// Hver má nota stjórnborðið (admin.beton.is / app.rondva.com)?
+// Hver má nota stjórnborðið?
 //
-// 1. Gamli netfangalistinn (Bragi, Hjalti, Alex) er hraðleið: engin auka
-//    netbeiðni, nákvæmlega sama hegðun og fyrir fyrirtækjaaðganga.
-// 2. Annars spyrjum við gagnagrunninn: my_access().allowed = is_allowed_user()
+// 1. Gamli netfangalistinn (Bragi, Hjalti, Alex) er hraðleið á báðum lénum:
+//    engin auka netbeiðni, nákvæmlega sama hegðun og áður.
+// 2. admin.beton.is (og óþekktir hýslar) hleypa AÐEINS listanum inn — Beton
+//    hegðar sér eins og fyrir fyrirtækjaaðganga.
+// 3. app.rondva.com spyr gagnagrunninn: my_access().allowed = is_allowed_user()
 //    = listinn OR virk aðild að fyrirtæki (companies.status = 'active').
 //    „Virkt fyrirtæki" er það sem greiðir (eða er undanþegið) — sjá
 //    beton-app/docs/release/COMPANY_ACCOUNTS_DESIGN.md §7.5.
@@ -26,9 +29,11 @@ interface MyAccessPayload {
 
 export async function checkDashboardAccess(
   supabase: SupabaseClient,
-  email: string | null | undefined
+  email: string | null | undefined,
+  brand: Brand
 ): Promise<DashboardAccess> {
   if (isAllowedEmail(email)) return { allowed: true };
+  if (brand !== "rondva") return { allowed: false, reason: "no_account" };
 
   try {
     const { data, error } = await supabase.rpc("my_access");
