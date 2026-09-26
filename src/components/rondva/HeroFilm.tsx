@@ -1,17 +1,22 @@
 "use client";
 
-// Kynningarmynd Rondva í hero (15 s, 60 fps, hljóðlaus, lykkja). Tvær útgáfur af
-// sömu mynd: "wide" (16:9, spjaldtölva og stærra) og "portrait" (4:5 fyrir síma —
-// sýndarmyndavél rammar hvert skot upp á nýtt og kaflaheitin eru í borða neðst).
-// Frumskrár og endurgerð: plan/rondva/hero-film/.
+// Kynningarmynd Rondva, á fullum skjá efst á forsíðu (15 s, 60 fps, hljóðlaus, lykkja).
+// Tvær útgáfur af sömu mynd, valdar eftir stefnu skjásins: "wide" (16:9, liggjandi skjár)
+// og "tall" (9:16, standandi — sími/spjaldtölva; sýndarmyndavél rammar hvert skot upp á
+// nýtt og kaflaheitin eru í borða neðst með öruggri spássíu). Frumskrár og endurgerð:
+// plan/rondva/hero-film/.
 //
-// - Þjónninn birtir veggspjaldið (ramma 165, t = 2,75 s) aðeins fyrir þá útgáfu sem
-//   passar við skjáinn (<picture> með media), svo hin sækist aldrei. Myndbandið
-//   festist aðeins þegar útgáfan passar og hreyfing er leyfð, og byrjar á sama ramma
-//   og veggspjaldið. Lykkjan lokast á kyrru merki (rammi 899 ≡ rammi 0).
+// - Fyllir kassann sinn (cover) en sker aldrei meira en ~3,5 % af hvorri hlið; ef skjárinn
+//   víkur meira frá hlutföllum myndarinnar fyllir blekflöturinn og teikninetið afganginn
+//   (mjúkir jaðrar, sjá .rv-film í rondva.css).
+// - Þjónninn birtir veggspjaldið (rammi 165, t = 2,75 s) aðeins fyrir útgáfuna sem passar
+//   (<picture> með media), svo hin sækist aldrei. Myndbandið festist aðeins þegar útgáfan
+//   passar og hreyfing er leyfð, og byrjar á sama ramma og veggspjaldið.
+// - iOS Safari sækir engin gögn í myndband sem er í hléi, svo `seeked` kemur aldrei ef beðið
+//   er eftir því: play() er kallað strax eftir að byrjunartími er settur. `muted` er líka
+//   sett sem eigind (React setur bara eiginleikann) — iOS krefst þess fyrir sjálfspilun.
+//   Ef spilun er hindruð (orkusparnaður, gagnasparnaður) birtist veggspjaldið, aldrei svartur flötur.
 // - prefers-reduced-motion: kyrrmynd af skýrslusíðunum; myndbandið er aldrei sótt.
-// - Myndin situr á blekmottu með mjúkum 64 px jöðrum: 48 px teikniblaðsnet kaflans
-//   fjarar út áður en eigið net myndarinnar fjarar inn, svo netin lendi aldrei tvöfalt.
 import { useEffect, useRef, useState } from "react";
 
 const BASE = "/rondva/hero";
@@ -20,8 +25,8 @@ const BLANK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAI
 
 const VARIANTS = {
   wide: {
-    media: "(min-width: 768px)",
-    aspect: "aspect-video",
+    media: "(orientation: landscape)",
+    ratio: 16 / 9,
     width: 1920,
     height: 1080,
     poster: "rondva-hero-poster-product",
@@ -32,29 +37,24 @@ const VARIANTS = {
       { src: "rondva-hero-1080p60.mp4", type: "video/mp4" },
     ],
   },
-  portrait: {
-    media: "(max-width: 767px)",
-    aspect: "aspect-[4/5]",
+  tall: {
+    media: "(orientation: portrait)",
+    ratio: 9 / 16,
     width: 1080,
-    height: 1350,
-    poster: "rondva-hero-mobile-poster",
-    still: "rondva-hero-mobile-reduced-motion",
-    sources: [{ src: "rondva-hero-mobile-720x900.mp4", type: "video/mp4" }], // 1,6 MB
+    height: 1920,
+    poster: "rondva-hero-tall-poster",
+    still: "rondva-hero-tall-reduced-motion",
+    sources: [{ src: "rondva-hero-tall-720x1280.mp4", type: "video/mp4" }],
   },
 } as const;
-
-const MATTE_MASK =
-  "linear-gradient(to right, transparent, #000 64px, #000 calc(100% - 64px), transparent), " +
-  "linear-gradient(to bottom, transparent, #000 64px, #000 calc(100% - 64px), transparent)";
-const MATTE_STYLE = { maskImage: MATTE_MASK, WebkitMaskImage: MATTE_MASK, maskComposite: "intersect", WebkitMaskComposite: "source-in" } as const;
 
 const POSTER_ALT = "Rondva: a phone with the rooms of a flat next to a drafted floor plan rising into 3D.";
 const STILL_ALT =
   "Four report pages from a Rondva inspection, one per room, each with a severity label and the inspector's company name.";
 
-type Mode = "pending" | "off" | "reduced" | "motion";
+type Mode = "pending" | "off" | "reduced" | "motion" | "blocked";
 
-export function HeroFilm({ variant = "wide", className }: { variant?: keyof typeof VARIANTS; className?: string }) {
+export function HeroFilm({ variant, className }: { variant: keyof typeof VARIANTS; className?: string }) {
   const V = VARIANTS[variant];
   const ref = useRef<HTMLVideoElement>(null);
   const [mode, setMode] = useState<Mode>("pending");
@@ -62,7 +62,8 @@ export function HeroFilm({ variant = "wide", className }: { variant?: keyof type
   useEffect(() => {
     const fits = window.matchMedia(V.media);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setMode(!fits.matches ? "off" : reduce.matches ? "reduced" : "motion");
+    const update = () =>
+      setMode((m) => (!fits.matches ? "off" : reduce.matches ? "reduced" : m === "blocked" ? "blocked" : "motion"));
     update();
     fits.addEventListener("change", update);
     reduce.addEventListener("change", update);
@@ -75,40 +76,73 @@ export function HeroFilm({ variant = "wide", className }: { variant?: keyof type
   useEffect(() => {
     const v = ref.current;
     if (!v || mode !== "motion") return;
-    let started = false;
-    const play = () => void v.play().catch(() => {});
+    v.muted = true;
+    v.defaultMuted = true;
+    v.setAttribute("muted", "");
+    let alive = true;
+    const play = () => {
+      const p = v.play();
+      // Aðeins raunveruleg hindrun (NotAllowedError/NotSupportedError) sýnir veggspjaldið;
+      // AbortError (truflað af hleðslu) er hunsað.
+      if (p)
+        p.catch((e: unknown) => {
+          const name = e instanceof DOMException ? e.name : "";
+          if (alive && v.paused && (name === "NotAllowedError" || name === "NotSupportedError")) setMode("blocked");
+        });
+    };
     const start = () => {
-      if (started) return;
-      started = true;
-      v.addEventListener("seeked", play, { once: true });
-      v.currentTime = START_AT;
+      try {
+        v.currentTime = START_AT;
+      } catch {
+        // sumir vafrar leyfa ekki tímasetningu fyrr en lýsigögn eru komin
+      }
+      play();
     };
     if (v.readyState >= 1) start();
     else v.addEventListener("loadedmetadata", start, { once: true });
     // Vafrar gera hlé á myndböndum í bakgrunnsflipa; höldum áfram þegar síðan sést aftur.
     const onVisible = () => {
-      if (document.visibilityState === "visible" && started && v.paused) play();
+      if (document.visibilityState === "visible" && v.paused) play();
     };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
+      alive = false;
       v.removeEventListener("loadedmetadata", start);
-      v.removeEventListener("seeked", play);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [mode]);
 
+  // Hindruð spilun (bakgrunnsflipi, orkusparnaður): reynum aftur þegar síðan sést eða við
+  // fyrstu snertingu/smell — þá telst notandinn hafa leyft spilun.
+  useEffect(() => {
+    if (mode !== "blocked") return;
+    const retry = () => {
+      if (document.visibilityState === "visible") setMode("motion");
+    };
+    document.addEventListener("visibilitychange", retry);
+    window.addEventListener("pointerdown", retry, { once: true });
+    window.addEventListener("keydown", retry, { once: true });
+    return () => {
+      document.removeEventListener("visibilitychange", retry);
+      window.removeEventListener("pointerdown", retry);
+      window.removeEventListener("keydown", retry);
+    };
+  }, [mode]);
+
   const image = mode === "reduced" ? V.still : V.poster;
+  const style = { "--ar": V.ratio } as React.CSSProperties;
   return (
-    <div className={`relative isolate ${className ?? ""}`}>
-      <div aria-hidden="true" className="pointer-events-none absolute -inset-16 -z-10 bg-ink" style={MATTE_STYLE} />
+    <div className={`rv-film ${className ?? ""}`} style={style}>
       {mode === "motion" ? (
         <video
           ref={ref}
-          className={`block h-auto w-full ${V.aspect}`}
+          className="rv-film-media"
           muted
           loop
           playsInline
           preload="auto"
+          disablePictureInPicture
+          disableRemotePlayback
           poster={`${BASE}/${V.poster}.webp`}
           width={V.width}
           height={V.height}
@@ -128,7 +162,9 @@ export function HeroFilm({ variant = "wide", className }: { variant?: keyof type
             alt={mode === "reduced" ? STILL_ALT : POSTER_ALT}
             width={V.width}
             height={V.height}
-            className={`block h-auto w-full ${V.aspect}`}
+            fetchPriority="high"
+            decoding="async"
+            className="rv-film-media"
           />
         </picture>
       )}

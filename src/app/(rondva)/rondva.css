@@ -147,5 +147,76 @@ body {
   background: currentColor;
 }
 
-/* Tölur með jafnbreiðum stöfum í kostnaðarmati */
+/* Tölur með jafnbreiðum stöfum (verð, tölusetning) */
 .rv-tnum { font-variant-numeric: tabular-nums; }
+
+/* --- Kynningarmynd á fullum skjá (HeroFilm) ---------------------------------
+   Myndin fyllir kassann (cover) en sker aldrei meira en ~3,5 % af hvorri hlið:
+   breidd = min(max(W, H·r), 1,07·min(W, H·r)), r = breidd/hæð myndarinnar.
+   Víki skjárinn meira frá hlutföllunum fyllir blekflöturinn afganginn og jaðrarnir
+   mýkjast (aðeins þar sem autt bil er — á skjá sem myndin fyllir er engin dofnun). */
+.rv-film {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background-color: var(--color-ink);
+}
+.rv-film-media {
+  --w: min(max(100cqw, calc(100cqh * var(--ar))), calc(1.07 * min(100cqw, calc(100cqh * var(--ar)))));
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--w);
+  max-width: none;
+  height: auto;
+  aspect-ratio: var(--ar);
+  /* Lóðrétt umframhæð er tekin að mestu ofan af (þar er aðeins netið): kaflaheitin neðst
+     missa í mesta lagi ~1,4 %, efri brúnin ~5,6 %. */
+  transform: translate(-50%, calc(-50% - max(0px, var(--w) / var(--ar) - 100cqh) * 0.3));
+  object-fit: cover;
+}
+/* Breiða útgáfan: autt bil ofan/neðan (skjár hlutfallslega hærri en 16:9 / 1,07). */
+@media (orientation: landscape) and (max-aspect-ratio: 1661/1000) {
+  .rv-film-media { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
+}
+/* Breiða útgáfan á mjög breiðum skjá: autt bil til hliða. */
+@media (orientation: landscape) and (min-aspect-ratio: 1902/1000) {
+  .rv-film-media { -webkit-mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(to right, transparent, #000 48px, #000 calc(100% - 48px), transparent); }
+}
+/* Háa útgáfan (9:16) á breiðari standandi skjá, t.d. spjaldtölvu: autt bil til hliða. */
+@media (orientation: portrait) and (min-aspect-ratio: 602/1000) {
+  .rv-film-media { -webkit-mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to right, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
+}
+
+/* Haus sem birtist við skrun (HeaderReveal) */
+.rv-header-reveal {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+}
+.rv-header-reveal[data-shown="true"] {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+/* Hausinn svífur hér yfir dökkum köflum: nær ógegnsær pappír svo hann verði ekki grár. */
+.rv-header-reveal > header {
+  background-color: color-mix(in srgb, var(--color-paper) 94%, transparent);
+}
+
+/* Skrunvísir neðst á myndinni */
+@keyframes rv-nudge {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50% { transform: translateY(6px); opacity: 0.9; }
+}
+.rv-scroll-cue svg { animation: rv-nudge 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rv-header-reveal { transition: none; }
+  .rv-scroll-cue svg { animation: none; opacity: 0.7; }
+}
