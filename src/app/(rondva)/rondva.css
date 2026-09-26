@@ -211,6 +211,29 @@ body {
 .rv-film-toggle:hover { color: #fafbfc; border-color: rgb(250 251 252 / 0.45); }
 .rv-film-toggle:focus-visible { outline: 2px solid #fafbfc; outline-offset: 3px; }
 
+/* „Log in" efst til hægri á myndinni (hausinn er falinn þar til skrunað er). */
+.rv-hero-login {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgb(250 251 252 / 0.92);
+  background: rgb(16 20 24 / 0.45);
+  border: 1px solid rgb(250 251 252 / 0.18);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+.rv-hero-login:hover { color: #fafbfc; border-color: rgb(250 251 252 / 0.45); background: rgb(16 20 24 / 0.6); }
+.rv-hero-login:focus-visible { outline: 2px solid #fafbfc; outline-offset: 3px; }
+
 /* Hetjuhlutinn: 100 svh (100 vh þar sem svh vantar). */
 .rv-hero {
   height: 100vh;
