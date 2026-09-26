@@ -19,7 +19,7 @@ const { waitForReport, readWithTimeout } = context.exports;
  await assert.rejects(readWithTimeout(()=>new Promise(()=>{}),5), /lang/);
  console.log('PASS a hung individual request cannot leave progress running forever');
  calls=0;
- result=await waitForReport(async()=>{calls++;throw Error('offline')},{cancelled:()=>false,sleep:async()=>{}});assert.equal(result.state,'error');assert.equal(calls,3);
+ result=await waitForReport(async()=>{calls++;throw Error('offline')},{cancelled:()=>false,sleep:async()=>{},unreachableDetail:'offline text'});assert.equal(result.state,'error');assert.equal(calls,3);assert.equal(result.detail,'offline text');
  console.log('PASS repeated network failures offer status retry, not another AI request');
  let cancel=false;
  result=await waitForReport(async()=>{cancel=true;return {state:'ready'};},{cancelled:()=>cancel}); assert.equal(result.state,'cancelled');

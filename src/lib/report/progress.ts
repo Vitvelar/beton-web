@@ -14,7 +14,11 @@ export async function readWithTimeout<T>(read: () => Promise<T>, timeoutMs = 15_
 
 export async function waitForReport(
   read: () => Promise<ReportProgressResult>,
-  options: { cancelled: () => boolean; sleep?: (ms: number) => Promise<void>; now?: () => number; timeoutMs?: number; requestTimeoutMs?: number },
+  options: {
+    cancelled: () => boolean; sleep?: (ms: number) => Promise<void>; now?: () => number; timeoutMs?: number; requestTimeoutMs?: number;
+    /** Shown after repeated failed status reads; the caller passes it in the dashboard's language. */
+    unreachableDetail?: string;
+  },
 ): Promise<ReportProgressResult | { state: 'timeout' | 'cancelled'; detail?: string }> {
   const now = options.now ?? Date.now;
   const sleep = options.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
@@ -28,7 +32,7 @@ export async function waitForReport(
       if (result.state !== 'pending') return result;
     } catch {
       if (options.cancelled()) return { state: 'cancelled' };
-      if (++failures >= 3) return { state: 'error', detail: 'Ekki næst samband til að athuga stöðuna. Skýrslugerðin getur samt haldið áfram. Athugaðu stöðuna aftur.' };
+      if (++failures >= 3) return { state: 'error', detail: options.unreachableDetail };
     }
     await sleep(4000);
   }

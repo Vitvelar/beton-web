@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { snapshotToken } from "@/lib/report/snapshot-token";
+import { getDashboardLocale } from "@/lib/request-brand";
 import {
   ReportTextEditor,
   type EditorReport,
@@ -15,6 +16,7 @@ export default async function ReportEditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const locale = await getDashboardLocale();
   const supabase = await createClient();
 
   const { data: inspection } = await supabase
@@ -33,6 +35,7 @@ export default async function ReportEditPage({
       address={inspection.address}
       report={inspection.ai_report_data as EditorReport}
       initialToken={snapshotToken(inspection.ai_report_data)}
+      locale={locale}
     />
   );
 }

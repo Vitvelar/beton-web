@@ -7,7 +7,7 @@ import { BetonHtml } from "@/components/BetonHtml";
 import { RondvaAppHtml } from "@/components/rondva/RondvaAppHtml";
 import { betonMetadata } from "@/lib/beton-metadata";
 import { checkDashboardAccess } from "@/lib/access";
-import { getRequestBrand } from "@/lib/request-brand";
+import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { BRANDS } from "@/lib/brand";
 
 // Sama stjórnborð þjónar tveimur vörumerkjum eftir hýsli (src/lib/brand.ts):
@@ -59,7 +59,13 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const brand = await getRequestBrand();
-  const Html = brand === "rondva" ? RondvaAppHtml : BetonHtml;
+  const locale = await getDashboardLocale();
+  const html = (content: React.ReactNode) =>
+    brand === "rondva" ? (
+      <RondvaAppHtml lang={locale}>{content}</RondvaAppHtml>
+    ) : (
+      <BetonHtml>{content}</BetonHtml>
+    );
 
   // The cookie client uses NEXT_PUBLIC_* which bake in EMPTY on the beton.is
   // Docker image — so getUser() can throw there. The worker-token report render
@@ -79,16 +85,14 @@ export default async function DashboardLayout({
   }
 
   if (!user || !allowed) {
-    return <Html>{children}</Html>;
+    return html(children);
   }
 
-  return (
-    <Html>
-      <div className="min-h-screen bg-paper">
-        <DashboardRealtimeRefresh />
-        <DashboardHeader email={user.email ?? ""} brand={brand} />
-        <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-      </div>
-    </Html>
+  return html(
+    <div className="min-h-screen bg-paper">
+      <DashboardRealtimeRefresh />
+      <DashboardHeader email={user.email ?? ""} brand={brand} locale={locale} />
+      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+    </div>
   );
 }

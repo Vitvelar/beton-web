@@ -37,16 +37,21 @@ type BeginDecision = {
   run_id?: string | null;
 };
 
-export type WebCreditGate = { ok: true; runId: string | null } | { ok: false; error: string };
+// Ástæða höfnunar; textinn sjálfur er í stjórnborðskatalóginu (src/lib/i18n/dashboard.ts → credits).
+export type WebCreditDenial =
+  | "ledger_unavailable"
+  | "use_app"
+  | "no_credits"
+  | "additional_credit_confirmation_required"
+  | "in_progress"
+  | "not_active";
+
+export type WebCreditGate = { ok: true; runId: string | null } | { ok: false; reason: WebCreditDenial };
 
 const PASS: WebCreditGate = { ok: true, runId: null };
 
-const DENIAL_TEXT: Record<string, string> = {
-  no_credits: "Ókeypis AI-skýrslurnar eru búnar. Handvirkar breytingar og endurútflutningur eru áfram ókeypis.",
-  additional_credit_confirmation_required:
-    "Innifaldar AI-endurgerðir fyrir þessa skýrslu eru búnar. Þú getur áfram breytt textanum og flutt skýrsluna út.",
-  in_progress: "Verið er að búa til skýrslu fyrir þessa skoðun.",
-};
+// Ástæður úr begin_ai_report_run sem fá eigin texta; allt annað = "not_active".
+const LEDGER_DENIALS = new Set<string>(["no_credits", "additional_credit_confirmation_required", "in_progress"]);
 
 async function isExemptFallback(supabase: SupabaseClient, email: string | null): Promise<boolean> {
   if (isAllowedEmail(email)) return true;
@@ -100,7 +105,7 @@ export async function beginWebCreditRun(opts: {
     console.error("[credits] begin_ai_report_run failed:", e);
     if (mode === "shadow") return PASS;
     if (await isExemptFallback(opts.supabase, opts.email)) return PASS;
-    return { ok: false, error: "Ekki tókst að staðfesta skýrsluinneign. Reyndu aftur eftir smástund." };
+    return { ok: false, reason: "ledger_unavailable" };
   }
 
   console.log(JSON.stringify({
@@ -114,11 +119,12 @@ export async function beginWebCreditRun(opts: {
   if (decision.allowed) {
     // Fyrirtæki án undanþágu: vefpromptið er Beton-sértækt → appið.
     await releaseRun(decision.run_id);
-    return { ok: false, error: "Notaðu Rondva-appið til að búa til AI-skýrslu fyrir þetta fyrirtæki." };
+    return { ok: false, reason: "use_app" };
   }
+  const reason = decision.reason ?? "";
   return {
     ok: false,
-    error: DENIAL_TEXT[decision.reason ?? ""] ?? "Fyrirtækjaaðgangurinn er ekki virkur.",
+    reason: LEDGER_DENIALS.has(reason) ? (reason as WebCreditDenial) : "not_active",
   };
 }
 

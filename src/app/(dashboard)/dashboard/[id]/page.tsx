@@ -6,6 +6,8 @@ import { SeverityBadge } from "@/components/dashboard/SeverityBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ReportActions } from "./report-actions";
 import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
+import { getDashboardLocale } from "@/lib/request-brand";
+import { dashboardCopy, fill, plural } from "@/lib/i18n/dashboard";
 import type {
   Severity,
   InspectionStatus,
@@ -29,6 +31,9 @@ export default async function InspectionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const locale = await getDashboardLocale();
+  const copy = dashboardCopy(locale);
+  const t = copy.inspection;
   const supabase = await createClient();
   // „Senda í Google Drive" skrifar í Drive Beton ehf. — aðeins fyrir gamla
   // netfangalistann, aldrei fyrir fyrirtækjaaðganga á app.rondva.com.
@@ -98,7 +103,7 @@ export default async function InspectionDetailPage({
             href="/dashboard"
             className="text-sm text-fog hover:text-ink transition-colors"
           >
-            &larr; Til baka
+            {copy.common.backLink}
           </Link>
           <h1 className="text-xl font-semibold text-ink mt-1">
             {inspection.address}
@@ -108,23 +113,23 @@ export default async function InspectionDetailPage({
             {inspection.municipality ? ` — ${inspection.municipality}` : ""}
           </p>
         </div>
-        <StatusBadge status={inspection.status as InspectionStatus} />
+        <StatusBadge status={inspection.status as InspectionStatus} locale={locale} />
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        <StatCard value={rooms.length} label="Rými" />
-        <StatCard value={totalObservations} label="Athugasemdir" />
-        <StatCard value={totalPhotos} label="Myndir" />
+        <StatCard value={rooms.length} label={t.statRooms} />
+        <StatCard value={totalObservations} label={t.statObservations} />
+        <StatCard value={totalPhotos} label={t.statPhotos} />
       </div>
 
       {/* Property + inspection info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <InfoCard title="Eign">
-          <InfoRow label="Fastanúmer" value={inspection.fastanumer} />
-          <InfoRow label="Tegund" value={propertyData.tegund} />
+        <InfoCard title={t.property}>
+          <InfoRow label={t.propertyId} value={inspection.fastanumer} />
+          <InfoRow label={t.type} value={propertyData.tegund} />
           <InfoRow
-            label="Stærð"
+            label={t.size}
             value={
               propertyData.staerd_m2
                 ? `${propertyData.staerd_m2} m²`
@@ -132,25 +137,25 @@ export default async function InspectionDetailPage({
             }
           />
           <InfoRow
-            label="Byggingarár"
+            label={t.yearBuilt}
             value={
               propertyData.byggingarar
                 ? String(propertyData.byggingarar)
                 : undefined
             }
           />
-          <InfoRow label="Byggingarstig" value={propertyData.byggingarafangi} />
+          <InfoRow label={t.buildStage} value={propertyData.byggingarafangi} />
         </InfoCard>
 
-        <InfoCard title="Skoðun">
-          <InfoRow label="Viðskiptavinur" value={inspection.customer_name} />
-          <InfoRow label="Dagsetning" value={inspection.inspection_date} />
-          <InfoRow label="Skoðunarmaður" value={propertyData.inspectorName} />
+        <InfoCard title={t.inspection}>
+          <InfoRow label={t.customer} value={inspection.customer_name} />
+          <InfoRow label={t.date} value={inspection.inspection_date} />
+          <InfoRow label={t.inspector} value={propertyData.inspectorName} />
           <InfoRow
-            label="Viðstaddir"
+            label={t.attendees}
             value={inspection.attendees?.join(", ")}
           />
-          <InfoRow label="Veður" value={inspection.weather} />
+          <InfoRow label={t.weather} value={inspection.weather} />
         </InfoCard>
       </div>
 
@@ -160,16 +165,17 @@ export default async function InspectionDetailPage({
         reportUrl={reportSignedUrl}
         hasAiReport={!!inspection.ai_report_data}
         canSendToDrive={canSendToDrive}
+        locale={locale}
       />
 
       {/* Rooms */}
       <h2 className="text-lg font-semibold text-ink mt-8 mb-4">
-        Rými ({rooms.length})
+        {fill(t.roomsHeading, { count: rooms.length })}
       </h2>
 
       {rooms.length === 0 ? (
         <p className="text-fog text-sm">
-          Engin rými skráð. Samstilltu skoðunina úr appinu.
+          {t.noRooms}
         </p>
       ) : (
         <div className="space-y-4">
@@ -189,8 +195,8 @@ export default async function InspectionDetailPage({
                 <div className="flex items-center justify-between px-4 py-3 border-b border-concrete/50">
                   <h3 className="font-semibold text-ink">{room.name}</h3>
                   <div className="flex items-center gap-3 text-xs text-fog">
-                    <span>{obs.length} ath.</span>
-                    <span>{photoCount} myndir</span>
+                    <span>{fill(t.roomObservations, { count: obs.length })}</span>
+                    <span>{fill(plural(locale, photoCount, t.roomPhotos), { count: photoCount })}</span>
                   </div>
                 </div>
 
@@ -227,11 +233,11 @@ export default async function InspectionDetailPage({
                               </p>
                             )}
                           </div>
-                          <SeverityBadge severity={o.severity as Severity} />
+                          <SeverityBadge severity={o.severity as Severity} locale={locale} />
                         </Link>
                         {obsPhotos.length > 0 && (
                           <div className="px-4 pb-3">
-                            <PhotoGrid photos={obsPhotos} />
+                            <PhotoGrid photos={obsPhotos} locale={locale} />
                           </div>
                         )}
                       </li>
@@ -242,16 +248,16 @@ export default async function InspectionDetailPage({
 
                 {obs.length === 0 && (
                   <p className="px-4 py-3 text-sm text-fog">
-                    Engar athugasemdir í þessu rými.
+                    {t.noObservations}
                   </p>
                 )}
 
                 {photoCount > 0 && (
                   <div className="px-4 py-3 border-t border-concrete/30">
                     <p className="text-xs font-semibold text-fog mb-2">
-                      Myndir ({photoCount})
+                      {fill(t.photosHeading, { count: photoCount })}
                     </p>
-                    <PhotoGrid photos={roomPhotos} />
+                    <PhotoGrid photos={roomPhotos} locale={locale} />
                   </div>
                 )}
               </div>

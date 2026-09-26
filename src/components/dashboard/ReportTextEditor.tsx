@@ -15,6 +15,7 @@ import {
 import { ReportProgress } from "./ReportProgress";
 import { SeverityBadge } from "./SeverityBadge";
 import type { Severity } from "@/lib/supabase/types";
+import { dashboardCopy, fill, plural, type DashboardLocale } from "@/lib/i18n/dashboard";
 
 export interface EditorReport {
   ai_summary: {
@@ -47,12 +48,16 @@ export function ReportTextEditor({
   address,
   report,
   initialToken,
+  locale,
 }: {
   inspectionId: string;
   address: string;
   report: EditorReport;
   initialToken: string;
+  locale: DashboardLocale;
 }) {
+  const copy = dashboardCopy(locale);
+  const t = copy.reportEditor;
   const router = useRouter();
   const [reportRequest, setReportRequest] = useState(0);
   const [isPending, startTransition] = useTransition();
@@ -137,7 +142,7 @@ export function ReportTextEditor({
         if (!regeneratePdf) {
           setMessage({
             type: "success",
-            text: "Breytingar vistaðar. PDF-ið uppfærist ekki fyrr en það er endurgert.",
+            text: t.savedNoPdf,
           });
         } else if (queued) {
           setReportRequest(Date.now());
@@ -146,13 +151,12 @@ export function ReportTextEditor({
           // PDF-i; notandinn ýtir aftur þegar það starf er búið.
           setMessage({
             type: "warning",
-            text:
-              "Vistað — en PDF-gerð var þegar í gangi með eldri texta. Ýttu aftur á „Vista og endurgera PDF“ eftir ~1 mínútu svo breytingarnar skili sér í PDF-ið.",
+            text: t.savedWhileRendering,
           });
         }
         router.refresh();
       } catch {
-        setMessage({ type: "error", text: "Ekki tókst að staðfesta vistun. Athugaðu tenginguna og reyndu aftur." });
+        setMessage({ type: "error", text: t.saveUnconfirmed });
       }
     });
   }
@@ -167,26 +171,25 @@ export function ReportTextEditor({
           href={`/dashboard/${inspectionId}`}
           className="text-sm text-fog hover:text-ink transition-colors"
         >
-          &larr; Til baka
+          {copy.common.backLink}
         </Link>
         <h1 className="text-xl font-semibold text-ink mt-1">
-          Breyta skýrslutexta
+          {t.title}
         </h1>
         <p className="text-sm text-fog">
-          {address} — {totalObs} athugasemdir
+          {fill(plural(locale, totalObs, t.subtitle), { address, count: totalObs })}
         </p>
         <p className="mt-2 text-sm text-fog max-w-2xl">
-          Hér má lagfæra eða eyða texta sem AI skrifaði án þess að keyra
-          skýrslugerðina aftur. Tóm tillaga birtist ekki í skýrslunni.
+          {t.intro}
         </p>
       </div>
 
       {/* Samantekt */}
       <div className="rounded-xl border border-concrete bg-white p-6 space-y-5 mb-6">
-        <h2 className="text-sm font-semibold text-navy">1. Samantekt</h2>
+        <h2 className="text-sm font-semibold text-navy">{t.summary}</h2>
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5">
-            Inngangur
+            {t.introduction}
           </label>
           <textarea
             value={introduction}
@@ -197,7 +200,7 @@ export function ReportTextEditor({
         </div>
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5">
-            Eignalýsing
+            {t.propertyDescription}
           </label>
           <textarea
             value={propertyDescription}
@@ -208,7 +211,7 @@ export function ReportTextEditor({
         </div>
         <div>
           <label className="block text-sm font-medium text-ink mb-1.5">
-            Niðurstaða
+            {t.conclusion}
           </label>
           <textarea
             value={conclusion}
@@ -232,7 +235,7 @@ export function ReportTextEditor({
           </div>
           {(room.observations ?? []).length === 0 ? (
             <p className="px-6 py-4 text-sm text-fog italic">
-              Engar athugasemdir í þessu rými.
+              {t.noObservations}
             </p>
           ) : (
             <div className="divide-y divide-concrete/40">
@@ -245,11 +248,11 @@ export function ReportTextEditor({
                     <span className="font-semibold text-sm text-ink flex-1">
                       {obs.title}
                     </span>
-                    <SeverityBadge severity={obs.severity} />
+                    <SeverityBadge severity={obs.severity} locale={locale} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-fog mb-1">
-                      Lýsing
+                      {t.description}
                     </label>
                     <textarea
                       value={obsText[obs.id]?.description ?? ""}
@@ -263,7 +266,7 @@ export function ReportTextEditor({
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-medium text-fog">
-                        Tillaga
+                        {t.suggestion}
                       </label>
                       {(obsText[obs.id]?.suggestion ?? "") !== "" && (
                         <button
@@ -271,7 +274,7 @@ export function ReportTextEditor({
                           onClick={() => setObsField(obs.id, "suggestion", "")}
                           className="text-xs text-sev-danger hover:underline"
                         >
-                          Eyða tillögu
+                          {t.deleteSuggestion}
                         </button>
                       )}
                     </div>
@@ -281,7 +284,7 @@ export function ReportTextEditor({
                         setObsField(obs.id, "suggestion", e.target.value)
                       }
                       rows={2}
-                      placeholder="(engin tillaga — birtist ekki í skýrslu)"
+                      placeholder={t.emptySuggestion}
                       className={textareaCls}
                     />
                   </div>
@@ -294,7 +297,7 @@ export function ReportTextEditor({
 
       {/* Fast vistunarborði neðst */}
       <div className="fixed bottom-0 left-0 right-0 max-h-[45vh] overflow-y-auto border-t border-concrete bg-white/95 backdrop-blur px-6 py-3 z-10">
-        {reportRequest > 0 && <div className="max-w-4xl mx-auto mb-2"><ReportProgress key={reportRequest} inspectionId={inspectionId} requestKey={reportRequest} /></div>}
+        {reportRequest > 0 && <div className="max-w-4xl mx-auto mb-2"><ReportProgress key={reportRequest} inspectionId={inspectionId} requestKey={reportRequest} locale={locale} /></div>}
         <div className="max-w-4xl mx-auto flex items-center gap-3 flex-wrap">
           <button
             onClick={() => handleSave(true)}
@@ -304,20 +307,20 @@ export function ReportTextEditor({
             {isPending && (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
             )}
-            Vista og endurgera PDF
+            {t.saveAndRegenerate}
           </button>
           <button
             onClick={() => handleSave(false)}
             disabled={isPending}
             className="rounded-lg border border-navy px-5 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors disabled:opacity-60"
           >
-            Vista án PDF
+            {t.saveWithoutPdf}
           </button>
           <Link
             href={`/dashboard/${inspectionId}/report`}
             className="text-sm text-fog hover:text-ink transition-colors"
           >
-            Skoða skýrslu
+            {t.viewReport}
           </Link>
           {message && (
             <span

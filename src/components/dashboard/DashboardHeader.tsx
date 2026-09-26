@@ -4,14 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "@/app/(dashboard)/actions";
 import type { Brand } from "@/lib/brand";
+import { dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
 
-const COPY = {
-  beton: { section: "Stjórnborð", settings: "Stillingar", signOut: "Útskrá" },
-  rondva: { section: "Dashboard", settings: "Settings", signOut: "Sign out" },
-} as const;
-
-export function DashboardHeader({ email, brand = "beton" }: { email: string; brand?: Brand }) {
-  const t = COPY[brand];
+export function DashboardHeader({
+  email,
+  brand,
+  locale,
+}: {
+  email: string;
+  brand: Brand;
+  locale: DashboardLocale;
+}) {
+  const t = dashboardCopy(locale).header;
 
   return (
     <header className="border-b border-concrete bg-white print:hidden">

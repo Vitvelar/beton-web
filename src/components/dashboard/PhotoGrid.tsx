@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Photo } from "@/lib/supabase/types";
+import { dashboardCopy, type DashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
+
+type PhotoCopy = DashboardCopy["photos"];
 
 function useSignedUrl(storagePath: string | null) {
   const [url, setUrl] = useState<string | null>(null);
@@ -24,9 +27,11 @@ function useSignedUrl(storagePath: string | null) {
 function PhotoThumbnail({
   photo,
   onClick,
+  t,
 }: {
   photo: Photo;
   onClick: () => void;
+  t: PhotoCopy;
 }) {
   const url = useSignedUrl(photo.storage_path);
 
@@ -43,12 +48,12 @@ function PhotoThumbnail({
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-fog text-xs">
-          Hleð...
+          {t.loading}
         </div>
       )}
       {photo.photo_type === "thermal" && (
         <span className="absolute top-1 right-1 rounded bg-sev-danger/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-          Hiti
+          {t.thermal}
         </span>
       )}
     </button>
@@ -62,6 +67,7 @@ function Lightbox({
   onNext,
   hasPrev,
   hasNext,
+  t,
 }: {
   photo: Photo;
   onClose: () => void;
@@ -69,6 +75,7 @@ function Lightbox({
   onNext: () => void;
   hasPrev: boolean;
   hasNext: boolean;
+  t: PhotoCopy;
 }) {
   const url = useSignedUrl(photo.storage_path);
 
@@ -103,7 +110,7 @@ function Lightbox({
           />
         ) : (
           <div className="bg-concrete/30 rounded-lg h-96 flex items-center justify-center text-white">
-            Hleð mynd...
+            {t.loadingPhoto}
           </div>
         )}
 
@@ -148,7 +155,8 @@ function Lightbox({
   );
 }
 
-export function PhotoGrid({ photos }: { photos: Photo[] }) {
+export function PhotoGrid({ photos, locale }: { photos: Photo[]; locale: DashboardLocale }) {
+  const t = dashboardCopy(locale).photos;
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const sorted = [...photos].sort((a, b) => a.sort_order - b.sort_order);
@@ -161,6 +169,7 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
             key={photo.id}
             photo={photo}
             onClick={() => setLightboxIndex(i)}
+            t={t}
           />
         ))}
       </div>
@@ -173,6 +182,7 @@ export function PhotoGrid({ photos }: { photos: Photo[] }) {
           onNext={() => setLightboxIndex((prev) => (prev ?? 0) + 1)}
           hasPrev={lightboxIndex > 0}
           hasNext={lightboxIndex < sorted.length - 1}
+          t={t}
         />
       )}
     </>

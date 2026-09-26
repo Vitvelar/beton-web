@@ -5,10 +5,17 @@ import "@/app/globals.css";
 // Beton-stjórnborðið (globals.css) en data-brand="rondva" skiptir litum og
 // letri yfir í Rondva (sjá neðst í globals.css). rondva.css er EKKI flutt inn
 // hér: það er sjálfstæð Tailwind-bygging sem myndi rekast á Beton-klasana.
-export function RondvaAppHtml({ children }: { children: React.ReactNode }) {
+export function RondvaAppHtml({
+  children,
+  lang = "en",
+}: {
+  children: React.ReactNode;
+  /** Tungumál stjórnborðsins (getDashboardLocale). */
+  lang?: string;
+}) {
   return (
     <html
-      lang="en"
+      lang={lang}
       data-brand="rondva"
       className={`${interApp.variable} ${sourceSerifApp.variable} h-full antialiased`}
     >

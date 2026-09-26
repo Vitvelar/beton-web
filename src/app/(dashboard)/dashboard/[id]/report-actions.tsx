@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ReportProgress } from "@/components/dashboard/ReportProgress";
+import { dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
 import { generateReport, sendToDrive } from "./actions";
 
 export function ReportActions({
@@ -10,12 +11,15 @@ export function ReportActions({
   reportUrl,
   hasAiReport,
   canSendToDrive,
+  locale,
 }: {
   inspectionId: string;
   reportUrl: string | null;
   hasAiReport: boolean;
   canSendToDrive: boolean;
+  locale: DashboardLocale;
 }) {
+  const t = dashboardCopy(locale).reportActions;
   const [reportRequest, setReportRequest] = useState(0);
   const [generating, setGenerating] = useState(false);
   const [sending, setSending] = useState(false);
@@ -38,7 +42,7 @@ export function ReportActions({
         setReportRequest(Date.now());
       }
     } catch {
-      setMessage({ type: "error", text: "Ekki tókst að staðfesta skýrslugerðina. Athugaðu tenginguna og stöðu skoðunarinnar." });
+      setMessage({ type: "error", text: t.confirmFailed });
     } finally { setGenerating(false); }
   }
 
@@ -52,10 +56,10 @@ export function ReportActions({
     } else if ("drive_view_url" in result && result.drive_view_url) {
       setMessage({
         type: "success",
-        text: "Skýrsla send í Google Drive.",
+        text: t.sentToDrive,
       });
     } else {
-      setMessage({ type: "success", text: "Sent í Drive." });
+      setMessage({ type: "success", text: t.sentToDriveShort });
     }
   }
 
@@ -63,7 +67,7 @@ export function ReportActions({
 
   return (
     <div className="rounded-xl border border-concrete bg-white p-4">
-      <h3 className="text-sm font-semibold text-ink mb-3">Skýrsla</h3>
+      <h3 className="text-sm font-semibold text-ink mb-3">{t.title}</h3>
 
       <div className="flex flex-wrap gap-3">
         <button
@@ -76,10 +80,10 @@ export function ReportActions({
           )}
           <span>
             {generating
-              ? "Bý til skýrslu..."
+              ? t.generating
               : showViewReport
-                ? "Endurgera skýrslu"
-                : "Búa til skýrslu"}
+                ? t.regenerate
+                : t.create}
           </span>
         </button>
 
@@ -89,7 +93,7 @@ export function ReportActions({
               href={`/dashboard/${inspectionId}/report`}
               className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
             >
-              Skoða skýrslu
+              {t.view}
             </Link>
             {/* Breyta texta beint (án AI) — nýtt PDF renderast úr breytta
                 textanum, Claude er ekki keyrt aftur. */}
@@ -97,7 +101,7 @@ export function ReportActions({
               href={`/dashboard/${inspectionId}/report/edit`}
               className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
             >
-              Breyta texta
+              {t.editText}
             </Link>
           </>
         )}
@@ -110,7 +114,7 @@ export function ReportActions({
               rel="noopener noreferrer"
               className="rounded-lg border border-concrete px-4 py-2 text-sm font-semibold text-stone hover:bg-stone/5 transition-colors"
             >
-              Sækja PDF
+              {t.downloadPdf}
             </a>
 
             {canSendToDrive && (
@@ -119,7 +123,7 @@ export function ReportActions({
                 disabled={sending}
                 className="rounded-lg border border-copper px-4 py-2 text-sm font-semibold text-copper-dk hover:bg-copper/5 transition-colors disabled:opacity-50"
               >
-                {sending ? "Sendi í Drive..." : "Senda í Google Drive"}
+                {sending ? t.sendingToDrive : t.sendToDrive}
               </button>
             )}
           </>
@@ -128,15 +132,14 @@ export function ReportActions({
 
       {generating && (
         <div className="mt-4 rounded-lg border border-navy/15 bg-navy/5 px-4 py-3 text-sm text-navy">
-          <p className="font-semibold">Skýrslugerð í gangi</p>
+          <p className="font-semibold">{t.inProgressTitle}</p>
           <p className="mt-1 text-navy/75">
-            AI er að lesa athugasemdir og myndir. Þetta getur tekið smá stund í
-            stórum skoðunum.
+            {t.inProgressBody}
           </p>
         </div>
       )}
 
-      {reportRequest > 0 && <ReportProgress key={reportRequest} inspectionId={inspectionId} requestKey={reportRequest} />}
+      {reportRequest > 0 && <ReportProgress key={reportRequest} inspectionId={inspectionId} requestKey={reportRequest} locale={locale} />}
 
       {message && (
         <p
