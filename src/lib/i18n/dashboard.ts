@@ -199,6 +199,36 @@ const is = {
     uploadFailed: (message: string) => `Upphleðsla mistókst: ${message}`,
     genericError: "Villa kom upp.",
   },
+  // Innskráningarleiðir í Stillingum (SignInMethods, aðeins á app.rondva.com).
+  // Aðeins „tengja" — engin aftenging (plan/rondva/INNSKRANINGARLEIDIR-HONNUN.md D1).
+  signInMethods: {
+    title: "Innskráningarleiðir",
+    intro:
+      "Tengdu fleiri leiðir til að skrá þig inn á þennan sama aðgang. Allar tengdar leiðir opna sömu skoðanir og stillingar.",
+    // Heiti innskráningarleiða eftir `provider` í Supabase; óþekkt heiti birtist óbreytt.
+    providers: {
+      google: "Google",
+      apple: "Apple",
+      azure: "Microsoft",
+      email: "Netfang",
+    } as Record<string, string>,
+    hiddenEmail: "Netfang falið hjá Apple",
+    linkGoogle: "Tengja Google",
+    linkAnotherGoogle: "Tengja annan Google-reikning",
+    linkApple: "Tengja Apple",
+    linkAnotherApple: "Tengja annað Apple-auðkenni",
+    opening: "Opna {provider}…",
+    linkHint:
+      "Þú skráir þig inn með reikningnum sem á að bætast við og kemur svo aftur hingað.",
+    removeNote: "Viltu fjarlægja innskráningarleið? Skrifaðu á {email}.",
+    linked: "Innskráningarleiðin er tengd. Þú getur nú skráð þig inn með henni.",
+    identityAlreadyExists:
+      "Þessi reikningur er þegar tengdur, annaðhvort þessum aðgangi eða öðrum Rondva-aðgangi. Ef þú átt tvo aðganga, hafðu samband og við hjálpum þér.",
+    manualLinkingDisabled:
+      "Ekki er enn hægt að tengja innskráningarleiðir. Reyndu aftur síðar.",
+    linkFailed:
+      "Tengingin kláraðist ekki. Glugginn gæti hafa lokast eða tíminn runnið út. Reyndu aftur.",
+  },
   // Villutextar server-aðgerða í [id]/actions.ts.
   actions: {
     unknownError: "Óþekkt villa",
@@ -418,6 +448,31 @@ const en: DashboardCopy = {
     logoTooLarge: "The logo must be at most 2 MB.",
     uploadFailed: (message) => `Logo upload failed: ${message}`,
     genericError: "Something went wrong.",
+  },
+  signInMethods: {
+    title: "Sign-in methods",
+    intro:
+      "Link more ways to sign in to this same account. Every linked method opens the same inspections and settings.",
+    providers: {
+      google: "Google",
+      apple: "Apple",
+      azure: "Microsoft",
+      email: "Email",
+    },
+    hiddenEmail: "Email hidden by Apple",
+    linkGoogle: "Link Google",
+    linkAnotherGoogle: "Link another Google account",
+    linkApple: "Link Apple",
+    linkAnotherApple: "Link another Apple ID",
+    opening: "Opening {provider}…",
+    linkHint: "You'll sign in with the account you want to add, then come back here.",
+    removeNote: "Need to remove a sign-in method? Write to {email}.",
+    linked: "Sign-in method linked. You can now use it to sign in.",
+    identityAlreadyExists:
+      "That account is already linked, either to this account or to another Rondva account. If you have two Rondva accounts, contact us and we'll help.",
+    manualLinkingDisabled: "Linking sign-in methods isn't available yet. Please try again later.",
+    linkFailed:
+      "Linking didn't finish. The window may have been closed or timed out. Please try again.",
   },
   actions: {
     unknownError: "Unknown error",
