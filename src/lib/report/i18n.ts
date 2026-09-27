@@ -80,6 +80,35 @@ const is = {
     },
   } as Record<SeverityKey, { label: string; short: string; description: string }>,
 
+  // Einkunnakerfi 1–3 (companies.rating_scheme = condition_1_3). Aðeins birting:
+  // athugasemd → 1, alvarleg → 2, mjog_alvarleg → 3.
+  conditionRatingSystemHow:
+    "Svona virkar matskerfið: hver athugasemd í skýrslunni fær ástandseinkunn frá 1 til 3. Einkunnin sýnir hversu alvarlegur gallinn er og hversu brýnt er að bregðast við honum.",
+  conditionRatingSystemTypes: "Í skýrslunni eru notaðar þrjár ástandseinkunnir.",
+  conditionSeverity: {
+    athugasemd: {
+      label: "Ástandseinkunn 1",
+      short: "Einkunn 1",
+      description: "Ekki þörf á viðgerð nú. Eðlilegt viðhald.",
+    },
+    alvarleg: {
+      label: "Ástandseinkunn 2",
+      short: "Einkunn 2",
+      description: "Galli sem þarf að gera við eða endurnýja, en er hvorki alvarlegur né brýnn.",
+    },
+    mjog_alvarleg: {
+      label: "Ástandseinkunn 3",
+      short: "Einkunn 3",
+      description: "Alvarlegur galli, eða galli sem þarf að gera við, endurnýja eða rannsaka án tafar.",
+    },
+  } as Record<SeverityKey, { label: string; short: string; description: string }>,
+  conditionRating: {
+    ok: "Viðunandi",
+    warn: "Einkunn 1",
+    danger: "Einkunn 2",
+    mjog_alvarleg: "Einkunn 3",
+  } as Record<string, string>,
+
   summary: "Samantekt",
   introduction: "Inngangur",
   propertyDescription: "Eignalýsing",
@@ -173,6 +202,33 @@ const en: ReportCopy = {
       description:
         "Damage that has already impaired, or will soon impair, the function of the building element. It can cause, or has already caused, damage to other building elements.",
     },
+  },
+
+  conditionRatingSystemHow:
+    "How the rating system works: every observation in the report is given a condition rating from 1 to 3. The rating shows how serious the defect is and how urgently it needs attention.",
+  conditionRatingSystemTypes: "The report uses three condition ratings.",
+  conditionSeverity: {
+    athugasemd: {
+      label: "Condition rating 1",
+      short: "Rating 1",
+      description: "No repair is needed at present. Maintain in the normal way.",
+    },
+    alvarleg: {
+      label: "Condition rating 2",
+      short: "Rating 2",
+      description: "A defect that needs repairing or replacing, but is not considered serious or urgent.",
+    },
+    mjog_alvarleg: {
+      label: "Condition rating 3",
+      short: "Rating 3",
+      description: "A serious defect, or one that needs to be repaired, replaced or investigated urgently.",
+    },
+  },
+  conditionRating: {
+    ok: "Acceptable",
+    warn: "Rating 1",
+    danger: "Rating 2",
+    mjog_alvarleg: "Rating 3",
   },
 
   summary: "Summary",

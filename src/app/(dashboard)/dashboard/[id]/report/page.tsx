@@ -22,6 +22,7 @@ import {
   reportCopy,
   reportLocaleOf,
 } from "@/lib/report/i18n";
+import { ratingSchemeOf, type RatingScheme } from "@/lib/report/settings";
 import { fill, format } from "@/lib/i18n/format";
 import { dashboardCopy } from "@/lib/i18n/dashboard";
 import { getDashboardLocale } from "@/lib/request-brand";
@@ -30,6 +31,8 @@ import type { Metadata } from "next";
 interface ReportData {
   /** Tungumál skýrslunnar, stimplað við gerð hennar; vantar = íslenska. */
   report_locale?: string;
+  /** Matskerfi (standard | condition_1_3), stimplað við gerð; vantar = standard. */
+  rating_scheme?: string;
   inspection: {
     address: string;
     postal_code: string;
@@ -87,6 +90,19 @@ const SEV_ICON: Record<string, string> = {
   athugasemd: "!",
   alvarleg: "−",
   mjog_alvarleg: "×",
+};
+
+// Einkunnakerfi 1–3: umferðarljós (grænt/gult/rautt) og tölur í stað tákna.
+const CONDITION_COLORS: Record<string, { color: string; bg: string }> = {
+  athugasemd: { color: "#2f7d4f", bg: "#e8f3ec" },
+  alvarleg: { color: "#c98a2e", bg: "#fbf2e3" },
+  mjog_alvarleg: { color: "#b53d3d", bg: "#fbeaea" },
+};
+
+const CONDITION_ICON: Record<string, string> = {
+  athugasemd: "1",
+  alvarleg: "2",
+  mjog_alvarleg: "3",
 };
 
 const SEV_RANK: Record<string, number> = {
@@ -203,6 +219,13 @@ export default async function ReportPage({
   // af stjórnborðinu og fylgja viðmótsmáli notandans.
   const locale = reportLocaleOf(report);
   const t = reportCopy(locale);
+  // Matskerfið (stimplað) ræður heitum, skýringum, litum og táknum alvarleika.
+  const scheme = ratingSchemeOf(report);
+  const condition = scheme === "condition_1_3";
+  const sevText = condition ? t.conditionSeverity : t.severity;
+  const sevColors = condition ? CONDITION_COLORS : SEV_COLORS;
+  const sevIcon = condition ? CONDITION_ICON : SEV_ICON;
+  const roomRating = condition ? t.conditionRating : t.rating;
   const ui = dashboardCopy(await getDashboardLocale());
 
   type RawRoom = {
@@ -469,10 +492,10 @@ export default async function ReportPage({
             <span className="text-sev-calm font-bold mr-2">M.</span>{t.ratingSystem}
           </h2>
           <p className="text-sm text-ink/80 leading-relaxed mb-2">
-            {t.ratingSystemHow}
+            {condition ? t.conditionRatingSystemHow : t.ratingSystemHow}
           </p>
           <p className="text-sm text-ink/80 leading-relaxed mb-6">
-            {t.ratingSystemTypes}
+            {condition ? t.conditionRatingSystemTypes : t.ratingSystemTypes}
           </p>
 
           <div className="space-y-6">
@@ -480,16 +503,16 @@ export default async function ReportPage({
               <div key={sev} className="flex items-start gap-4 print:break-inside-avoid">
                 <div
                   className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xl font-bold"
-                  style={{ backgroundColor: SEV_COLORS[sev].color }}
+                  style={{ backgroundColor: sevColors[sev].color }}
                 >
-                  {SEV_ICON[sev]}
+                  {sevIcon[sev]}
                 </div>
                 <div className="pt-1">
-                  <p className="font-bold text-sm" style={{ color: SEV_COLORS[sev].color }}>
-                    {t.severity[sev].label}
+                  <p className="font-bold text-sm" style={{ color: sevColors[sev].color }}>
+                    {sevText[sev].label}
                   </p>
                   <p className="text-sm text-ink/80 leading-relaxed mt-0.5">
-                    {t.severity[sev].description}
+                    {sevText[sev].description}
                   </p>
                 </div>
               </div>
@@ -532,12 +555,12 @@ export default async function ReportPage({
               <div
                 key={sev}
                 className="rounded-lg p-3 border-l-4"
-                style={{ borderLeftColor: SEV_COLORS[sev].color }}
+                style={{ borderLeftColor: sevColors[sev].color }}
               >
-                <div className="text-2xl font-bold" style={{ color: SEV_COLORS[sev].color }}>
+                <div className="text-2xl font-bold" style={{ color: sevColors[sev].color }}>
                   {sevCounts[sev]}
                 </div>
-                <div className="text-xs text-fog">{t.severity[sev].short}</div>
+                <div className="text-xs text-fog">{sevText[sev].short}</div>
               </div>
             ))}
           </div>
@@ -612,8 +635,8 @@ export default async function ReportPage({
                     .map(([key, value]) => (
                       <div key={key} className="flex justify-between py-0.5">
                         <span className="text-fog capitalize">{ratingCategoryLabel(t, key)}</span>
-                        <span className="font-semibold" style={{ color: ratingColor(value) }}>
-                          {t.rating[value] ?? value}
+                        <span className="font-semibold" style={{ color: ratingColor(value, scheme) }}>
+                          {roomRating[value] ?? value}
                         </span>
                       </div>
                     ))}
@@ -631,8 +654,8 @@ export default async function ReportPage({
               {room.observations.length > 0 ? (
                 <div className="space-y-4 print:space-y-3">
                   {room.observations.map((obs, obsIdx) => {
-                    const sevKey = obs.severity in SEV_COLORS ? obs.severity : "athugasemd";
-                    const sev = SEV_COLORS[sevKey];
+                    const sevKey = obs.severity in sevColors ? obs.severity : "athugasemd";
+                    const sev = sevColors[sevKey];
                     const oPhotos = obsPhotos(obs.id);
                     return (
                       <div
@@ -649,7 +672,7 @@ export default async function ReportPage({
                             className="text-xs font-semibold px-2 py-0.5 rounded"
                             style={{ backgroundColor: sev.bg, color: sev.color }}
                           >
-                            {t.severity[sevKey].label}
+                            {sevText[sevKey].label}
                           </span>
                         </div>
                         {obs.category && (
@@ -696,8 +719,8 @@ export default async function ReportPage({
             </p>
             <div className="space-y-3">
               {rankedObs.map(({ obs, roomName }, i) => {
-                const sevKey = obs.severity in SEV_COLORS ? obs.severity : "athugasemd";
-                const sev = SEV_COLORS[sevKey];
+                const sevKey = obs.severity in sevColors ? obs.severity : "athugasemd";
+                const sev = sevColors[sevKey];
                 return (
                   <div
                     key={obs.id}
@@ -711,7 +734,7 @@ export default async function ReportPage({
                         className="text-xs font-semibold px-2 py-0.5 rounded"
                         style={{ backgroundColor: sev.bg, color: sev.color }}
                       >
-                        {t.severity[sevKey].label}
+                        {sevText[sevKey].label}
                       </span>
                     </div>
                     <p className="text-[10px] uppercase tracking-wider text-fog mb-1">
@@ -871,10 +894,10 @@ function TermsSection({ n, title, children }: { n: number; title: string; childr
   );
 }
 
-function ratingColor(value: string): string {
+function ratingColor(value: string, scheme: RatingScheme): string {
   const colors: Record<string, string> = {
     ok: "#8a8278",
-    warn: "#3b4ec9",
+    warn: scheme === "condition_1_3" ? CONDITION_COLORS.athugasemd.color : "#3b4ec9",
     danger: "#c98a2e",
     mjog_alvarleg: "#b53d3d",
   };
