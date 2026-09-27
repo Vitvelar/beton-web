@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isAllowedEmail } from "@/lib/allowed-users";
+import { canUseBetonDrive } from "@/lib/beton-drive";
 import { SeverityBadge } from "@/components/dashboard/SeverityBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ReportActions } from "./report-actions";
@@ -35,12 +35,12 @@ export default async function InspectionDetailPage({
   const copy = dashboardCopy(locale);
   const t = copy.inspection;
   const supabase = await createClient();
-  // „Senda í Google Drive" skrifar í Drive Beton ehf. — aðeins fyrir gamla
-  // netfangalistann, aldrei fyrir fyrirtækjaaðganga á app.rondva.com.
+  // „Senda í Google Drive" skrifar í Drive Beton ehf. — aðeins skoðanir Beton
+  // (ákvörðun eiganda 2026-09-27; src/lib/beton-drive.ts).
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const canSendToDrive = isAllowedEmail(user?.email);
+  const canSendToDrive = await canUseBetonDrive(supabase, user?.email);
 
   const { data: inspection, error } = await supabase
     .from("inspections")

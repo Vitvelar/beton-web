@@ -46,12 +46,12 @@ assert.equal(shared.reportDownloadName('Þórsgata 1', '2026-09-21'), 'Thorsgata
 assert.equal(shared.reportDownloadName('Álfaskeið 12, íbúð 0201', '2026-05-22'), 'Alfaskeid 12 ibud 0201 - 22.05.2026.pdf');
 assert.equal(shared.reportDownloadName(null, null, 'en'), 'Inspection report.pdf');
 assert.ok(/^[\x20-\x7e]+$/.test(shared.reportDownloadName('Ægisíða 5 / Öldugata', '2026-01-02')), 'download name is plain ASCII');
-const webPromptSource = fs.readFileSync(path.join(root, 'src/app/(dashboard)/dashboard/[id]/actions.ts'), 'utf8');
-const appPrompt = fs.existsSync(mobileRoot) ? load('../beton-app/supabase/functions/generate-report/prompt.ts') : null;
-const webPrompt = webPromptSource.slice(webPromptSource.indexOf('const SYSTEM_PROMPT = ')).replace('const SYSTEM_PROMPT = ', 'exports.SYSTEM_PROMPT = ');
-const promptContext = { exports: {} }; vm.runInNewContext(webPrompt, promptContext);
-if (appPrompt) assert.equal(promptContext.exports.SYSTEM_PROMPT, appPrompt.SYSTEM_PROMPT, 'Web and mobile report instructions must remain in sync');
-console.log('PASS civil-date boundaries, address+date filename (ASCII download) and identical report instructions');
+// Skýrslugerð með AI er aðeins í edge-fallinu generate-report (vefurinn kallar á það);
+// vefurinn má ekki fá eigið prompt aftur (tvær útgáfur rákust á: „Beton ehf." í skýrslum annarra).
+const webActions = fs.readFileSync(path.join(root, 'src/app/(dashboard)/dashboard/[id]/actions.ts'), 'utf8');
+assert.ok(!/SYSTEM_PROMPT|@anthropic-ai\/sdk|messages\.create/.test(webActions), 'the web must not call Claude itself');
+assert.ok(webActions.includes('functions.invoke("generate-report"'), 'the web generates reports through the edge function');
+console.log('PASS civil-date boundaries, address+date filename (ASCII download), report generation only via the edge function');
 
 async function main() {
   const obs = { id: 'o1', number: '2.1', category: 'thak', title: 'Þak', description: 'Þak og þétting. Áá Éé Íí Óó Úú Ýý Þþ Ðð Ææ Öö. Þéttingar þurfa viðhald.', suggestion: 'Yfirfara þéttingar við þak.', severity: 'alvarleg' };

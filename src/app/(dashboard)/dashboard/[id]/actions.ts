@@ -2,75 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isAllowedEmail } from "@/lib/allowed-users";
+import { canUseBetonDrive } from "@/lib/beton-drive";
 import { snapshotToken } from "@/lib/report/snapshot-token";
-import { abortWebCreditRun, beginWebCreditRun, finishWebCreditRun } from "@/lib/report/credits";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
-import { dashboardCopy, localeForBrand, USER_LOCALE_KEY } from "@/lib/i18n/dashboard";
-import Anthropic from "@anthropic-ai/sdk";
-
-const ANTHROPIC_MODEL = "claude-opus-4-8";
-// Hækkað úr 4096: löng íslensk skýrsla með mörgum athugasemdum rúmaðist ekki
-// og JSON-svarið slitnaði í miðju (olli "Expected ',' or '}' ..." villunni).
-const CLAUDE_MAX_TOKENS = 16000;
-// Opus-verð (USD/1M tókenar) — staðfesta gegn gildandi Anthropic verðskrá.
-const PRICE_INPUT_PER_M = 15;
-const PRICE_OUTPUT_PER_M = 75;
-const PHOTO_BUCKET = "inspection-photos";
-const PHOTO_URL_TTL_SECONDS = 10 * 60;
-const MAX_PHOTOS_PER_OBS = 10;
-const MAX_TOTAL_IMAGES = 100;
-const CLAUDE_IMAGE_TRANSFORM = {
-  width: 1600,
-  height: 1600,
-  resize: "contain" as const,
-  quality: 75,
-};
-
-// Tól sem þvingar Claude til að skila skipulögðu, gildu JSON (structured output).
-// Þetta kemur í veg fyrir að frítextasvar slitni/sé gallað og brjóti JSON.parse.
-const REPORT_TOOL: Anthropic.Tool = {
-  name: "skila_skyrslu",
-  description:
-    "Skilar fullunninni AI-samantekt fyrir ástandsskoðunarskýrslu: þrískiptan inngangstexta og snyrta lýsingu, tillögu og óbreyttan alvarleika skoðunarmanns fyrir hverja athugasemd.",
-  input_schema: {
-    type: "object",
-    properties: {
-      introduction: { type: "string" },
-      property_description: { type: "string" },
-      conclusion: { type: "string" },
-      observations: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            id: { type: "string" },
-            severity: {
-              description: "Afrita nákvæmlega alvarleikaflokk skoðunarmanns; aldrei breyta honum.",
-              type: "string",
-              enum: ["athugasemd", "alvarleg", "mjog_alvarleg"],
-            },
-            polished_description: { type: "string" },
-            polished_suggestion: { type: "string" },
-          },
-          required: [
-            "id",
-            "severity",
-            "polished_description",
-            "polished_suggestion",
-          ],
-        },
-      },
-    },
-    required: [
-      "introduction",
-      "property_description",
-      "conclusion",
-      "observations",
-    ],
-  },
-};
-
+import { dashboardCopy, localeForBrand, USER_LOCALE_KEY, type DashboardCopy } from "@/lib/i18n/dashboard";
 
 export async function updateObservation(
   obsId: string,
@@ -100,364 +35,56 @@ async function actionCopy() {
   return dashboardCopy(await getDashboardLocale());
 }
 
+// Skýrslugerð með AI fer um edge-fallið generate-report — sömu leið og appið. Þar eru
+// fyrirtæki, tungumál og matskerfi skoðunarinnar, skýrsluinneign og PDF-biðröð á einum
+// stað. Beton-promptið þar er bæti fyrir bæti það sem vefurinn notaði áður (ákvörðun
+// eiganda 2026-09-27; gamla vef-promptið skrifaði „Beton ehf." í skýrslur annarra).
 export async function generateReport(inspectionId: string) {
   const copy = await actionCopy();
-  const t = copy.actions;
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return { error: t.missingApiKey };
-  }
-
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: inspection, error: fetchError } = await supabase
-    .from("inspections")
-    .select(`
-      id, inspector_id, address, postal_code, municipality, fastanumer,
-      property_data, customer_name, inspection_date, weather, attendees, status,
-      rooms (
-        id, name, slug, sort_order, ratings, equipment, notes,
-        observations (
-          id, observation_number, category, title, description,
-          suggestion, severity, sort_order,
-          photos ( id, storage_path, photo_type, sort_order )
-        )
-      )
-    `)
-    .eq("id", inspectionId)
-    .maybeSingle();
-
-  if (fetchError || !inspection) {
-    return { error: fetchError?.message ?? t.inspectionNotFound };
-  }
-
-  const rooms = (inspection.rooms ?? []) as Array<{
-    id: string;
-    name: string;
-    slug: string;
-    sort_order: number;
-    ratings: Record<string, string> | null;
-    equipment: unknown[] | null;
-    notes: string | null;
-    observations: Array<{
-      id: string;
-      observation_number: string | null;
-      category: string | null;
-      title: string;
-      description: string | null;
-      suggestion: string | null;
-      severity: string;
-      sort_order: number;
-      photos: Array<{
-        id: string;
-        storage_path: string | null;
-        photo_type: string | null;
-        sort_order: number;
-      }> | null;
-    }> | null;
-  }>;
-
-  const obsCount = rooms.reduce(
-    (n, r) => n + (r.observations?.length ?? 0),
-    0
-  );
-  if (obsCount === 0) {
-    return {
-      error: t.noObservations,
-    };
-  }
-
-  // Skýrsluinneign (REPORT_CREDITS_MODE; sjá lib/report/credits.ts). Áður en nokkuð breytist.
-  const credit = await beginWebCreditRun({
-    supabase,
-    userId: user?.id ?? null,
-    email: user?.email ?? null,
-    inspectionId,
+  const { data, error } = await supabase.functions.invoke("generate-report", {
+    body: { inspection_id: inspectionId },
   });
-  if (!credit.ok) return { error: copy.credits[credit.reason] };
-
-  await supabase
-    .from("inspections")
-    .update({ status: "generating", updated_at: new Date().toISOString() })
-    .eq("id", inspectionId);
-
-  const propertyData = (inspection.property_data ?? {}) as Record<
-    string,
-    unknown
-  >;
-  const lookupFailed = Object.keys(propertyData).length === 0;
-
-  const sortedRooms = rooms.slice().sort((a, b) => a.sort_order - b.sort_order);
-
-  // Eignar-/skoðunarsamhengi (notað bæði í hvatningu og í ai_report_data).
-  const inspectionContext = {
-    address: inspection.address,
-    postal_code: inspection.postal_code,
-    municipality: inspection.municipality ?? "",
-    fastanumer: inspection.fastanumer ?? "",
-    customer_name: inspection.customer_name,
-    inspection_date: inspection.inspection_date,
-    weather: inspection.weather ?? "",
-    attendees: inspection.attendees ?? [],
-    property_data: propertyData,
-    lookup_failed: lookupFailed,
-  };
-
-  // Undirskrifa minnkaðar myndir hverrar athugasemdar svo Claude SJÁI þær.
-  // Anthropic hafnar "many-image" beiðnum ef einhver mynd er yfir 2000px á hlið;
-  // Supabase transform heldur upprunalegu myndinni óbreyttri en gefur Claude
-  // öruggt 1600px afrit.
-  const obsPhotoPaths: string[] = [];
-  let queuedImages = 0;
-  for (const r of sortedRooms) {
-    for (const o of r.observations ?? []) {
-      for (const p of (o.photos ?? [])
-        .slice()
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .slice(0, MAX_PHOTOS_PER_OBS)) {
-        if (queuedImages >= MAX_TOTAL_IMAGES) break;
-        if (p.storage_path) {
-          obsPhotoPaths.push(p.storage_path);
-          queuedImages++;
-        }
-      }
-    }
+  if (error) {
+    const code = await edgeErrorCode(error);
+    console.error("generate-report failed:", code ?? error.message);
+    return { error: edgeErrorText(copy, code) };
   }
-  const signedMap = new Map<string, string>();
-  if (obsPhotoPaths.length > 0) {
-    const signed = await Promise.all(
-      obsPhotoPaths.map(async (path) => {
-        const { data, error } = await supabase.storage
-          .from(PHOTO_BUCKET)
-          .createSignedUrl(path, PHOTO_URL_TTL_SECONDS, {
-            transform: CLAUDE_IMAGE_TRANSFORM,
-          });
-        if (error || !data?.signedUrl) {
-          console.error("Claude photo sign error:", { path, error });
-          return null;
-        }
-        return { path, signedUrl: data.signedUrl };
-      })
-    );
-    for (const s of signed) {
-      if (s?.path && s.signedUrl) signedMap.set(s.path, s.signedUrl);
-    }
-  }
-
-  // Byggja multimodal skilaboð: samhengi, svo hver athugasemd með sínum myndum.
-  const roomContext = sortedRooms.map((r) => ({
-    name: r.name,
-    ratings: r.ratings ?? {},
-    notes: r.notes ?? "",
-  }));
-  const content: Anthropic.ContentBlockParam[] = [
-    {
-      type: "text" as const,
-      text:
-        "Hér eru gögn skoðunarinnar. Eignar- og rýmissamhengi:\n\n" +
-        JSON.stringify({ inspection: inspectionContext, rooms: roomContext }, null, 2) +
-        "\n\nHér á eftir kemur hver athugasemd með sínum ljósmyndum. Notaðu það sem SÉST á myndunum ásamt samhenginu (rými, byggingarár, tegund eignar o.fl.) til að skrifa nákvæma faglega lýsingu og raunhæfa tillögu fyrir HVERJA athugasemd.",
-    },
-  ];
-  // Anthropic leyfir takmarkaðan fjölda mynda per beiðni — verjum okkur fyrir
-  // mjög stórum skoðunum með heildarþaki.
-  let totalImages = 0;
-  for (const r of sortedRooms) {
-    for (const o of (r.observations ?? [])
-      .slice()
-      .sort((a, b) => a.sort_order - b.sort_order)) {
-      content.push({
-        type: "text" as const,
-        text:
-          `\n── Athugasemd ${o.id}\nRými: ${r.name}\nFlokkur: ${o.category ?? ""}\n` +
-          `Núverandi alvarleiki: ${o.severity}\nTitill: ${o.title}\n` +
-          `Lýsing skoðunarmanns: ${o.description ?? "(engin)"}\n` +
-          `Tillaga skoðunarmanns: ${o.suggestion ?? "(engin)"}`,
-      });
-      for (const p of (o.photos ?? [])
-        .slice()
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .slice(0, MAX_PHOTOS_PER_OBS)) {
-        if (totalImages >= MAX_TOTAL_IMAGES) break;
-        const url = p.storage_path ? signedMap.get(p.storage_path) : undefined;
-        if (url) {
-          content.push({ type: "image" as const, source: { type: "url" as const, url } });
-          totalImages++;
-        }
-      }
-    }
-  }
-  content.push({
-    type: "text" as const,
-    text: "Skilaðu nú niðurstöðunni fyrir ALLAR athugasemdir með því að kalla á tólið skila_skyrslu.",
-  });
-
-  let claudeResult;
-  try {
-    const anthropic = new Anthropic({ apiKey });
-    const response = await anthropic.messages.create({
-      model: ANTHROPIC_MODEL,
-      max_tokens: CLAUDE_MAX_TOKENS,
-      system: [
-        {
-          type: "text" as const,
-          text: SYSTEM_PROMPT,
-          cache_control: { type: "ephemeral" as const },
-        },
-      ],
-      tools: [REPORT_TOOL],
-      // Þvingum Claude til að kalla á tólið → alltaf gilt, skipulagt JSON.
-      tool_choice: { type: "tool", name: REPORT_TOOL.name },
-      messages: [{ role: "user", content }],
-    });
-
-    if (response.stop_reason === "max_tokens") {
-      throw new Error(t.aiTruncated);
-    }
-
-    const toolUse = response.content.find(
-      (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
-    );
-    if (!toolUse) {
-      throw new Error(t.aiNoToolUse);
-    }
-
-    const inputTokens = response.usage?.input_tokens ?? 0;
-    const outputTokens = response.usage?.output_tokens ?? 0;
-
-    // toolUse.input er þegar parse-að af SDK-inu — engin frítexta-JSON greining.
-    const parsed = validateReportOutput(toolUse.input, t.aiMissingFields);
-    claudeResult = { output: parsed, inputTokens, outputTokens };
-  } catch (e: unknown) {
-    console.error("Claude error:", e);
-    await abortWebCreditRun(credit.runId);
-    await supabase
-      .from("inspections")
-      .update({ status: "error", updated_at: new Date().toISOString() })
-      .eq("id", inspectionId);
-    const msg = e instanceof Error ? e.message : t.unknownError;
-    return { error: t.aiFailed(msg) };
-  }
-
-  const aiCostUsd = computeCostUsd(
-    claudeResult.inputTokens,
-    claudeResult.outputTokens
-  );
-
-  // Preserve the inspector-selected severity. AI only edits prose.
-  const origSeverityById = new Map<string, string>();
-  for (const r of sortedRooms) {
-    for (const o of r.observations ?? []) origSeverityById.set(o.id, o.severity);
-  }
-  const safeSeverity = (id: string): string =>
-    origSeverityById.get(id) ?? "athugasemd";
-
-  const polishById = new Map(
-    claudeResult.output.observations.map((p) => [p.id, p] as const)
-  );
-
-  const aiReportData = {
-    inspection: inspectionContext,
-    ai_summary: {
-      introduction: claudeResult.output.introduction,
-      property_description: claudeResult.output.property_description,
-      conclusion: claudeResult.output.conclusion,
-    },
-    rooms: sortedRooms.map((room) => ({
-      name: room.name,
-      slug: room.slug,
-      sort_order: room.sort_order,
-      ratings: room.ratings ?? {},
-      notes: room.notes ?? "",
-      observations: (room.observations ?? [])
-        .slice()
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map((o) => {
-          const polish = polishById.get(o.id);
-          return {
-            id: o.id,
-            number: o.observation_number,
-            category: o.category ?? "",
-            title: o.title,
-            description:
-              polish?.polished_description ?? o.description ?? "",
-            suggestion:
-              polish?.polished_suggestion ?? o.suggestion ?? "",
-            severity: safeSeverity(o.id),
-          };
-        }),
-    })),
-  };
-
-  const aiSummary = firstSentence(claudeResult.output.conclusion);
-
-  // Skrif í gagnagrunn umlukin try/catch: ef eitthvað klikkar setjum við
-  // status='error' svo skýrslan festist EKKI í 'generating' (spinner sem hangir).
-  let textStored = false; // ai_report_data vistað → keyrslan telst þótt biðröðin bili
-  try {
-    for (const obs of claudeResult.output.observations) {
-      const { error } = await supabase
-        .from("observations")
-        .update({
-          description: obs.polished_description,
-          suggestion: obs.polished_suggestion,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", obs.id);
-      if (error)
-        throw new Error(t.observationUpdateFailed(error.message));
-    }
-
-    // AI er búið; PDF-render fer í biðröð (bakgrunns-worker). status='report_ready',
-    // report_url og report_generated_at eru sett af worker þegar PDF er tilbúið.
-    const { error: inspErr } = await supabase
-      .from("inspections")
-      .update({
-        status: "rendering_pdf",
-        ai_report_data: aiReportData,
-        ai_summary: aiSummary,
-        ai_cost_usd: aiCostUsd,
-        ai_model: ANTHROPIC_MODEL,
-        report_error: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", inspectionId);
-    if (inspErr)
-      throw new Error(t.inspectionUpdateFailed(inspErr.message));
-    textStored = true;
-
-    // Setja PDF-render í biðröð. 23505 = virkt starf þegar til fyrir þessa skoðun
-    // (partial unique index) → í lagi, það er nú þegar í biðröð.
-    const { error: jobErr } = await supabase
-      .from("report_jobs")
-      .insert({ inspection_id: inspectionId, requested_by: user?.id ?? null });
-    if (jobErr && jobErr.code !== "23505")
-      throw new Error(t.queueFailed(jobErr.message));
-  } catch (e: unknown) {
-    console.error("DB write error:", e);
-    if (textStored) await finishWebCreditRun(credit.runId, ANTHROPIC_MODEL, aiCostUsd);
-    else await abortWebCreditRun(credit.runId);
-    await supabase
-      .from("inspections")
-      .update({ status: "error", updated_at: new Date().toISOString() })
-      .eq("id", inspectionId);
-    const msg = e instanceof Error ? e.message : t.unknownError;
-    return { error: t.saveReportFailed(msg) };
-  }
-
-  // AI-textinn er vistaður → keyrslan telst.
-  await finishWebCreditRun(credit.runId, ANTHROPIC_MODEL, aiCostUsd);
 
   revalidatePath(`/dashboard/${inspectionId}`);
   revalidatePath("/dashboard");
   return {
-    status: "success",
-    ai_summary: aiSummary,
-    ai_cost_usd: aiCostUsd,
+    status: "success" as const,
+    ai_summary: (data as { ai_summary?: string } | null)?.ai_summary ?? "",
   };
+}
+
+// error_code úr svari edge-fallsins (FunctionsHttpError.context er Response-ið).
+async function edgeErrorCode(error: unknown): Promise<string | null> {
+  const context = (error as { context?: unknown } | null)?.context;
+  if (!(context instanceof Response)) return null;
+  try {
+    const body = (await context.clone().json()) as { error_code?: unknown };
+    return typeof body.error_code === "string" ? body.error_code : null;
+  } catch {
+    return null;
+  }
+}
+
+// Villukóðar generate-report → texti á máli stjórnborðsins.
+function edgeErrorText(copy: DashboardCopy, code: string | null): string {
+  const t = copy.actions;
+  switch (code) {
+    case "unauthenticated": return t.signInToGenerate;
+    case "not_found": return t.inspectionNotFound;
+    case "no_observations": return t.noObservations;
+    case "no_credits": return copy.credits.no_credits;
+    case "additional_credit_confirmation_required": return copy.credits.additional_credit_confirmation_required;
+    case "generation_in_progress": return copy.credits.in_progress;
+    case "company_not_active": return copy.credits.not_active;
+    case "credit_check_unavailable": return copy.credits.ledger_unavailable;
+    default: return t.generateFailed;
+  }
 }
 
 // ── Handvirk textabreyting á skýrslu (án AI) ──
@@ -714,7 +341,7 @@ export async function sendToDrive(inspectionId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!isAllowedEmail(user?.email)) {
+  if (!(await canUseBetonDrive(supabase, user?.email))) {
     return { error: t.driveBetonOnly };
   }
 
@@ -766,153 +393,9 @@ export async function sendToDrive(inspectionId: string) {
 
 // ── Helpers ──
 
-interface ClaudeReportOutput {
-  introduction: string;
-  property_description: string;
-  conclusion: string;
-  observations: Array<{
-    id: string;
-    severity: string;
-    polished_description: string;
-    polished_suggestion: string;
-  }>;
-}
-
-/**
- * Staðfestir lögun á skipulagða svarinu úr tólkallinu (toolUse.input er þegar
- * gilt JSON-objekt frá SDK-inu — við tékkum bara að nauðsynlegir reitir séu til).
- */
-function validateReportOutput(input: unknown, missingFieldsMessage: string): ClaudeReportOutput {
-  const obj = input as Record<string, unknown> | null;
-  if (
-    !obj ||
-    typeof obj.introduction !== "string" ||
-    typeof obj.property_description !== "string" ||
-    typeof obj.conclusion !== "string" ||
-    !Array.isArray(obj.observations)
-  ) {
-    throw new Error(missingFieldsMessage);
-  }
-  return obj as unknown as ClaudeReportOutput;
-}
-
-function computeCostUsd(inputTokens: number, outputTokens: number): number {
-  const cost =
-    (inputTokens * PRICE_INPUT_PER_M + outputTokens * PRICE_OUTPUT_PER_M) /
-    1_000_000;
-  return Math.round(cost * 10_000) / 10_000;
-}
-
 function firstSentence(text: string): string {
   const trimmed = (text ?? "").trim();
   if (!trimmed) return "";
   const m = trimmed.match(/^.+?[.!?](?=\s|$)/);
   return (m ? m[0] : trimmed).slice(0, 500);
 }
-
-const SYSTEM_PROMPT = `Þú ert faglegur ritstjóri fyrir Beton ehf., íslenskt fyrirtæki sem framkvæmir ástandsskoðanir á fasteignum. Þú færð skipulögð gögn um eina skoðun (eign, rými, athugasemdir og myndir) og átt að skila einum JSON hlut sem inniheldur:
-
-1) Þrískiptan inngangstexta sem birtist á samantektarsíðu skýrslunnar (síða 4).
-2) Snyrtu, faglega lýsingu og tillögu fyrir hverja athugasemd.
-3) ÓBREYTTAN alvarleikaflokk skoðunarmanns fyrir hverja athugasemd.
-
-INNTAK: Fyrst kemur eignar- og rýmissamhengi sem JSON. Síðan kemur HVER athugasemd á eftir öðrum, merkt "── Athugasemd <id>", með rými, flokki, alvarleika, titli og hrátexta skoðunarmanns — og þar á eftir koma LJÓSMYNDIRNAR af þeirri athugasemd. Skoðaðu myndirnar vandlega; þær sýna oft það sem skoðunarmaður er að benda á. Mappaðu hverja niðurstöðu við rétt "id".
-
-Þú skrifar EKKI HTML, þú smíðar EKKI PDF. Annað kerfi sér um framsetningu. Þú skilar niðurstöðunni með tólinu skila_skyrslu.
-
-═══════════════════════════════════════════════════════════
-TÓNN OG STÍLL
-═══════════════════════════════════════════════════════════
-
-- Tungumál: íslenska. Engin ensk orð nema sérheiti (Bosch, Protimeter, Topdon, o.s.frv.).
-- Tónn: faglegur, hlutlaus, lýsandi. Ekki dramatískur, ekki of mjúkur.
-- Notaðu byggingafagmál þar sem það á við (gúmmíþétting, rakaskemmd, einangrun, burðarvirki, frágangur, þrýstijöfnun).
-- Engar fyrstu persónu setningar ("ég sé að..." "við mælum með..."). Skrifaðu hlutlaust í þriðju persónu eða ópersónulega ("mælt er með að...", "þétting vantar", "yfirborð er slitið").
-- Forðastu fyllingarorð ("mjög", "auðvitað", "að sjálfsögðu"). Vertu hnitmiðuð/-aður.
-- Ekki nota emoji.
-
-═══════════════════════════════════════════════════════════
-HLUTI 1 — INNGANGUR (introduction)
-═══════════════════════════════════════════════════════════
-
-Næstum fastur texti. Aðlagaðu nöfn, dagsetningu og staðsetningu. Notaðu ÞESSA uppbyggingu — ekki finna upp aðra:
-
-"[Nafn viðskiptavinar] hafði samband við Beton ehf. og óskaði eftir ástandsskoðun, heimilisfangið er: [heimilisfang]. Bragi Michaelsson Húsasmíðameistari framkvæmdi ástandsskoðunina þann [dagsetning á forminu dd.mm.áááá, t.d. '21.09.2026'; ekki vikudagur eða mánaðarheiti]. Sér til stuðnings notaði hann hlutfallsrakamæli af gerðinni Protimeter Survey Master og hitamyndavél frá Topdon. Ytra byrðið var sjónskoðað frá jörðu og þakið skoðað frá [veldu eitt sem passar: 'svölum' / 'jörðu' / 'þakstiga'  — ef ekki er hægt að ráða af gögnum, notaðu 'jörðu']."
-
-Þrjár til fjórar setningar. Ekki bæta við aukaupplýsingum.
-
-═══════════════════════════════════════════════════════════
-HLUTI 2 — EIGNALÝSING (property_description)
-═══════════════════════════════════════════════════════════
-
-Tvær til þrjár setningar úr property_data hlutnum (sem kemur úr fasteignaskrá hms.is). Lýstu: tegund (parhús/einbýli/raðhús/fjölbýli), hæðir, stærð (m²), byggingarár, byggingaráfangi. Þú mátt nefna fjölda herbergja ef það á við. Engar tilgátur um efni eða ástand sem ekki er í gögnunum.
-
-Ef inspection.lookup_failed er true (eða property_data er tómt): skilaðu TÓMUM streng "". PDF þjónustan birtir þá staðlaðan placeholder.
-
-Dæmi: "Erluás 70 er parhús á tveimur hæðum, byggt árið 1985, 145 fermetrar að stærð og fullbyggt. Eignin telur fimm herbergi."
-
-═══════════════════════════════════════════════════════════
-HLUTI 3 — NIÐURSTAÐA (conclusion)
-═══════════════════════════════════════════════════════════
-
-Skrifaðu samfellda, hnitmiðaða heildarsamantekt fyrir eiganda eða kaupanda sem hefur ekki lesið skýrsluna. Byggðu hana á ÖLLUM athugasemdum, lýsingum, tillögum og skráðum takmörkunum skoðunarinnar; veldu síðan það sem skiptir mestu máli. Þetta er ritstýrð niðurstaða skýrslunnar, ekki efnisyfirlit eða upptalning athugasemda.
-
-- Fjórar til sex samhangandi setningar, yfirleitt 90–140 orð. Styttra ef fáar niðurstöður liggja fyrir; ekki fylla upp í textann.
-- Byrjaðu á helstu niðurstöðu sem gögnin styðja. Ekki byrja á fjölda athugasemda eða telja upp herbergi, titla, númer eða alla alvarleikaflokka.
-- Tengdu skyldar niðurstöður í tvö til þrjú meginþemu eftir því sem gögnin leyfa, t.d. raka/vatnsþéttingu, öryggi eða viðhald. Ekki sameina óskyld atriði í eina orsök og ekki gera ráð fyrir að galli sé útbreiddur þótt hann finnist á einum stað.
-- Settu atriði sem krefjast tafarlausra viðbragða fremst. Engin mjög alvarleg eða brýn öryggisniðurstaða má hverfa við styttingu. Lýstu í stuttu máli hvað niðurstöðurnar þýða og hvað þarf að kanna eða bæta fyrst, eingöngu samkvæmt skráðum athugunum og tillögum.
-- Minniháttar slit og frágang má taka saman í einni stuttri setningu án þess að endurtaka hvert atriði. Einstök atriði og úrbætur eru útskýrð síðar í skýrslunni.
-- Greindu á milli staðfests galla, vísbendingar og þess sem þarfnast frekari rannsóknar. Varðveittu mikilvægar takmarkanir á skoðun og óvissu.
-- Ekki lýsa eigninni sem öruggri, gallalausri eða í eðlilegu/góðu ástandi miðað við aldur nema gögnin styðji það sérstaklega. Ekki finna upp orsakir, kostnað, líftíma, nýja galla eða ráðleggingar um kaup eða verð.
-- Engir punktalistar, tölusett upptalning eða setning fyrir hverja athugasemd. Lesandi á að skilja heildarmyndina og forgang næstu skrefa.
-
-KRÍTÍSK SKORÐUR: Samantektin (allir þrír hlutar samanlagðir) á að rúmast á EINNI A4 síðu, yfirleitt 180–260 orð. Ekki lengja stutta skýrslu til að ná orðafjölda og aldrei stytta þannig að brýn hætta eða mikilvæg óvissa falli brott.
-
-═══════════════════════════════════════════════════════════
-ALVARLEIKAFLOKKUN ATHUGASEMDA
-═══════════════════════════════════════════════════════════
-
-Alvarleikaflokkun er ákvörðun skoðunarmanns, EKKI verkefni gervigreindarinnar.
-Afritaðu gildið í severity nákvæmlega úr inntakinu fyrir sömu athugasemd: athugasemd, alvarleg eða mjog_alvarleg.
-ALDREI hækka, lækka, endurmeta eða leiðrétta flokkinn, jafnvel þótt þú teljir annan flokk eiga betur við. Ekki endurflokka óbeint í samantektinni heldur.
-Lýsing og tillaga mega skýrast en verða að varðveita merkingu, óvissu og valinn alvarleikaflokk. Ekki fullyrða nýja hættu eða nýjan galla til að réttlæta annan flokk.
-
-═══════════════════════════════════════════════════════════
-SNYRTING ATHUGASEMDA (polished_description, polished_suggestion)
-═══════════════════════════════════════════════════════════
-
-Fyrir hverja athugasemd færðu hráa lýsingu (description) og tillögu (suggestion) frá skoðunarmanni — oft er textinn stuttur, slangur eða með innsláttarvillum. Þú átt að:
-
-1. **polished_description** — Skrifaðu eina til þrjár setningar sem lýsa athuguninni faglega. Hvað sást, hvar, hvers vegna er það athugavert. Notaðu byggingafagmál. Þú mátt NÝTA það sem sést á meðfylgjandi ljósmyndum athugasemdarinnar og eignarsamhengið (rými, byggingarár, tegund) til að gera lýsinguna nákvæmari — en EKKI finna upp galla sem hvorki sjást á myndum né koma fram hjá skoðunarmanni.
-2. **polished_suggestion** — Skrifaðu eina til tvær setningar með ráðleggingu um úrbót, byggða á lýsingunni, því sem sést á myndunum og alvarleika. Hvað á að gera, hvernig, og ef við á: hver á að gera það (fagaðili eða eigandi). Engin verðmæti.
-
-Reglur:
-- Ef hrá lýsing er tóm, skrifaðu eitthvað í líkingu við "Sjá meðfylgjandi mynd."
-- Ef hrá tillaga er tóm eða ófullnægjandi, skrifaðu faglega tillögu byggða á lýsingu og alvarleika. Nefndu hvaða tegund fagaðila á að kalla til (pípara, rafvirkja, múrara, húsasmíðameistara, o.s.frv.) og lýstu viðeigandi úrbót. Aldrei sleppa tillögu — ALLAR athugasemdir skulu hafa polished_suggestion.
-- Ekki endurtaka titilinn í lýsingunni.
-- Ekki skrifa númer athugasemdar inn í textann — það kemur sjálfkrafa fram.
-- Ekki breyta merkingu — einungis orðalagi.
-
-═══════════════════════════════════════════════════════════
-ÚTGANGSSKEMA — JSON
-═══════════════════════════════════════════════════════════
-
-Skilaðu niðurstöðunni með því að kalla á tólið \`skila_skyrslu\`. Reitirnir eru samkvæmt þessu skema:
-
-{
-  "introduction": string,
-  "property_description": string,
-  "conclusion": string,
-  "observations": [
-    {
-      "id": string,
-      "severity": "athugasemd" | "alvarleg" | "mjog_alvarleg",
-      "polished_description": string,
-      "polished_suggestion": string
-    }
-  ]
-}
-
-Athugasemdir í observations fylkinu verða að vera nákvæmlega jafn margar og koma inn, og hver "id" verður að passa við einn af id-unum sem þú fékkst. Ekki bæta við athugasemdum og ekki sleppa neinum.
-
-Notaðu tólið \`skila_skyrslu\` til að skila svarinu — ekki skrifa svarið sem venjulegan texta.`;

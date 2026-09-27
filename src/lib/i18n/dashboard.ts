@@ -263,17 +263,12 @@ const is = {
   // Villutextar server-aðgerða í [id]/actions.ts.
   actions: {
     unknownError: "Óþekkt villa",
-    missingApiKey: "ANTHROPIC_API_KEY vantar í umhverfisbreytur.",
+    generateFailed: "Ekki tókst að búa til skýrsluna. Reyndu aftur eftir smástund.",
+    signInToGenerate: "Innskráningin er útrunnin. Skráðu þig inn aftur og reyndu svo aftur.",
     inspectionNotFound: "Skoðun fannst ekki.",
     noObservations: "Engar athugasemdir skráðar — ekki er hægt að búa til skýrslu.",
-    aiTruncated: "Svar varð of langt og slitnaði (max_tokens). Hækkaðu CLAUDE_MAX_TOKENS.",
-    aiNoToolUse: "Claude skilaði ekki skipulögðu svari (tool_use vantar).",
-    aiMissingFields: "Skipulagt svar vantar nauðsynlega reiti.",
-    aiFailed: (message: string) => `Villa við gerð AI samantektar: ${message}`,
     observationUpdateFailed: (message: string) => `Uppfærsla athugasemdar mistókst: ${message}`,
-    inspectionUpdateFailed: (message: string) => `Uppfærsla skoðunar mistókst: ${message}`,
     queueFailed: (message: string) => `Tókst ekki að setja PDF í biðröð: ${message}`,
-    saveReportFailed: (message: string) => `Villa við vistun skýrslu: ${message}`,
     noAiReport: "Engin skýrsla til — búðu fyrst til skýrslu með AI.",
     textChangedElsewhere:
       "Skýrslutextinn hefur breyst síðan ritillinn var opnaður (t.d. ný skýrslugerð eða vistun annars staðar). Endurhladdu síðuna og gerðu breytingarnar aftur.",
@@ -288,10 +283,9 @@ const is = {
     noReportForDrive: "Engin skýrsla til. Búðu til skýrslu fyrst.",
     reportDownloadFailed: (message: string | undefined) => `Gat ekki sótt skýrslu: ${message}`,
   },
-  // Höfnun skýrsluinneignar (src/lib/report/credits.ts skilar kóðanum).
+  // Höfnun skýrsluinneignar (error_code frá edge-fallinu generate-report).
   credits: {
     ledger_unavailable: "Ekki tókst að staðfesta skýrsluinneign. Reyndu aftur eftir smástund.",
-    use_app: "Notaðu Rondva-appið til að búa til AI-skýrslu fyrir þetta fyrirtæki.",
     no_credits:
       "Ókeypis AI-skýrslurnar eru búnar. Handvirkar breytingar og endurútflutningur eru áfram ókeypis.",
     additional_credit_confirmation_required:
@@ -524,17 +518,12 @@ const en: DashboardCopy = {
   },
   actions: {
     unknownError: "Unknown error",
-    missingApiKey: "ANTHROPIC_API_KEY is missing from the environment.",
+    generateFailed: "The report could not be created. Please try again in a moment.",
+    signInToGenerate: "Your session has expired. Sign in again and try again.",
     inspectionNotFound: "Inspection not found.",
     noObservations: "No observations recorded — a report can't be created.",
-    aiTruncated: "The response was too long and got cut off (max_tokens). Raise CLAUDE_MAX_TOKENS.",
-    aiNoToolUse: "Claude did not return a structured response (tool_use missing).",
-    aiMissingFields: "The structured response is missing required fields.",
-    aiFailed: (message) => `The AI summary failed: ${message}`,
     observationUpdateFailed: (message) => `Updating the observation failed: ${message}`,
-    inspectionUpdateFailed: (message) => `Updating the inspection failed: ${message}`,
     queueFailed: (message) => `Could not queue the PDF: ${message}`,
-    saveReportFailed: (message) => `Saving the report failed: ${message}`,
     noAiReport: "There's no report yet — create one with AI first.",
     textChangedElsewhere:
       "The report text has changed since the editor was opened (for example a new report run or a save elsewhere). Reload the page and make your changes again.",
@@ -550,7 +539,6 @@ const en: DashboardCopy = {
   },
   credits: {
     ledger_unavailable: "We couldn't check your report credits. Please try again in a moment.",
-    use_app: "Use the Rondva app to create AI reports for this company.",
     no_credits:
       "You've used your free AI-drafted reports. Manual edits and re-exports stay free.",
     additional_credit_confirmation_required:
