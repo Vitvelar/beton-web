@@ -3,10 +3,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CompanyBrandingForm } from "@/components/dashboard/CompanyBrandingForm";
 import { LanguageSetting } from "@/components/dashboard/LanguageSetting";
+import { ReportSettingsForm } from "@/components/dashboard/ReportSettingsForm";
 import { SignInMethods } from "@/components/dashboard/SignInMethods";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { linkedIdentities } from "@/lib/sign-in-methods";
 import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
+import { resolveReportSettings } from "@/lib/report/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: dashboardCopy(await getDashboardLocale()).settings.metaTitle };
@@ -28,6 +30,11 @@ export default async function SettingsPage() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Skýrslumál og matskerfi fyrirtækis: aðeins á app.rondva.com og aðeins fyrir eiganda.
+  // Ef dálkarnir eru ekki til enn (flutningurinn ekki keyrður) bregst uppflettingin og
+  // spjaldið felst — vefurinn má því fara út á undan gagnagrunnsbreytingunni.
+  const reportSettings = brand === "rondva" ? await ownerReportSettings(supabase) : null;
+
   return (
     <div className="max-w-2xl">
       <div className="mb-6 flex items-baseline justify-between">
@@ -42,6 +49,7 @@ export default async function SettingsPage() {
 
       {/* Beton er alltaf á íslensku — tungumálavalið er aðeins á app.rondva.com. */}
       {brand === "rondva" ? <LanguageSetting locale={locale} /> : null}
+      {reportSettings ? <ReportSettingsForm locale={locale} initial={reportSettings} /> : null}
 
       {inspector ? (
         <CompanyBrandingForm
@@ -65,4 +73,17 @@ export default async function SettingsPage() {
       {(await getRequestBrand()) === "rondva" && <SignInMethods locale={locale} identities={linkedIdentities(user.identities)} appleEnabled={process.env.RONDVA_APPLE_SIGNIN === "1"} />}
     </div>
   );
+}
+
+async function ownerReportSettings(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data, error } = await supabase
+    .from("company_members")
+    .select("role, companies ( report_locale, rating_scheme, country_code )")
+    .eq("role", "owner")
+    .maybeSingle();
+  if (error || !data) return null;
+  const company = Array.isArray(data.companies) ? data.companies[0] : data.companies;
+  if (!company) return null;
+  const settings = resolveReportSettings(company);
+  return { reportLocale: settings.locale, ratingScheme: settings.scheme };
 }
