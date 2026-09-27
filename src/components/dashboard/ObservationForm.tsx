@@ -6,6 +6,7 @@ import { updateObservation } from "@/app/(dashboard)/dashboard/[id]/actions";
 import { SeverityBadge } from "./SeverityBadge";
 import type { Observation, Severity } from "@/lib/supabase/types";
 import { categoryLabel, dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
+import type { RatingScheme } from "@/lib/report/settings";
 
 // Geymd gildi (íslenska) — birtingarheitið kemur úr katalóginu.
 const CATEGORIES = [
@@ -31,10 +32,12 @@ export function ObservationForm({
   observation,
   inspectionId,
   locale,
+  scheme = "standard",
 }: {
   observation: Observation;
   inspectionId: string;
   locale: DashboardLocale;
+  scheme?: RatingScheme;
 }) {
   const copy = dashboardCopy(locale);
   const t = copy.observation;
@@ -125,7 +128,7 @@ export function ObservationForm({
                     : "opacity-60 hover:opacity-100"
                 }`}
               >
-                <SeverityBadge severity={s} locale={locale} />
+                <SeverityBadge severity={s} locale={locale} scheme={scheme} />
               </button>
             ))}
           </div>

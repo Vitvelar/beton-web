@@ -16,6 +16,7 @@ import { ReportProgress } from "./ReportProgress";
 import { SeverityBadge } from "./SeverityBadge";
 import type { Severity } from "@/lib/supabase/types";
 import { dashboardCopy, fill, plural, type DashboardLocale } from "@/lib/i18n/dashboard";
+import type { RatingScheme } from "@/lib/report/settings";
 
 export interface EditorReport {
   ai_summary: {
@@ -49,12 +50,15 @@ export function ReportTextEditor({
   report,
   initialToken,
   locale,
+  scheme = "standard",
 }: {
   inspectionId: string;
   address: string;
   report: EditorReport;
   initialToken: string;
   locale: DashboardLocale;
+  /** Matskerfið sem stimplað var í skýrsluna (sama og PDF-ið sýnir). */
+  scheme?: RatingScheme;
 }) {
   const copy = dashboardCopy(locale);
   const t = copy.reportEditor;
@@ -248,7 +252,7 @@ export function ReportTextEditor({
                     <span className="font-semibold text-sm text-ink flex-1">
                       {obs.title}
                     </span>
-                    <SeverityBadge severity={obs.severity} locale={locale} />
+                    <SeverityBadge severity={obs.severity} locale={locale} scheme={scheme} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-fog mb-1">
