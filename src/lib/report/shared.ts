@@ -1,5 +1,4 @@
 import { formatReportDate } from "./date";
-import { format } from "@/lib/i18n/format";
 import { reportCopy, type ReportLocale } from "./i18n";
 // Shared helpers for the background report-PDF pipeline: worker-token auth, the
 // Storage object path, and the human-facing download filename. Kept free of
@@ -39,24 +38,39 @@ export function reportStoragePath(args: {
   return `${owner}/${args.inspectionId}/Astandsskodun_${safeAddress}${datePart}.pdf`;
 }
 
-// Human-facing download name in the report's language:
-//   is: "Beton Ástandsskoðun - <heimilisfang>, <dags>.pdf"
-//   en: "Acme Inspection report - <address>, <date>.pdf"
-// Forced via the signed-URL `download` option / Content-Disposition; Icelandic
-// characters are preserved there.
+// Heiti skýrslu: "<heimilisfang> - <dd.mm.áááá>" (ósk eiganda 2026-09-27). Notað sem
+// <title> skýrslusíðunnar (PDF-heiti í skoðara) með séríslenskum stöfum.
+export function reportTitle(
+  address: string | null,
+  date: string | null,
+  locale: ReportLocale = "is"
+): string {
+  const fallback = reportCopy(locale).downloadFallbackAddress;
+  const addr = (address ?? "").trim() || fallback;
+  return date ? `${addr} - ${formatReportDate(date)}` : addr;
+}
+
+// Íslenskir stafir sem hverfa ekki við NFD-sundurliðun.
+const ASCII_LETTERS: Readonly<Record<string, string>> = {
+  þ: "th", Þ: "Th", æ: "ae", Æ: "Ae", ð: "d", Ð: "D", ø: "o", Ø: "O", ß: "ss",
+};
+
+// Skráarheiti niðurhals: sama og heitið en aðeins ASCII ("Þórsgata 1 - 21.09.2026" →
+// "Thorsgata 1 - 21.09.2026.pdf"). Supabase Storage setur `download`-heitið óafkóðað í
+// Content-Disposition, svo séríslenskir stafir enduðu sem %C3%A9 í skráarheitinu.
 export function reportDownloadName(
   address: string | null,
   date: string | null,
-  companyName: string | null = null,
   locale: ReportLocale = "is"
 ): string {
-  const copy = reportCopy(locale);
-  const fallback = copy.downloadFallbackAddress;
-  const addr = (address ?? fallback).trim() || fallback;
-  const tail = date ? `, ${formatReportDate(date)}` : "";
-  // Fyrsta orð fyrirtækisheitis (án "ehf."), sjálfgefið Beton fyrir eldri gögn.
-  const company = (companyName ?? "").trim().split(/\s+/)[0] || "Beton";
-  return format(copy.downloadName, { company, address: addr, date: tail });
+  const ascii = reportTitle(address, date, locale)
+    .replace(/[þÞæÆðÐøØß]/g, (c) => ASCII_LETTERS[c] ?? c)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9 ._()-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return `${ascii || "report"}.pdf`;
 }
 
 // A report_url is a signable Storage object path only if it has no URI scheme.
