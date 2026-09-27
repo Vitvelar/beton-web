@@ -32,9 +32,8 @@ type SeverityKey = "athugasemd" | "alvarleg" | "mjog_alvarleg";
 const is = {
   /** <title> / skjalaheiti þegar skoðun finnst ekki. */
   docTitle: "Ástandsskoðun",
-  /** Skráarheiti niðurhals: "Beton Ástandsskoðun - Gata 1, 21.09.2026.pdf". */
-  downloadName: "{company} Ástandsskoðun - {address}{date}.pdf",
-  downloadFallbackAddress: "skýrsla",
+  /** Heiti skýrslu án heimilisfangs (sjá reportTitle í shared.ts). */
+  downloadFallbackAddress: "Ástandsskoðun",
 
   coverTitle: "Ástandsskoðun",
   coverPhotoAlt: "Forsíðumynd",
@@ -157,8 +156,7 @@ export type ReportCopy = typeof is;
 
 const en: ReportCopy = {
   docTitle: "Condition inspection",
-  downloadName: "{company} Inspection report - {address}{date}.pdf",
-  downloadFallbackAddress: "report",
+  downloadFallbackAddress: "Inspection report",
 
   coverTitle: "Condition inspection",
   coverPhotoAlt: "Cover photo",

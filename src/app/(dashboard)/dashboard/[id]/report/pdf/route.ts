@@ -18,7 +18,7 @@ import { reportLocaleOf } from "@/lib/report/i18n";
 // /api/report/worker/tick); this route no longer launches Chromium. It just
 // resolves the stored PDF:
 //   - report_url is a Storage object path  → 307 redirect to a signed URL that
-//     downloads as "Beton Ástandsskoðun - <heimilisfang>, <dags>.pdf".
+//     downloads as "<heimilisfang> - <dags>.pdf" (ASCII, see reportDownloadName).
 //   - render failed (status=error/report_error) → 500 with the message.
 //   - still rendering (queued/rendering_pdf)    → 202 { status:"rendering_pdf" }.
 //   - no server PDF yet (legacy/local-only)     → 404 (regenerate to enqueue).
@@ -60,7 +60,7 @@ export async function GET(
 
   let inspectionQuery = supabase
     .from("inspections")
-    .select("id, address, inspection_date, status, report_url, report_error, report_locale:ai_report_data->>report_locale, inspectors ( company_name )")
+    .select("id, address, inspection_date, status, report_url, report_error, report_locale:ai_report_data->>report_locale")
     .limit(1);
   inspectionQuery = bearerAuthorization
     ? inspectionQuery.or(`id.eq.${id},local_id.eq.${id}`)
@@ -73,13 +73,9 @@ export async function GET(
 
   // Tilbúið PDF í Storage → signa + redirecta með mannlegu skráarnafni.
   if (isStorageObjectPath(inspection.report_url)) {
-    const inspectorRow = Array.isArray(inspection.inspectors)
-      ? inspection.inspectors[0]
-      : inspection.inspectors;
     const download = reportDownloadName(
       inspection.address ?? null,
       inspection.inspection_date ?? null,
-      (inspectorRow as { company_name?: string | null } | null)?.company_name ?? null,
       reportLocaleOf(inspection)
     );
     const { data: signed, error: signErr } = await supabase.storage

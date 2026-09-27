@@ -9,10 +9,21 @@ const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { execFileSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
+// Finnur .ts/.tsx fyrir `@/…` og `./…` innflutning svo síðan geti hlaðið eigin einingar.
+function resolveTs(base) {
+  for (const f of [base, base + '.ts', base + '.tsx', path.join(base, 'index.ts')]) if (fs.existsSync(f) && fs.statSync(f).isFile()) return f;
+  return null;
+}
 function load(file, mocks = {}) {
   const filename = path.resolve(root, file);
-  const context = { exports: {}, process, console, Uint8Array, setTimeout, clearTimeout,
-    require: name => Object.hasOwn(mocks, name) ? mocks[name] : require(name) };
+  const local = name => {
+    const base = name.startsWith('@/') ? path.join(root, 'src', name.slice(2))
+      : name.startsWith('.') ? path.resolve(path.dirname(filename), name) : null;
+    const found = base && resolveTs(base);
+    return found ? load(path.relative(root, found), mocks) : require(name);
+  };
+  const context = { exports: {}, process, console, Uint8Array, setTimeout, clearTimeout, Intl,
+    require: name => Object.hasOwn(mocks, name) ? mocks[name] : local(name) };
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
     fileName: filename,
@@ -30,13 +41,17 @@ for (const [input, expected] of [
 const mobileRoot = path.resolve(root, '../beton-app');
 if (fs.existsSync(mobileRoot)) assert.equal(fs.readFileSync(path.join(mobileRoot, 'lib/utils/report-date.ts'), 'utf8'), fs.readFileSync(path.join(root, 'src/lib/report/date.ts'), 'utf8'));
 const shared = load('src/lib/report/shared.ts', { './date': date });
-assert.equal(shared.reportDownloadName('Þórsgata 1', '2026-09-21'), 'Beton Ástandsskoðun - Þórsgata 1, 21.09.2026.pdf');
+assert.equal(shared.reportTitle('Þórsgata 1', '2026-09-21'), 'Þórsgata 1 - 21.09.2026');
+assert.equal(shared.reportDownloadName('Þórsgata 1', '2026-09-21'), 'Thorsgata 1 - 21.09.2026.pdf');
+assert.equal(shared.reportDownloadName('Álfaskeið 12, íbúð 0201', '2026-05-22'), 'Alfaskeid 12 ibud 0201 - 22.05.2026.pdf');
+assert.equal(shared.reportDownloadName(null, null, 'en'), 'Inspection report.pdf');
+assert.ok(/^[\x20-\x7e]+$/.test(shared.reportDownloadName('Ægisíða 5 / Öldugata', '2026-01-02')), 'download name is plain ASCII');
 const webPromptSource = fs.readFileSync(path.join(root, 'src/app/(dashboard)/dashboard/[id]/actions.ts'), 'utf8');
 const appPrompt = fs.existsSync(mobileRoot) ? load('../beton-app/supabase/functions/generate-report/prompt.ts') : null;
 const webPrompt = webPromptSource.slice(webPromptSource.indexOf('const SYSTEM_PROMPT = ')).replace('const SYSTEM_PROMPT = ', 'exports.SYSTEM_PROMPT = ');
 const promptContext = { exports: {} }; vm.runInNewContext(webPrompt, promptContext);
 if (appPrompt) assert.equal(promptContext.exports.SYSTEM_PROMPT, appPrompt.SYSTEM_PROMPT, 'Web and mobile report instructions must remain in sync');
-console.log('PASS civil-date boundaries, Icelandic filename and identical report instructions');
+console.log('PASS civil-date boundaries, address+date filename (ASCII download) and identical report instructions');
 
 async function main() {
   const obs = { id: 'o1', number: '2.1', category: 'thak', title: 'Þak', description: 'Þak og þétting. Áá Éé Íí Óó Úú Ýý Þþ Ðð Ææ Öö. Þéttingar þurfa viðhald.', suggestion: 'Yfirfara þéttingar við þak.', severity: 'alvarleg' };
@@ -56,6 +71,7 @@ async function main() {
     '@/lib/supabase/server': { createClient: async () => client },
     '@/lib/supabase/service': { createServiceClient: () => client },
     '@/lib/supabase/bearer': { getBearerAuthorization: () => null },
+    '@/lib/request-brand': { getDashboardLocale: async () => 'is', getRequestBrand: async () => 'beton' },
   });
   const element = await page.default({ params: Promise.resolve({ id: 'fixture' }), searchParams: Promise.resolve({ pdf: '1' }) });
   const markup = renderToStaticMarkup(element);

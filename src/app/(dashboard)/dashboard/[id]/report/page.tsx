@@ -12,7 +12,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   isWorkerRequest,
   WORKER_TOKEN_HEADER,
-  reportDownloadName,
+  reportTitle,
 } from "@/lib/report/shared";
 import type { Severity } from "@/lib/supabase/types";
 import { resolveBranding } from "@/lib/report/branding";
@@ -139,19 +139,12 @@ export async function generateMetadata({
       : await createClient();
     let q = supabase
       .from("inspections")
-      .select("address, inspection_date, local_id, report_locale:ai_report_data->>report_locale, inspectors ( company_name )")
+      .select("address, inspection_date, local_id, report_locale:ai_report_data->>report_locale")
       .limit(1);
     q = authorization ? q.or(`id.eq.${id},local_id.eq.${id}`) : q.eq("id", id);
     const { data } = await q.maybeSingle();
     if (data?.address) {
-      const insp = Array.isArray(data.inspectors) ? data.inspectors[0] : data.inspectors;
-      const name = reportDownloadName(
-        data.address,
-        data.inspection_date,
-        (insp as { company_name?: string | null } | null)?.company_name ?? null,
-        reportLocaleOf(data)
-      ).replace(/\.pdf$/, "");
-      return { title: { absolute: name } };
+      return { title: { absolute: reportTitle(data.address, data.inspection_date, reportLocaleOf(data)) } };
     }
   } catch {
     // fall back to a generic title below

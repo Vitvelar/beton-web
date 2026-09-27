@@ -6,8 +6,9 @@ import { dashboardCopy, LOCALE_NAMES, type DashboardLocale } from "@/lib/i18n/da
 import { REPORT_LOCALES, type ReportLocale } from "@/lib/report/i18n";
 import type { RatingScheme } from "@/lib/report/settings";
 
-// Skýrslumál og matskerfi fyrirtækis (aðeins eigandi, app.rondva.com). Gildir um nýjar
-// skýrslur: edge-fallið stimplar valið í hverja skýrslu þegar hún er gerð.
+// Skýrslumál og matskerfi fyrirtækis (aðeins eigandi, app.rondva.com). Vistast um leið
+// og valið breytist (engin Vista-hnappur); fer til baka ef vistun mistekst. Gildir um
+// nýjar skýrslur: edge-fallið stimplar valið í hverja skýrslu þegar hún er gerð.
 export function ReportSettingsForm({
   locale,
   initial,
@@ -16,17 +17,23 @@ export function ReportSettingsForm({
   initial: { reportLocale: ReportLocale; ratingScheme: RatingScheme };
 }) {
   const t = dashboardCopy(locale).reportSettings;
-  const [reportLocale, setReportLocale] = useState<string>(initial.reportLocale);
-  const [ratingScheme, setRatingScheme] = useState<string>(initial.ratingScheme);
+  const [saved, setSaved] = useState({ reportLocale: initial.reportLocale as string, ratingScheme: initial.ratingScheme as string });
+  const [value, setValue] = useState(saved);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function change(next: { reportLocale: string; ratingScheme: string }) {
+    setValue(next);
     setMessage(null);
     startTransition(async () => {
-      const result = await saveReportSettings(reportLocale, ratingScheme);
-      setMessage("error" in result ? { kind: "error", text: result.error } : { kind: "ok", text: t.saved });
+      const result = await saveReportSettings(next.reportLocale, next.ratingScheme);
+      if ("error" in result) {
+        setValue(saved);
+        setMessage({ kind: "error", text: result.error });
+      } else {
+        setSaved(next);
+        setMessage({ kind: "ok", text: t.saved });
+      }
     });
   }
 
@@ -35,7 +42,7 @@ export function ReportSettingsForm({
     "w-full max-w-xs rounded-md border border-concrete-dk bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none disabled:opacity-60";
 
   return (
-    <form onSubmit={onSubmit} className="mb-6 space-y-5 rounded-xl border border-concrete bg-white p-6">
+    <div className="mb-6 space-y-5 rounded-xl border border-concrete bg-white p-6">
       <h2 className="text-sm font-semibold text-ink">{t.title}</h2>
       <div>
         <label htmlFor="report_locale" className={labelCls}>
@@ -43,9 +50,9 @@ export function ReportSettingsForm({
         </label>
         <select
           id="report_locale"
-          value={reportLocale}
+          value={value.reportLocale}
           disabled={isPending}
-          onChange={(e) => setReportLocale(e.target.value)}
+          onChange={(e) => change({ ...value, reportLocale: e.target.value })}
           className={selectCls}
         >
           {REPORT_LOCALES.map((code) => (
@@ -62,9 +69,9 @@ export function ReportSettingsForm({
         </label>
         <select
           id="rating_scheme"
-          value={ratingScheme}
+          value={value.ratingScheme}
           disabled={isPending}
-          onChange={(e) => setRatingScheme(e.target.value)}
+          onChange={(e) => change({ ...value, ratingScheme: e.target.value })}
           className={selectCls}
         >
           <option value="standard">{t.schemeStandard}</option>
@@ -72,16 +79,9 @@ export function ReportSettingsForm({
         </select>
         <p className="mt-1 text-xs text-fog">{t.schemeHint}</p>
       </div>
-      {message ? (
-        <p className={`text-sm ${message.kind === "ok" ? "text-emerald-700" : "text-sev-danger"}`}>{message.text}</p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={isPending}
-        className="rounded-full bg-navy px-5 py-2 text-sm font-semibold text-white hover:bg-navy-deep disabled:opacity-50"
-      >
-        {isPending ? t.saving : t.save}
-      </button>
-    </form>
+      <p role="status" aria-live="polite" className={`min-h-5 text-sm ${message?.kind === "error" ? "text-sev-danger" : "text-emerald-700"}`}>
+        {isPending ? t.saving : message?.text ?? ""}
+      </p>
+    </div>
   );
 }
