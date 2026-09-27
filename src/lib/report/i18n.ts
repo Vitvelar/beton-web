@@ -146,8 +146,20 @@ const is = {
   actionListIntro: "Hér er verkefnalisti yfir atriði sem þarf að taka á.",
 
   termsHeading: "Skilmálar og fyrirvarar ástandsskoðunar {company}",
-  /** Aðeins notað utan íslensku (íslenskir skilmálar eru fullur texti í page.tsx). */
+  /** Tengill á skilmála fyrirtækis (annarra en Beton, sem fær fullan texta í page.tsx). */
   termsLinkOnly: "Skoðunin og skýrslan falla undir skilmála {company}:",
+  // Hlutlaus kafli fyrir öll fyrirtæki önnur en Beton (ákvörðun eiganda 2026-09-27):
+  // takmarkanir sjónskoðunar, engir greiðslu- eða ábyrgðarskilmálar. Lögfræðingur ætti
+  // að lesa hann yfir. Eigin skilmálar fyrirtækis (inspectors.company_terms_text) á eftir.
+  limitationsHeading: "Takmarkanir skoðunar",
+  limitations: [
+    "Skýrslan byggir á sjónskoðun án inngrips á aðgengilegum hlutum eignarinnar á skoðunardegi. Hún lýsir því ástandi sem sást þá og er ekki trygging fyrir því að eignin sé gallalaus.",
+    "Hlutar sem voru huldir, lokaðir eða óaðgengilegir voru ekki skoðaðir, til dæmis inni í veggjum, undir gólfefnum, bak við innréttingar og hlutar þaks eða ytra byrðis sem ekki var hægt að skoða með öruggum hætti. Lagnir, raflagnir, frárennsli og hitakerfi voru aðeins skoðuð sjónrænt þar sem þau voru aðgengileg; þau voru ekki prófuð.",
+    "Rakamælingar eru aðeins til viðmiðunar. Raki, mygla eða aðrir gallar geta leynst í byggingarhlutum án sýnilegra ummerkja.",
+    "Nánari athugun eða viðgerð á göllum sem lýst er í skýrslunni getur leitt í ljós aðra galla sem ekki voru sýnilegir við skoðun.",
+    "Skýrslan er ætluð þeim viðskiptavini sem hún er gerð fyrir. Ekki ætti að byggja ákvörðun um kaup, sölu eða viðgerðir eingöngu á henni.",
+  ],
+  ownTermsHeading: "Skilmálar {company}",
 
   reportCreated: "Skýrsla gerð",
 };
@@ -170,7 +182,7 @@ const en: ReportCopy = {
   tocSummary: "Summary",
   tocRoom: "{name}",
   tocActionList: "Action list",
-  tocTerms: "Terms and conditions",
+  tocTerms: "Limitations and terms",
 
   introHeading: "Condition inspection by {company}",
   introPurpose:
@@ -285,8 +297,17 @@ const en: ReportCopy = {
   actionList: "Action list",
   actionListIntro: "These are the items that need attention, most serious first.",
 
-  termsHeading: "Terms and conditions",
+  termsHeading: "Limitations and terms",
   termsLinkOnly: "This inspection and report are subject to the terms and conditions of {company}:",
+  limitationsHeading: "Limitations of this inspection",
+  limitations: [
+    "This report is based on a visual, non-invasive inspection of the accessible parts of the property on the date of the inspection. It describes the condition seen at that time and is not a guarantee that the property is free of defects.",
+    "Parts that were concealed, covered or inaccessible were not inspected, for example inside walls, under floor coverings, behind fitted units, and parts of the roof or exterior that could not be inspected safely. Plumbing, electrics, drainage and heating were only inspected visually where accessible; they were not tested.",
+    "Moisture readings are indicative only. Damp, mould or other defects can be present in building elements without visible signs.",
+    "Further investigation or repair of a defect described in this report may reveal other defects that were not visible at the time of the inspection.",
+    "This report is intended for the client it was prepared for. A decision to buy, sell or carry out repairs should not be based on this report alone.",
+  ],
+  ownTermsHeading: "{company} terms and conditions",
 
   reportCreated: "Report created",
 };

@@ -26,7 +26,7 @@ export default async function SettingsPage() {
 
   const { data: inspector } = await supabase
     .from("inspectors")
-    .select("full_name, company_name, company_logo_url, company_terms_url")
+    .select("full_name, company_name, company_logo_url, company_terms_url, company_terms_text")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -58,8 +58,10 @@ export default async function SettingsPage() {
             company_name: inspector.company_name ?? "",
             company_logo_url: inspector.company_logo_url ?? "",
             company_terms_url: inspector.company_terms_url ?? "",
+            company_terms_text: inspector.company_terms_text ?? "",
           }}
           locale={locale}
+          showTermsText={brand === "rondva" && inspector.company_name?.trim() !== "Beton ehf."}
         />
       ) : (
         <p className="rounded-xl border border-concrete bg-white p-6 text-sm text-fog">

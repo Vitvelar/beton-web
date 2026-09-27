@@ -185,7 +185,7 @@ export default async function ReportPage({
       customer_name, inspection_date, weather, attendees,
       property_data, ai_report_data, ai_summary,
       ai_cost_usd, ai_model, report_generated_at,
-      inspectors ( full_name, company_name, company_logo_url, company_terms_url ),
+      inspectors ( full_name, company_name, company_logo_url, company_terms_url, company_terms_text ),
       rooms (
         id, name, slug, sort_order, ratings, notes,
         observations (
@@ -318,9 +318,10 @@ export default async function ReportPage({
   const brand = resolveBranding(inspectorRow ?? null, propData.inspectorName);
   const inspectorName = brand.inspectorName;
   const logoSrc = brand.logoUrl;
-  // Íslenska: fullir skilmálar eins og áður. Önnur mál: aldrei lagatexti Beton —
-  // aðeins tengill á skilmála fyrirtækisins, og hlutanum sleppt ef enginn er til.
-  const showTerms = locale === "is" || !!brand.termsUrl;
+  // Skilmálar (ákvörðun eiganda 2026-09-27): Beton á íslensku fær sína eigin fullu
+  // skilmála eins og áður. Öll önnur fyrirtæki (og önnur mál) fá hlutlausan kafla um
+  // takmarkanir skoðunar, svo eigin skilmálatexta og/eða tengil — aldrei lagatexta Beton.
+  const betonTerms = locale === "is" && brand.isBeton;
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -455,12 +456,10 @@ export default async function ReportPage({
             {rankedObs.length > 0 && (
               <TocRow num={String(report.rooms.length + 2)} name={t.tocActionList} />
             )}
-            {showTerms && (
-              <TocRow
-                num={String(report.rooms.length + 2 + (rankedObs.length > 0 ? 1 : 0))}
-                name={t.tocTerms}
-              />
-            )}
+            <TocRow
+              num={String(report.rooms.length + 2 + (rankedObs.length > 0 ? 1 : 0))}
+              name={t.tocTerms}
+            />
           </div>
         </section>
 
@@ -744,14 +743,13 @@ export default async function ReportPage({
         )}
 
         {/* ═══ SKILMÁLAR OG FYRIRVARAR ═══ */}
-        {showTerms && (
         <section className="rpt-terms px-8 py-8 border-t border-concrete print:border-0 print:break-before-page">
           <h2 className="text-base font-bold text-navy mb-1">
             {fill(t.termsHeading, { company: brand.name })}
           </h2>
           <div className="h-0.5 bg-navy mb-4" />
 
-          {locale === "is" ? (
+          {betonTerms ? (
           <div className="space-y-1.5 text-[11px] leading-snug text-ink/90 print:text-[7.5pt] print:leading-[1.3]">
             <TermsSection n={1} title="Markmið og gildissvið">
               Markmið ástandsskoðunar er að veita verkkaupa upplýsingar um almennt og sýnilegt ástand fasteignar á
@@ -827,12 +825,30 @@ export default async function ReportPage({
             </TermsSection>
           </div>
           ) : (
-            <p className="text-sm text-ink/80">
-              {fill(t.termsLinkOnly, { company: brand.name })}{" "}
-              <a href={brand.termsUrl ?? undefined} className="text-navy underline break-all">
-                {brand.termsUrl}
-              </a>
-            </p>
+            <div className="space-y-1.5 text-[11px] leading-snug text-ink/90 print:text-[7.5pt] print:leading-[1.3]">
+              <h3 className="font-bold text-xs text-ink mt-2 mb-0.5 print:mt-2 print:mb-0.5 print:text-[8.5pt]">
+                {t.limitationsHeading}
+              </h3>
+              {t.limitations.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+              {brand.termsText ? (
+                <>
+                  <h3 className="font-bold text-xs text-ink mt-4 mb-0.5 print:mt-3 print:mb-0.5 print:text-[8.5pt]">
+                    {fill(t.ownTermsHeading, { company: brand.name })}
+                  </h3>
+                  <p className="whitespace-pre-line">{brand.termsText}</p>
+                </>
+              ) : null}
+              {brand.termsUrl ? (
+                <p className="pt-2">
+                  {fill(t.termsLinkOnly, { company: brand.name })}{" "}
+                  <a href={brand.termsUrl} className="text-navy underline break-all">
+                    {brand.termsUrl}
+                  </a>
+                </p>
+              ) : null}
+            </div>
           )}
 
           {logoSrc ? (
@@ -842,7 +858,6 @@ export default async function ReportPage({
             </div>
           ) : null}
         </section>
-        )}
 
         {/* Footer */}
         <div className="px-8 py-4 border-t border-concrete bg-stone-50/30 text-xs text-fog print:hidden">

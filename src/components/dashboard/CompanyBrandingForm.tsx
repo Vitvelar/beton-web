@@ -10,17 +10,21 @@ interface Props {
     company_name: string;
     company_logo_url: string;
     company_terms_url: string;
+    company_terms_text: string;
   };
   locale: DashboardLocale;
+  /** Eigin skilmálatexti (ekki fyrir Beton, sem hefur fasta skilmála í skýrslunni). */
+  showTermsText?: boolean;
 }
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/svg+xml";
 const MAX_BYTES = 2 * 1024 * 1024;
 
-export function CompanyBrandingForm({ userId, initial, locale }: Props) {
+export function CompanyBrandingForm({ userId, initial, locale, showTermsText = false }: Props) {
   const t = dashboardCopy(locale).branding;
   const [companyName, setCompanyName] = useState(initial.company_name);
   const [termsUrl, setTermsUrl] = useState(initial.company_terms_url);
+  const [termsText, setTermsText] = useState(initial.company_terms_text);
   const [logoUrl, setLogoUrl] = useState(initial.company_logo_url);
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -52,6 +56,8 @@ export function CompanyBrandingForm({ userId, initial, locale }: Props) {
           company_name: companyName.trim() || null,
           company_terms_url: termsUrl.trim() || null,
           company_logo_url: nextLogoUrl || null,
+          // Aðeins þegar reiturinn sést — Beton-síðan snertir aldrei þennan dálk.
+          ...(showTermsText ? { company_terms_text: termsText.trim() || null } : {}),
         })
         .eq("user_id", userId);
       if (error) throw new Error(error.message);
@@ -98,6 +104,23 @@ export function CompanyBrandingForm({ userId, initial, locale }: Props) {
         />
         <p className="mt-1 text-xs text-fog">{t.termsUrlHint}</p>
       </div>
+
+      {showTermsText ? (
+        <div>
+          <label htmlFor="company_terms_text" className="block text-xs font-mono uppercase tracking-wider text-fog mb-1.5">
+            {t.termsText}
+          </label>
+          <textarea
+            id="company_terms_text"
+            value={termsText}
+            onChange={(e) => setTermsText(e.target.value)}
+            rows={8}
+            maxLength={20000}
+            className="w-full rounded-md border border-concrete-dk bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none resize-y"
+          />
+          <p className="mt-1 text-xs text-fog">{t.termsTextHint}</p>
+        </div>
+      ) : null}
 
       <div>
         <span className="block text-xs font-mono uppercase tracking-wider text-fog mb-1.5">{t.logo}</span>

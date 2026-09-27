@@ -7,6 +7,7 @@ export interface InspectorBrandingRow {
   company_name?: string | null;
   company_logo_url?: string | null;
   company_terms_url?: string | null;
+  company_terms_text?: string | null;
 }
 
 export interface ReportBranding {
@@ -18,6 +19,10 @@ export interface ReportBranding {
   logoUrl: string | null;
   /** Slóð á skilmála; null = sleppa setningunni um skilmála */
   termsUrl: string | null;
+  /** Eigin skilmálatexti fyrirtækis (ekki Beton); null = aðeins hlutlausi kaflinn */
+  termsText: string | null;
+  /** Beton ehf. sjálft — fær sína eigin íslensku skilmála í skýrslunni */
+  isBeton: boolean;
   /** Nafn skoðunarmanns; propertyData.inspectorName hefur forgang */
   inspectorName: string;
 }
@@ -27,6 +32,8 @@ export const DEFAULT_BRANDING: ReportBranding = {
   nameUpper: "BETON EHF.",
   logoUrl: "/images/beton-logo.webp",
   termsUrl: "https://www.betonehf.is/s/skilmalarbetonehf.pdf",
+  termsText: null,
+  isBeton: true,
   inspectorName: "Bragi Michaelsson",
 };
 
@@ -51,6 +58,8 @@ export function resolveBranding(
     nameUpper: name.toUpperCase(),
     logoUrl,
     termsUrl,
+    termsText: isDefaultCompany ? null : inspector?.company_terms_text?.trim() || null,
+    isBeton: isDefaultCompany,
     inspectorName,
   };
 }

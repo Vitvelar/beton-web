@@ -217,6 +217,9 @@ const is = {
     companyNameHint: "Birtist á forsíðu skýrslu, í inngangi og í skilmálum.",
     termsUrl: "Slóð á skilmála (valfrjálst)",
     termsUrlHint: "Ef tómt er setningin um skilmála ekki í skýrslunni.",
+    termsText: "Eigin skilmálar (valfrjálst)",
+    termsTextHint:
+      "Birtast aftast í skýrslum ykkar, á eftir almennum fyrirvörum um takmarkanir skoðunar. Aðeins venjulegur texti.",
     logo: "Merki",
     logoAlt: "Merki",
     noLogo: "Ekkert merki",
@@ -478,6 +481,9 @@ const en: DashboardCopy = {
     companyNameHint: "Appears on the report cover, in the introduction and in the terms.",
     termsUrl: "Terms URL (optional)",
     termsUrlHint: "If empty, the terms sentence is left out of the report.",
+    termsText: "Your terms (optional)",
+    termsTextHint:
+      "Shown at the end of your reports, after the standard limitations of the inspection. Plain text only.",
     logo: "Logo",
     logoAlt: "Logo",
     noLogo: "No logo",
