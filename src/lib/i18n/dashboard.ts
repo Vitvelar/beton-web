@@ -52,8 +52,8 @@ export function localeForBrand(brand: Brand, preferred?: string | null): Dashboa
   return isDashboardLocale(preferred) ? preferred : "en";
 }
 
-/** Fleirtöluform eftir Intl.PluralRules; `other` er alltaf til. */
-export type PluralForms = Partial<Record<Intl.LDMLPluralRule, string>> & { other: string };
+import type { PluralForms } from "./format";
+export { fill, format, plural, type PluralForms } from "./format";
 
 const is = {
   common: {
@@ -539,25 +539,6 @@ export const DASHBOARD_COPY: Readonly<Record<DashboardLocale, DashboardCopy>> = 
 
 export function dashboardCopy(locale: DashboardLocale): DashboardCopy {
   return DASHBOARD_COPY[locale];
-}
-
-/** Velur fleirtöluform fyrir `count` á tungumálinu `locale`. */
-export function plural(locale: DashboardLocale, count: number, forms: PluralForms): string {
-  return forms[new Intl.PluralRules(locale).select(count)] ?? forms.other;
-}
-
-type FillValue = string | number | null | undefined;
-
-/**
- * Fyllir {nafn} í sniðmáti og skilar bútunum sem JSX-börnum: "Rými ({count})"
- * → ["Rými (", 3, ")"], nákvæmlega sömu textahnútar og `Rými ({n})` í JSX.
- * Tómir bútar detta út; null/undefined gildi birtast ekki (eins og í JSX).
- */
-export function fill(template: string, values: Record<string, FillValue>): FillValue[] {
-  return template
-    .split(/\{(\w+)\}/)
-    .map((part, i) => (i % 2 === 1 ? values[part] : part))
-    .filter((part, i) => i % 2 === 1 || part !== "");
 }
 
 /** Birtingarheiti athugasemdaflokks; geymda gildið (íslenska) ef engin þýðing er til. */
