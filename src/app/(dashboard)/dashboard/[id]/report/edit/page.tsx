@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { snapshotToken } from "@/lib/report/snapshot-token";
 import { getDashboardLocale } from "@/lib/request-brand";
+import { ratingSchemeOf } from "@/lib/report/settings";
 import {
   ReportTextEditor,
   type EditorReport,
@@ -36,6 +37,7 @@ export default async function ReportEditPage({
       report={inspection.ai_report_data as EditorReport}
       initialToken={snapshotToken(inspection.ai_report_data)}
       locale={locale}
+      scheme={ratingSchemeOf(inspection.ai_report_data as { rating_scheme?: unknown })}
     />
   );
 }

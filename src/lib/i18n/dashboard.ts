@@ -93,6 +93,12 @@ const is = {
     alvarleg: "Alvarleg",
     mjog_alvarleg: "Mjög alvarleg",
   },
+  // Sama alvarleiki sem ástandseinkunnir (companies.rating_scheme = condition_1_3).
+  conditionSeverity: {
+    athugasemd: "Einkunn 1",
+    alvarleg: "Einkunn 2",
+    mjog_alvarleg: "Einkunn 3",
+  },
   // Birtingarheiti athugasemdaflokka. Íslenska birtir geymda gildið sjálft.
   categories: {} as Record<string, string>,
   list: {
@@ -336,6 +342,11 @@ const en: DashboardCopy = {
     athugasemd: "Minor",
     alvarleg: "Serious",
     mjog_alvarleg: "Very serious",
+  },
+  conditionSeverity: {
+    athugasemd: "Rating 1",
+    alvarleg: "Rating 2",
+    mjog_alvarleg: "Rating 3",
   },
   categories: {
     "Veggir": "Walls",

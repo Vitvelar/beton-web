@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ObservationForm } from "@/components/dashboard/ObservationForm";
 import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
-import { getDashboardLocale } from "@/lib/request-brand";
+import { getDashboardLocale, getDashboardRatingScheme } from "@/lib/request-brand";
 import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 import type { Observation, Photo } from "@/lib/supabase/types";
 
@@ -71,6 +71,7 @@ export default async function ObservationEditorPage({
         observation={observation as Observation}
         inspectionId={id}
         locale={locale}
+        scheme={await getDashboardRatingScheme()}
       />
     </div>
   );

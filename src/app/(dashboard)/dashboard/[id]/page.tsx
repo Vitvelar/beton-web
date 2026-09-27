@@ -6,7 +6,7 @@ import { SeverityBadge } from "@/components/dashboard/SeverityBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { ReportActions } from "./report-actions";
 import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
-import { getDashboardLocale } from "@/lib/request-brand";
+import { getDashboardLocale, getDashboardRatingScheme } from "@/lib/request-brand";
 import { dashboardCopy, fill, plural } from "@/lib/i18n/dashboard";
 import type {
   Severity,
@@ -32,6 +32,7 @@ export default async function InspectionDetailPage({
 }) {
   const { id } = await params;
   const locale = await getDashboardLocale();
+  const scheme = await getDashboardRatingScheme();
   const copy = dashboardCopy(locale);
   const t = copy.inspection;
   const supabase = await createClient();
@@ -233,7 +234,7 @@ export default async function InspectionDetailPage({
                               </p>
                             )}
                           </div>
-                          <SeverityBadge severity={o.severity as Severity} locale={locale} />
+                          <SeverityBadge severity={o.severity as Severity} locale={locale} scheme={scheme} />
                         </Link>
                         {obsPhotos.length > 0 && (
                           <div className="px-4 pb-3">
