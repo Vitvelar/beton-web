@@ -120,7 +120,11 @@ async function processJob(
       .eq("id", inspectionId);
     if (upInsp) throw new Error(`Uppfærsla skoðunar mistókst: ${upInsp.message}`);
 
-    await svc
+    // PDF-ið er vistað og skoðunin report_ready — ef bókhaldið á starfinu
+    // bregst hér má EKKI setja skoðunina í 'error'. Skilum ok:false svo tick-
+    // svarið (og logg) sýni það; claim_next_report_job endurheimtir starfið
+    // eftir 15 mín ef það situr fast í 'running'.
+    const { error: doneErr } = await svc
       .from("report_jobs")
       .update({
         status: "succeeded",
@@ -130,13 +134,18 @@ async function processJob(
         locked_at: null,
       })
       .eq("id", job.id);
+    if (doneErr) {
+      const msg = `PDF vistað en report_jobs uppfærsla mistókst: ${doneErr.message}`;
+      console.error(`[worker] job=${job.id} ${msg}`);
+      return { ok: false, error: msg };
+    }
 
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const giveUp = (job.attempts ?? 0) >= MAX_ATTEMPTS;
     if (giveUp) {
-      await svc
+      const { error: failErr } = await svc
         .from("report_jobs")
         .update({
           status: "failed",
@@ -145,16 +154,19 @@ async function processJob(
           locked_at: null,
         })
         .eq("id", job.id);
-      await svc
+      if (failErr) console.error(`[worker] job=${job.id} failed-merking mistókst: ${failErr.message}`);
+      const { error: inspFailErr } = await svc
         .from("inspections")
         .update({ status: "error", report_error: msg, updated_at: new Date().toISOString() })
         .eq("id", inspectionId);
+      if (inspFailErr) console.error(`[worker] job=${job.id} inspections error-merking mistókst: ${inspFailErr.message}`);
     } else {
       // Re-queue for another pass.
-      await svc
+      const { error: requeueErr } = await svc
         .from("report_jobs")
         .update({ status: "queued", error: msg, locked_at: null, locked_by: null })
         .eq("id", job.id);
+      if (requeueErr) console.error(`[worker] job=${job.id} endurröðun mistókst: ${requeueErr.message}`);
     }
     return { ok: false, error: msg };
   }
