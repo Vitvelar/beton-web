@@ -31,7 +31,7 @@ export const DEFAULT_BRANDING: ReportBranding = {
   name: "Beton ehf.",
   nameUpper: "BETON EHF.",
   logoUrl: "/images/beton-logo.webp",
-  termsUrl: "https://www.betonehf.is/s/skilmalarbetonehf.pdf",
+  termsUrl: "https://beton.is/skilmalar",
   termsText: null,
   isBeton: true,
   inspectorName: "Bragi Michaelsson",
