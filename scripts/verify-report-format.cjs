@@ -46,12 +46,12 @@ assert.equal(shared.reportDownloadName('Þórsgata 1', '2026-09-21'), 'Thorsgata
 assert.equal(shared.reportDownloadName('Álfaskeið 12, íbúð 0201', '2026-05-22'), 'Alfaskeid 12 ibud 0201 - 22.05.2026.pdf');
 assert.equal(shared.reportDownloadName(null, null, 'en'), 'Inspection report.pdf');
 assert.ok(/^[\x20-\x7e]+$/.test(shared.reportDownloadName('Ægisíða 5 / Öldugata', '2026-01-02')), 'download name is plain ASCII');
-const webPromptSource = fs.readFileSync(path.join(root, 'src/app/(dashboard)/dashboard/[id]/actions.ts'), 'utf8');
-const appPrompt = fs.existsSync(mobileRoot) ? load('../beton-app/supabase/functions/generate-report/prompt.ts') : null;
-const webPrompt = webPromptSource.slice(webPromptSource.indexOf('const SYSTEM_PROMPT = ')).replace('const SYSTEM_PROMPT = ', 'exports.SYSTEM_PROMPT = ');
-const promptContext = { exports: {} }; vm.runInNewContext(webPrompt, promptContext);
-if (appPrompt) assert.equal(promptContext.exports.SYSTEM_PROMPT, appPrompt.SYSTEM_PROMPT, 'Web and mobile report instructions must remain in sync');
-console.log('PASS civil-date boundaries, address+date filename (ASCII download) and identical report instructions');
+// Skýrslugerð með AI er aðeins í edge-fallinu generate-report (vefurinn kallar á það);
+// vefurinn má ekki fá eigið prompt aftur (tvær útgáfur rákust á: „Beton ehf." í skýrslum annarra).
+const webActions = fs.readFileSync(path.join(root, 'src/app/(dashboard)/dashboard/[id]/actions.ts'), 'utf8');
+assert.ok(!/SYSTEM_PROMPT|@anthropic-ai\/sdk|messages\.create/.test(webActions), 'the web must not call Claude itself');
+assert.ok(webActions.includes('functions.invoke("generate-report"'), 'the web generates reports through the edge function');
+console.log('PASS civil-date boundaries, address+date filename (ASCII download), report generation only via the edge function');
 
 async function main() {
   const obs = { id: 'o1', number: '2.1', category: 'thak', title: 'Þak', description: 'Þak og þétting. Áá Éé Íí Óó Úú Ýý Þþ Ðð Ææ Öö. Þéttingar þurfa viðhald.', suggestion: 'Yfirfara þéttingar við þak.', severity: 'alvarleg' };
@@ -77,6 +77,19 @@ async function main() {
   const markup = renderToStaticMarkup(element);
   assert.ok(markup.includes('21.09.2026')); assert.ok(!markup.includes('2026-09-21'));
   assert.ok(markup.includes('Þak')); assert.ok(markup.includes(report.ai_summary.conclusion));
+  // Skilmálar (ákvörðun eiganda 2026-09-27): Beton heldur sínum; önnur fyrirtæki fá aldrei
+  // lagatexta Beton, heldur hlutlausan kafla + eigin texta.
+  const BETON_CLAUSE = 'Greitt er fyrir ástandsskoðun ásamt skýrslu';
+  assert.ok(markup.includes(BETON_CLAUSE), 'Beton keeps its own terms');
+  record.inspectors = { company_name: 'Vitvélar ehf.', company_terms_text: 'Okkar eigin skilmálar.', company_terms_url: null };
+  const other = renderToStaticMarkup(await page.default({ params: Promise.resolve({ id: 'fixture' }), searchParams: Promise.resolve({ pdf: '1' }) }));
+  assert.ok(!other.includes(BETON_CLAUSE) && !other.includes('Takmörkun ábyrgðar'), 'no Beton legal text for other companies');
+  for (const expected of ['Takmarkanir skoðunar', 'Skilmálar Vitvélar ehf.', 'Okkar eigin skilmálar.']) assert.ok(other.includes(expected), expected);
+  report.report_locale = 'en';
+  const english = renderToStaticMarkup(await page.default({ params: Promise.resolve({ id: 'fixture' }), searchParams: Promise.resolve({ pdf: '1' }) }));
+  for (const expected of ['Limitations of this inspection', 'Vitvélar ehf. terms and conditions', 'Okkar eigin skilmálar.']) assert.ok(english.includes(expected), expected);
+  delete report.report_locale; delete record.inspectors;
+  console.log('PASS terms: Beton keeps its own; other companies get the neutral limitations + their own terms, never Beton\'s legal text');
   // Use the real compiled application styles, not a redesigned test report.
   function walk(dir) { return fs.readdirSync(dir, { withFileTypes: true }).flatMap(x => x.isDirectory() ? walk(path.join(dir, x.name)) : [path.join(dir, x.name)]); }
   const cssFiles = walk(path.join(root, '.next/static')).filter(x => x.endsWith('.css'));
