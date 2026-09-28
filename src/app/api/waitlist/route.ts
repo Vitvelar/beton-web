@@ -80,7 +80,8 @@ export async function POST(request: Request) {
     if (isNew && apiKey && FROM_EMAIL) {
       try {
         const resend = new Resend(apiKey);
-        await resend.emails.send({
+        // Resend skilar { error } í stað þess að kasta — loggum það svo bilun sjáist.
+        const { error: notifyError } = await resend.emails.send({
           from: FROM_EMAIL,
           to: NOTIFY_EMAIL,
           subject: `Rondva waitlist: ${normalizedEmail} (${country})`,
@@ -93,6 +94,9 @@ export async function POST(request: Request) {
             `Time:    ${new Date().toISOString()}`,
           ].join("\n"),
         });
+        if (notifyError) {
+          console.error("Waitlist notification email failed:", notifyError);
+        }
       } catch (error) {
         console.error("Waitlist notification email failed:", error);
       }
