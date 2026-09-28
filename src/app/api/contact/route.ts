@@ -36,7 +36,9 @@ export async function POST(request: Request) {
 
     const resend = new Resend(apiKey);
 
-    await resend.emails.send({
+    // Resend kastar ekki villu heldur skilar { error } — án þessarar athugunar fékk
+    // notandinn „Takk" þótt pósturinn færi aldrei.
+    const { error: sendError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: CONTACT_EMAIL,
       replyTo: netfang,
@@ -53,6 +55,17 @@ export async function POST(request: Request) {
         .filter(Boolean)
         .join("\n"),
     });
+
+    if (sendError) {
+      console.error("Contact form email failed:", sendError);
+      return Response.json(
+        {
+          error:
+            "Ekki tókst að senda skilaboðin. Reyndu aftur síðar eða sendu póst á beton@beton.is.",
+        },
+        { status: 502 }
+      );
+    }
 
     return Response.json({ success: true });
   } catch (error) {
