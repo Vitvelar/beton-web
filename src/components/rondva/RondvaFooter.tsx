@@ -16,8 +16,14 @@ export function RondvaFooter() {
           <a href={BRANDS.rondva.appUrl} className="text-paper/80 transition-colors hover:text-paper">
             Log in
           </a>
+          <Link href="/support" className="text-paper/80 transition-colors hover:text-paper">
+            Support
+          </Link>
           <Link href="/privacy" className="text-paper/80 transition-colors hover:text-paper">
             Privacy
+          </Link>
+          <Link href="/terms" className="text-paper/80 transition-colors hover:text-paper">
+            Terms
           </Link>
           <Link href="/cookies" className="text-paper/80 transition-colors hover:text-paper">
             Cookies
