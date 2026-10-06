@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { canUseBetonDrive } from "@/lib/beton-drive";
 import { snapshotToken } from "@/lib/report/snapshot-token";
+import { applyNzs4306Edit, type Nzs4306Conditions, type Nzs4306Edit, type Nzs4306ReportData } from "@/lib/report/nzs4306";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { dashboardCopy, localeForBrand, USER_LOCALE_KEY, type DashboardCopy } from "@/lib/i18n/dashboard";
 
@@ -101,6 +102,8 @@ export interface ReportTextEdit {
   property_description: string;
   conclusion: string;
   observations: Array<{ id: string; description: string; suggestion: string }>;
+  /** Aðeins NZS 4306-skýrslur: samantektir, takmarkanir og eyðing mælilína. */
+  nzs4306?: Nzs4306Edit;
 }
 
 interface AiReportSnapshot {
@@ -195,7 +198,18 @@ export async function updateReportText(
       }
     }
 
-    // 2) Uppfæra snapshot-ið sjálft (það sem PDF-ið renderast úr).
+    // 2) Uppfæra snapshot-ið sjálft (það sem PDF-ið renderast úr). NZS 4306-hlutinn
+    //    (efsti lykill ai_report_data.nzs4306) breytist aðeins ef hann er til og ritillinn
+    //    sendi breytingu; annars helst hann óbreyttur í ...snapshot.
+    const nzs4306 =
+      edit.nzs4306 && snapshot.nzs4306 && typeof snapshot.nzs4306 === "object"
+        ? applyNzs4306Edit(
+            snapshot.nzs4306 as Nzs4306ReportData,
+            edit.nzs4306,
+            ((snapshot.inspection as { property_data?: { nzs4306?: unknown } } | undefined)?.property_data
+              ?.nzs4306 ?? null) as Nzs4306Conditions | null,
+          )
+        : null;
     const patched: AiReportSnapshot = {
       ...snapshot,
       ai_summary: {
@@ -212,6 +226,7 @@ export async function updateReportText(
             : obs;
         }),
       })),
+      ...(nzs4306 ? { nzs4306 } : {}),
     };
 
     // RETURNING (.select() á update-inu) er atómískt með skrifinu: token-ið er

@@ -13,3 +13,10 @@ export function formatReportDate(value: string | null | undefined): string {
   if (year < 1 || month < 1 || month > 12 || day < 1 || day > days[month - 1]) return text;
   return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${String(year).padStart(4, '0')}`;
 }
+
+/** NZS 4306 reports: d/m/yyyy (NZ convention), same civil-date rules as formatReportDate. */
+export function formatReportDateNz(value: string | null | undefined): string {
+  const text = formatReportDate(value);
+  const dmy = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(text);
+  return dmy ? `${Number(dmy[1])}/${Number(dmy[2])}/${dmy[3]}` : text;
+}

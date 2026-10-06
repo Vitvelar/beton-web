@@ -17,8 +17,13 @@ import { SeverityBadge } from "./SeverityBadge";
 import type { Severity } from "@/lib/supabase/types";
 import { dashboardCopy, fill, plural, type DashboardLocale } from "@/lib/i18n/dashboard";
 import type { RatingScheme } from "@/lib/report/settings";
+import type { Nzs4306Conditions, Nzs4306ReportData } from "@/lib/report/nzs4306";
 
 export interface EditorReport {
+  /** "nzs_4306" = NZS 4306-skýrsla (ai_report_data.report_standard). */
+  report_standard?: string;
+  nzs4306?: Nzs4306ReportData;
+  inspection?: { property_data?: { nzs4306?: Nzs4306Conditions } & Record<string, unknown> };
   ai_summary: {
     introduction: string;
     property_description: string;
@@ -95,6 +100,17 @@ export function ReportTextEditor({
     return initial;
   });
 
+  // NZS 4306: samantektir, takmarkanir (orðrétt) og eyðing mælilína. Aðeins fyrir
+  // skýrslur á því sniði — aðrar skýrslur senda engan nzs4306-hluta (óbreytt hegðun).
+  const nz = report.report_standard === "nzs_4306" && report.nzs4306 ? report.nzs4306 : null;
+  const [nzSignificant, setNzSignificant] = useState(nz?.significant_defects_summary ?? "");
+  const [nzMaintenance, setNzMaintenance] = useState(nz?.maintenance_summary ?? "");
+  const [nzLimitations, setNzLimitations] = useState(
+    (nz?.conditions?.limitations ?? report.inspection?.property_data?.nzs4306?.limitations ?? "") as string
+  );
+  const nzRows = Array.isArray(nz?.moisture_readings) ? nz!.moisture_readings! : [];
+  const [removedRows, setRemovedRows] = useState<Set<number>>(() => new Set());
+
   const totalObs = useMemo(
     () =>
       (report.rooms ?? []).reduce(
@@ -118,7 +134,26 @@ export function ReportTextEditor({
         description: t.description,
         suggestion: t.suggestion,
       })),
+      ...(nz
+        ? {
+            nzs4306: {
+              significant_defects_summary: nzSignificant,
+              maintenance_summary: nzMaintenance,
+              limitations: nzLimitations,
+              keep_moisture_rows: nzRows.map((_, i) => i).filter((i) => !removedRows.has(i)),
+            },
+          }
+        : {}),
     };
+  }
+
+  function toggleRow(i: number) {
+    setRemovedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
   }
 
   function handleSave(regeneratePdf: boolean) {
@@ -225,6 +260,54 @@ export function ReportTextEditor({
           />
         </div>
       </div>
+
+      {nz ? (
+        <div className="rounded-xl border border-concrete bg-white p-6 space-y-5 mb-6">
+          <h2 className="text-sm font-semibold text-navy">{t.nzHeading}</h2>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">{t.nzSignificant}</label>
+            <textarea value={nzSignificant} onChange={(e) => setNzSignificant(e.target.value)} rows={4} className={textareaCls} />
+            <p className="mt-1 text-xs text-fog">{t.nzSignificantHint}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">{t.nzMaintenance}</label>
+            <textarea value={nzMaintenance} onChange={(e) => setNzMaintenance(e.target.value)} rows={4} className={textareaCls} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-ink mb-1.5">{t.nzLimitations}</label>
+            <textarea value={nzLimitations} onChange={(e) => setNzLimitations(e.target.value)} rows={5} className={textareaCls} />
+            <p className="mt-1 text-xs text-fog">{t.nzLimitationsHint}</p>
+          </div>
+          <div>
+            <p className="block text-sm font-medium text-ink mb-1.5">{t.nzMoisture}</p>
+            <p className="mb-2 text-xs text-fog">{t.nzMoistureHint}</p>
+            {nzRows.length === 0 ? (
+              <p className="text-sm text-fog italic">{t.nzNoMoisture}</p>
+            ) : (
+              <ul className="divide-y divide-concrete/40 rounded-lg border border-concrete">
+                {nzRows.map((row, i) => {
+                  const removed = removedRows.has(i);
+                  return (
+                    <li key={`${row.source_id}-${i}`} className="flex items-center gap-3 px-3 py-2 text-sm">
+                      <span className={`flex-1 ${removed ? "text-fog line-through" : "text-ink"}`}>
+                        {row.location} — <strong>{row.reading}</strong> {row.unit}
+                        {row.assessment ? ` (${row.assessment})` : ""}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => toggleRow(i)}
+                        className={`text-xs hover:underline ${removed ? "text-navy" : "text-sev-danger"}`}
+                      >
+                        {removed ? t.nzRestoreRow : t.nzRemoveRow}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {/* Athugasemdir eftir rýmum */}
       {(report.rooms ?? []).map((room, roomIdx) => (

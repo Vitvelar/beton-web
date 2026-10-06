@@ -74,6 +74,10 @@ async function compressPdf(input: Uint8Array): Promise<Uint8Array> {
   }
 }
 
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+}
+
 export class ReportNotRenderedError extends Error {
   constructor(message = "Skýrslusíðan hlóðst ekki (.report-article fannst ekki).") {
     super(message);
@@ -93,6 +97,9 @@ type PuppeteerCookie = {
 
 export interface RenderReportPdfOptions {
   extraHeaders?: Record<string, string>;
+  /** Orðið á undan blaðsíðutalinu í fæti: "Bls." (íslenska, sjálfgefið) eða "Page"
+   *  (öll önnur skýrslumál) — sjá reportCopy(locale).pageLabel. */
+  pageLabel?: string;
   cookies?: PuppeteerCookie[];
   navigationTimeoutMs?: number;
   imageSettleTimeoutMs?: number;
@@ -175,7 +182,7 @@ export async function renderReportPdf(
       headerTemplate: "<div></div>",
       footerTemplate:
         '<div style="width:100%;text-align:center;font-size:8px;color:#8a8278;font-family:Helvetica,Arial,sans-serif;">' +
-        'Bls. <span class="pageNumber"></span> / <span class="totalPages"></span>' +
+        `${escapeHtml(opts.pageLabel ?? "Bls.")} <span class="pageNumber"></span> / <span class="totalPages"></span>` +
         "</div>",
     });
 

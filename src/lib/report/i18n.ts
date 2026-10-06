@@ -192,6 +192,8 @@ const is = {
   ownTermsHeading: "Skilmálar {company}",
 
   reportCreated: "Skýrsla gerð",
+  /** Fótur PDF-síðu (render-pdf.ts): „Bls. 3 / 12“. */
+  pageLabel: "Bls.",
 };
 
 export type ReportCopy = typeof is;
@@ -367,6 +369,7 @@ const en: ReportCopy = {
   ownTermsHeading: "{company} terms and conditions",
 
   reportCreated: "Report created",
+  pageLabel: "Page",
 };
 
 export const REPORT_COPY: Readonly<Record<ReportLocale, ReportCopy>> = { is, en };

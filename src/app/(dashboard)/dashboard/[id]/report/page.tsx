@@ -23,7 +23,8 @@ import {
   reportCopy,
   reportLocaleOf,
 } from "@/lib/report/i18n";
-import { ratingSchemeOf, type RatingScheme } from "@/lib/report/settings";
+import { ratingSchemeOf, reportStandardOf, type RatingScheme } from "@/lib/report/settings";
+import { Nzs4306Report, type NzReportData, type NzReportPhoto } from "@/components/report/Nzs4306Report";
 import { fill, format } from "@/lib/i18n/format";
 import { dashboardCopy } from "@/lib/i18n/dashboard";
 import { getDashboardLocale } from "@/lib/request-brand";
@@ -34,6 +35,10 @@ interface ReportData {
   report_locale?: string;
   /** Matskerfi (standard | condition_1_3 | nz_terms), stimplað við gerð; vantar = standard. */
   rating_scheme?: string;
+  /** Skýrslusnið (default | nzs_4306), stimplað við gerð; vantar = núverandi snið. */
+  report_standard?: string;
+  /** NZS 4306-hluti (aðeins þegar report_standard = nzs_4306) — sjá src/lib/report/nzs4306.ts. */
+  nzs4306?: NzReportData["nzs4306"];
   inspection: {
     address: string;
     postal_code: string;
@@ -329,34 +334,62 @@ export default async function ReportPage({
   // skilmála eins og áður. Öll önnur fyrirtæki (og önnur mál) fá hlutlausan kafla um
   // takmarkanir skoðunar, svo eigin skilmálatexta og/eða tengil — aldrei lagatexta Beton.
   const betonTerms = locale === "is" && brand.isBeton;
+
+  // NZS 4306:2005 (stimplað report_standard): eigið snið á ensku, sömu prentstílar og PDF-leið.
+  if (reportStandardOf(report) === "nzs_4306") {
+    const en = reportCopy("en");
+    const nzSevText = condition ? en.conditionSeverity : nzTerms ? en.nzSeverity : en.severity;
+    const nzRoomRating = condition ? en.conditionRating : nzTerms ? en.nzRating : en.rating;
+    // Réttindi skoðunarmanns (inspectors.qualifications) — sér fyrirspurn svo venjulega
+    // sniðið lesi aldrei nýja dálkinn; bregst mjúklega ef hann er ekki til.
+    let qualifications: string | null = null;
+    try {
+      const { data: q } = await supabase
+        .from("inspections")
+        .select("inspectors ( qualifications )")
+        .eq("id", inspection.id)
+        .maybeSingle();
+      const row = (Array.isArray(q?.inspectors) ? q?.inspectors[0] : q?.inspectors) as { qualifications?: unknown } | null | undefined;
+      qualifications = typeof row?.qualifications === "string" && row.qualifications.trim() ? row.qualifications.trim() : null;
+    } catch {
+      qualifications = null;
+    }
+    const toPhoto = (p: PhotoWithUrl): NzReportPhoto => ({ id: p.id, url: p.url, caption: p.caption });
+    const nzRoomPhotos: Record<string, NzReportPhoto[]> = {};
+    const nzObsPhotos: Record<string, NzReportPhoto[]> = {};
+    for (const room of report.rooms) {
+      const dbRoom = dbRooms.find((r) => r.slug === room.slug);
+      nzRoomPhotos[room.slug] = dbRoom ? roomPhotos(dbRoom.id).map(toPhoto) : [];
+      for (const obs of room.observations) nzObsPhotos[obs.id] = obsPhotos(obs.id).map(toPhoto);
+    }
+    return (
+      <div className="max-w-4xl mx-auto print:max-w-none">
+        <style dangerouslySetInnerHTML={{ __html: reportPrintCss(isPdfMode) }} />
+        <ReportNav id={id} ui={ui} />
+        <Nzs4306Report
+          report={report}
+          brand={brand}
+          inspectorName={inspectorName}
+          qualifications={qualifications}
+          sevText={nzSevText}
+          sevColors={sevColors}
+          roomRating={nzRoomRating}
+          ratingColor={(value) => ratingColor(value, scheme)}
+          coverPhotoUrl={coverPhoto?.url ?? null}
+          roomPhotos={nzRoomPhotos}
+          obsPhotos={nzObsPhotos}
+          reportGeneratedAt={inspection.report_generated_at ?? null}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
       <style dangerouslySetInnerHTML={{ __html: reportPrintCss(isPdfMode) }} />
 
       {/* Navigation — hidden in print */}
-      <div className="flex items-center justify-between mb-6 print:hidden">
-        <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
-          {ui.common.backLink}
-        </Link>
-        {/* EIN aðgerð: server-PDF (áreiðanlegar spássíur + blaðsíðunúmer, óháð
-            prentglugga). GET á route handler sem skilar application/pdf. Gamli
-            "Prenta/Vista" (window.print) hnappurinn fjarlægður til að forðast
-            rugling — PrintButton-comp er áfram til ef við viljum varaleið síðar. */}
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/dashboard/${id}/report/edit`}
-            className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
-          >
-            {ui.reportActions.editText}
-          </Link>
-          <a
-            href={`/dashboard/${id}/report/pdf`}
-            className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
-          >
-            {ui.reportActions.downloadPdf}
-          </a>
-        </div>
-      </div>
+      <ReportNav id={id} ui={ui} />
 
       {/* lang = tungumál skýrslunnar (getur verið annað en stjórnborðsins/hýsilsins). */}
       <article lang={locale} className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
@@ -830,6 +863,35 @@ export default async function ReportPage({
           </div>
         </div>
       </article>
+    </div>
+  );
+}
+
+// Hnapparnir efst (stjórnborð), faldir í prentun. Sameiginlegt báðum sniðum.
+function ReportNav({ id, ui }: { id: string; ui: ReturnType<typeof dashboardCopy> }) {
+  return (
+    <div className="flex items-center justify-between mb-6 print:hidden">
+      <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
+        {ui.common.backLink}
+      </Link>
+      {/* EIN aðgerð: server-PDF (áreiðanlegar spássíur + blaðsíðunúmer, óháð
+          prentglugga). GET á route handler sem skilar application/pdf. Gamli
+          "Prenta/Vista" (window.print) hnappurinn fjarlægður til að forðast
+          rugling — PrintButton-comp er áfram til ef við viljum varaleið síðar. */}
+      <div className="flex items-center gap-3">
+        <Link
+          href={`/dashboard/${id}/report/edit`}
+          className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
+        >
+          {ui.reportActions.editText}
+        </Link>
+        <a
+          href={`/dashboard/${id}/report/pdf`}
+          className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
+        >
+          {ui.reportActions.downloadPdf}
+        </a>
+      </div>
     </div>
   );
 }
