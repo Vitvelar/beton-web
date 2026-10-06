@@ -141,6 +141,9 @@ export function ContactForm() {
             Tölvupóstur
           </label>
         </div>
+        {errors.samskipti && (
+          <p className="mt-1 text-xs text-sev-danger">{errors.samskipti.message}</p>
+        )}
       </div>
 
       <div>
