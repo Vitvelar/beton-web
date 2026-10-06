@@ -49,7 +49,7 @@ export const BRANDS = {
     companyAddress: "Hjálmholt 2, 105 Reykjavík, Iceland",
     marketingUrl: "https://rondva.com",
     appUrl: "https://app.rondva.com",
-    // Tengiliðanetfang þar til rondva.com fær eigin pósthólf.
-    contactEmail: "hjalti@vitvelar.is",
+    // rondva@rondva.com = alias á hjalti@vitvelar.is (Google Workspace, staðfest 2026-10-06).
+    contactEmail: "rondva@rondva.com",
   },
 } as const;
