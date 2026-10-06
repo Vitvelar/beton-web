@@ -1,5 +1,6 @@
 import "@/lib/report/typography.css";
 import { formatReportDate } from "@/lib/report/date";
+import { reportPrintCss } from "@/lib/report/print-css";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -330,55 +331,7 @@ export default async function ReportPage({
   const betonTerms = locale === "is" && brand.isBeton;
   return (
     <div className="max-w-4xl mx-auto print:max-w-none">
-      <style dangerouslySetInnerHTML={{ __html: `
-        /* SPÁSSÍU-SKEMA — tvær leiðir, ein samræmd regla:
-
-           1) window.print() (Prenta/Vista PDF hnappur, varaleið):
-              Spássíurnar (Word "Normal" = 2,54 cm) eru í EFNINU sjálfu (padding),
-              EKKI í @page. Þannig haldast þær sama hvað "Margins" stillingin í
-              prentglugga Chrome er stillt á (None/Default) — áður var reitt á
-              @page margin sem Chrome hunsar þegar notandi velur "None".
-
-           2) Server-PDF (?pdf=1, report/pdf/route.ts):
-              puppeteer page.pdf() leggur til ALLAR spássíur (18mm/16mm/25.4mm)
-              OG blaðsíðunúmer. Þá DROPPUM við láréttu section-padding-i. MIKILVÆGT:
-              við megum EKKI setja @page { margin: 0 } í þessu tilviki — það
-              YFIRSKRIFAR puppeteer-spássíurnar og skilar 0 spássíum. Í print-
-              ham (window.print) höldum við @page margin:0 (efnið sér um padding). */
-        @page { size: A4; ${isPdfMode ? "" : "margin: 0;"} }
-        @media print {
-          html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
-          .report-article {
-            border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
-            background: #fff !important; max-width: none !important; overflow: visible !important;
-          }
-          ${isPdfMode ? `
-          /* Server-PDF: puppeteer sér um hliðarspássíur — aðeins lítið lóðrétt
-             bil milli efnis og brúnar puppeteer-spássíunnar. */
-          .report-article > section {
-            padding: 4mm 0 !important; border: 0 !important;
-          }
-          .report-article > section.rpt-cover { padding: 0 !important; }
-          .report-article > section.rpt-terms { padding: 4mm 0 !important; }
-          ` : `
-          /* window.print(): 25,4mm til hliðanna á öllum efnissíðum, hóflegt að ofan/neðan. */
-          .report-article > section {
-            padding: 18mm 25.4mm !important; border: 0 !important;
-          }
-          .report-article > section.rpt-cover { padding: 20mm 25.4mm !important; }
-          .report-article > section.rpt-terms { padding: 25.4mm !important; }
-          `}
-          /* Myndir/töflur klofna ekki milli síðna. Athugasemda-/rýmismyndir sýna FULLA
-             mynd (engin klipping) — náttúrulegt hlutfall, takmarkað í hæð. */
-          img, table, thead, tbody, tr, .rpt-keep { break-inside: avoid; page-break-inside: avoid; }
-          .rpt-photo { height: auto !important; max-height: 78mm !important; object-fit: contain !important; }
-          /* Halda fyrirsögnum við efnið sem fylgir (engar munaðarlausar fyrirsagnir
-             neðst á síðu). .rpt-obs-title = haus hverrar athugasemdar (númer + titill
-             + alvarleikamerki). */
-          h2, h3, .rpt-obs-title { break-after: avoid; }
-        }
-      `}} />
+      <style dangerouslySetInnerHTML={{ __html: reportPrintCss(isPdfMode) }} />
 
       {/* Navigation — hidden in print */}
       <div className="flex items-center justify-between mb-6 print:hidden">
