@@ -2,35 +2,10 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 const http = require('node:http');
-const ts = require('typescript');
-const React = require('react');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { execFileSync } = require('node:child_process');
-const root = path.resolve(__dirname, '..');
-// Finnur .ts/.tsx fyrir `@/…` og `./…` innflutning svo síðan geti hlaðið eigin einingar.
-function resolveTs(base) {
-  for (const f of [base, base + '.ts', base + '.tsx', path.join(base, 'index.ts')]) if (fs.existsSync(f) && fs.statSync(f).isFile()) return f;
-  return null;
-}
-function load(file, mocks = {}) {
-  const filename = path.resolve(root, file);
-  const local = name => {
-    const base = name.startsWith('@/') ? path.join(root, 'src', name.slice(2))
-      : name.startsWith('.') ? path.resolve(path.dirname(filename), name) : null;
-    const found = base && resolveTs(base);
-    return found ? load(path.relative(root, found), mocks) : require(name);
-  };
-  const context = { exports: {}, process, console, Uint8Array, setTimeout, clearTimeout, Intl,
-    require: name => Object.hasOwn(mocks, name) ? mocks[name] : local(name) };
-  const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
-    fileName: filename,
-  }).outputText;
-  vm.runInNewContext(code, context, { filename });
-  return context.exports;
-}
+const { root, load, loadReportPage } = require('./report-fixture.cjs');
 const date = load('src/lib/report/date.ts');
 for (const [input, expected] of [
   ['2026-09-21', '21.09.2026'], ['2026-09-21T00:00:00+14:00', '21.09.2026'],
@@ -61,18 +36,7 @@ async function main() {
     rooms: [{ id: 'r1', name: 'Þak', slug: 'thak', sort_order: 0, ratings: {}, notes: '', observations: [obs] }],
   };
   const record = { ...report.inspection, id: 'fixture', ai_report_data: report, report_generated_at: '2026-09-21T12:00:00Z', rooms: [] };
-  const query = { select() { return this; }, limit() { return this; }, eq() { return this; }, or() { return this; }, async maybeSingle() { return { data: record }; } };
-  const client = { from: () => query };
-  const page = load('src/app/(dashboard)/dashboard/[id]/report/page.tsx', {
-    '@/lib/report/typography.css': {}, '@/lib/report/date': date, '@/lib/report/shared': shared,
-    'next/navigation': { notFound: () => { throw new Error('Unexpected notFound'); } },
-    'next/link': { default: ({ children, ...props }) => React.createElement('a', props, children), __esModule: true },
-    'next/headers': { headers: async () => new Headers() },
-    '@/lib/supabase/server': { createClient: async () => client },
-    '@/lib/supabase/service': { createServiceClient: () => client },
-    '@/lib/supabase/bearer': { getBearerAuthorization: () => null },
-    '@/lib/request-brand': { getDashboardLocale: async () => 'is', getRequestBrand: async () => 'beton' },
-  });
+  const page = loadReportPage(record);
   const element = await page.default({ params: Promise.resolve({ id: 'fixture' }), searchParams: Promise.resolve({ pdf: '1' }) });
   const markup = renderToStaticMarkup(element);
   assert.ok(markup.includes('21.09.2026')); assert.ok(!markup.includes('2026-09-21'));
