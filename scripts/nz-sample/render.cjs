@@ -16,7 +16,11 @@ async function main() {
   fs.mkdirSync(out, { recursive: true });
   const record = buildNzSampleRecord();
   const markup = await renderReportMarkup(record, { pdf: true, dashboardLocale: 'en', brand: 'rondva' });
-  const html = reportHtml(markup);
+  // <title> eins og generateMetadata skýrslusíðunnar gefur (PDF-heiti í skoðara).
+  const date = load('src/lib/report/date.ts');
+  const { reportTitle } = load('src/lib/report/shared.ts', { './date': date });
+  const title = reportTitle(record.address, record.inspection_date, 'en').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const html = reportHtml(markup).replace('<meta charset="utf-8">', `<meta charset="utf-8"><title>${title}</title>`);
   fs.writeFileSync(path.join(out, 'nz-sample-report.html'), html);
   fs.writeFileSync(path.join(out, 'nz-sample-ai_report_data.json'), JSON.stringify(record.ai_report_data, null, 2) + '\n');
   const server = await serveReports({ sample: html }, { photos: samplePhotos(record) });

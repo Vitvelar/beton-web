@@ -441,43 +441,46 @@ export function Nzs4306Report({
       {/* ═══ MOISTURE READINGS ═══ */}
       <section className={SECTION_FLOW}>
         <Heading n={nMoisture}>Moisture readings</Heading>
-        <Para>
-          Non-invasive moisture readings were taken at selected locations. Readings are indicative only and depend on the
-          meter and scale used; they are reported here as recorded by the inspector. Elevated or wet readings should be
-          investigated further by a specialist, which may require invasive testing.
-        </Para>
-        {conditions.meter?.trim() ? (
-          <p className="text-sm text-ink/80 mb-4">
-            <strong className="text-navy">Meter:</strong> {conditions.meter.trim()}
-          </p>
-        ) : null}
-        {moisture.length === 0 ? (
-          <Para>No moisture readings were recorded in the inspector&apos;s notes.</Para>
-        ) : (
-          <table className="w-full text-sm rpt-moisture">
-            <thead>
-              <tr className="border-b border-concrete text-left">
-                <th className="py-1.5 pr-3 font-semibold text-ink">Area / location</th>
-                <th className="py-1.5 pr-3 font-semibold text-ink">Reading</th>
-                <th className="py-1.5 pr-3 font-semibold text-ink">Scale / unit</th>
-                <th className="py-1.5 font-semibold text-ink">Assessment</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-concrete/50">
-              {moisture.map((row, i) => (
-                <tr key={`${row.source_id}-${i}`}>
-                  <td className="py-1.5 pr-3 text-ink">
-                    {row.location}
-                    {obsRef.has(row.source_id) ? <span className="text-fog"> (see {obsRef.get(row.source_id)})</span> : null}
-                  </td>
-                  <td className="py-1.5 pr-3 text-ink font-semibold">{row.reading}</td>
-                  <td className="py-1.5 pr-3 text-ink">{row.unit || "—"}</td>
-                  <td className="py-1.5 text-ink">{capitalise(row.assessment) || "—"}</td>
+        {/* Stutt tafla helst með inngangi sínum á einni síðu; löng tafla má klofna milli lína. */}
+        <div className={moisture.length <= 12 ? "rpt-keep" : undefined}>
+          <Para>
+            Non-invasive moisture readings were taken at selected locations. Readings are indicative only and depend on the
+            meter and scale used; they are reported here as recorded by the inspector. Elevated or wet readings should be
+            investigated further by a specialist, which may require invasive testing.
+          </Para>
+          {conditions.meter?.trim() ? (
+            <p className="text-sm text-ink/80 mb-4">
+              <strong className="text-navy">Meter:</strong> {conditions.meter.trim()}
+            </p>
+          ) : null}
+          {moisture.length === 0 ? (
+            <Para>No moisture readings were recorded in the inspector&apos;s notes.</Para>
+          ) : (
+            <table className="w-full text-sm rpt-moisture">
+              <thead>
+                <tr className="border-b border-concrete text-left">
+                  <th className="py-1.5 pr-3 font-semibold text-ink">Area / location</th>
+                  <th className="py-1.5 pr-3 font-semibold text-ink">Reading</th>
+                  <th className="py-1.5 pr-3 font-semibold text-ink">Scale / unit</th>
+                  <th className="py-1.5 font-semibold text-ink">Assessment</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody className="divide-y divide-concrete/50">
+                {moisture.map((row, i) => (
+                  <tr key={`${row.source_id}-${i}`}>
+                    <td className="py-1.5 pr-3 text-ink">
+                      {row.location}
+                      {obsRef.has(row.source_id) ? <span className="text-fog"> (see {obsRef.get(row.source_id)})</span> : null}
+                    </td>
+                    <td className="py-1.5 pr-3 text-ink font-semibold">{row.reading}</td>
+                    <td className="py-1.5 pr-3 text-ink">{row.unit || "—"}</td>
+                    <td className="py-1.5 text-ink">{capitalise(row.assessment) || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </section>
 
       {/* ═══ LIMITATIONS AND AREAS NOT INSPECTED ═══ */}
