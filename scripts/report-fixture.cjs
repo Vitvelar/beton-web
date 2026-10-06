@@ -75,11 +75,28 @@ async function renderReportMarkup(record, { pdf = true, ...opts } = {}) {
   return renderToStaticMarkup(element);
 }
 
-// Raunverulegir þýddir stílar forritsins (.next/static eftir `next build`) + skýrsluletrið.
+// Raunverulegir þýddir stílar forritsins (eftir `next build`) + skýrsluletrið. Aðeins CSS sem
+// skýrslusíðan sjálf hleður, í sömu röð og í framleiðslu (entryCSSFiles í client-reference-
+// manifest síðunnar). Áður var ALLT CSS í .next/static skeytt saman í röð skráarheita (hash):
+// þá fylgdi CSS Rondva-vefsins með og röðin gat snúist milli bygginga, sem hnikaði texta um
+// brot úr pixli án nokkurrar breytingar á skýrslunni. Varaleið (eldri bygging án manifests):
+// allt CSS í röð skráarheita, eins og áður.
 function applicationCss() {
-  function walk(dir) { return fs.readdirSync(dir, { withFileTypes: true }).flatMap(x => x.isDirectory() ? walk(path.join(dir, x.name)) : [path.join(dir, x.name)]); }
-  const staticDir = path.join(root, '.next/static');
-  const cssFiles = fs.existsSync(staticDir) ? walk(staticDir).filter(x => x.endsWith('.css')).sort() : [];
+  const manifest = path.join(root, '.next/server/app/(dashboard)/dashboard/[id]/report/page_client-reference-manifest.js');
+  let cssFiles = [];
+  if (fs.existsSync(manifest)) {
+    const g = {};
+    new Function('globalThis', fs.readFileSync(manifest, 'utf8'))(g);
+    for (const m of Object.values(g.__RSC_MANIFEST || {})) {
+      const key = Object.keys(m.entryCSSFiles || {}).find(k => k.endsWith('src/app/(dashboard)/dashboard/[id]/report/page'));
+      if (key) cssFiles = m.entryCSSFiles[key].map(f => path.join(root, '.next', f.path));
+    }
+  }
+  if (!cssFiles.length) {
+    function walk(dir) { return fs.readdirSync(dir, { withFileTypes: true }).flatMap(x => x.isDirectory() ? walk(path.join(dir, x.name)) : [path.join(dir, x.name)]); }
+    const staticDir = path.join(root, '.next/static');
+    cssFiles = fs.existsSync(staticDir) ? walk(staticDir).filter(x => x.endsWith('.css')).sort() : [];
+  }
   if (!cssFiles.length) throw new Error('Run next build first to produce application styles');
   return cssFiles.map(x => fs.readFileSync(x, 'utf8')).join('\n') + '\n' + fs.readFileSync(path.join(root, 'src/lib/report/typography.css'), 'utf8');
 }

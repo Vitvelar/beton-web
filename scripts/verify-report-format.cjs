@@ -5,7 +5,7 @@ const path = require('node:path');
 const http = require('node:http');
 const { renderToStaticMarkup } = require('react-dom/server');
 const { execFileSync } = require('node:child_process');
-const { root, load, loadReportPage } = require('./report-fixture.cjs');
+const { root, load, loadReportPage, applicationCss } = require('./report-fixture.cjs');
 const date = load('src/lib/report/date.ts');
 for (const [input, expected] of [
   ['2026-09-21', '21.09.2026'], ['2026-09-21T00:00:00+14:00', '21.09.2026'],
@@ -54,11 +54,8 @@ async function main() {
   for (const expected of ['Limitations of this inspection', 'Vitvélar ehf. terms and conditions', 'Okkar eigin skilmálar.']) assert.ok(english.includes(expected), expected);
   delete report.report_locale; delete record.inspectors;
   console.log('PASS terms: Beton keeps its own; other companies get the neutral limitations + their own terms, never Beton\'s legal text');
-  // Use the real compiled application styles, not a redesigned test report.
-  function walk(dir) { return fs.readdirSync(dir, { withFileTypes: true }).flatMap(x => x.isDirectory() ? walk(path.join(dir, x.name)) : [path.join(dir, x.name)]); }
-  const cssFiles = walk(path.join(root, '.next/static')).filter(x => x.endsWith('.css'));
-  assert.ok(cssFiles.length, 'Run next build first to produce application styles');
-  const css = cssFiles.map(x => fs.readFileSync(x, 'utf8')).join('\n') + '\n' + fs.readFileSync(path.join(root, 'src/lib/report/typography.css'), 'utf8');
+  // Use the real compiled application styles (only the CSS the report route loads), not a redesigned test report.
+  const css = applicationCss();
   const html = '<!doctype html><html lang="is"><meta charset="utf-8"><style>' + css + '</style><body>' + markup + '</body></html>';
   const output = process.env.REPORT_TEST_OUTPUT || '/tmp/beton-report-feedback-20260921';
   fs.mkdirSync(output, { recursive: true }); fs.writeFileSync(path.join(output, 'report.html'), html);
