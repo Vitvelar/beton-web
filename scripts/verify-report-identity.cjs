@@ -176,6 +176,14 @@ async function main() {
   assert.deepEqual(changed, [], `report markup changed for ${changed.join(', ')} — compare ${output}/*.html with the same files rendered on origin/main`);
   console.log(`PASS report markup identical to origin/main golden for ${Object.keys(hashes).length} renders: ${Object.keys(FIXTURES).join(', ')} × (pdf=1, web)`);
 
+  // nz_terms (NZ-matsorð) á venjulegu sniði: aðeins heitin breytast, ekkert golden.
+  const nzRecord = JSON.parse(JSON.stringify(FIXTURES['en-standard']));
+  nzRecord.ai_report_data.rating_scheme = 'nz_terms';
+  const nz = await renderReportMarkup(nzRecord, { pdf: true });
+  for (const word of ['Satisfactory', 'Maintenance', 'Defect', 'Significant defect']) assert.ok(nz.includes(`>${word}<`), `nz_terms shows ${word}`);
+  assert.ok(!nz.includes('>Very serious<') && !nz.includes('>Minor<'), 'nz_terms replaces the standard words');
+  console.log('PASS nz_terms stamp: Satisfactory / Maintenance / Defect / Significant defect replace the standard words');
+
   if (process.env.REPORT_PIXELS === '1') await pixels(all, output);
 }
 

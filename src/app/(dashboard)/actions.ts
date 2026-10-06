@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardLocale } from "@/lib/request-brand";
 import { dashboardCopy, isDashboardLocale, USER_LOCALE_KEY } from "@/lib/i18n/dashboard";
 import { isReportLocale } from "@/lib/report/i18n";
-import { isRatingScheme } from "@/lib/report/settings";
+import { isRatingScheme, isReportStandard } from "@/lib/report/settings";
+import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
 
 export async function signOut() {
   const supabase = await createClient();
@@ -61,4 +62,39 @@ export async function saveReportSettings(
   }
   revalidatePath("/dashboard/settings");
   return { ok: true };
+}
+
+// Skýrslusnið fyrirtækis (Standard / NZS 4306:2005). Aðeins eigandi —
+// set_company_report_standard() (security definer, beton-app NZS 4306-flutningur) hafnar
+// öllum öðrum. Skilar virkum stillingum á eftir: matskerfi án skráðs gildis fylgir sniðinu
+// (NZS 4306 → nz_terms), svo valið á síðunni getur breyst með.
+export async function saveReportStandard(
+  reportStandard: string
+): Promise<
+  | { ok: true; settings: { reportLocale: string; ratingScheme: string; reportStandard: string } | null }
+  | { error: string }
+> {
+  const failed = async () => ({ error: dashboardCopy(await getDashboardLocale()).reportSettings.saveFailed });
+  if (!isReportStandard(reportStandard)) return failed();
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_company_report_standard", {
+    p_report_standard: reportStandard,
+  });
+  if (error) {
+    console.error("saveReportStandard failed:", error.message);
+    return failed();
+  }
+  revalidatePath("/dashboard/settings");
+  const company = await fetchCompanyReportSettings(supabase, { ownerOnly: true }).catch(() => null);
+  return {
+    ok: true,
+    settings: company
+      ? {
+          reportLocale: company.settings.locale,
+          ratingScheme: company.settings.scheme,
+          reportStandard: company.settings.standard,
+        }
+      : null,
+  };
 }

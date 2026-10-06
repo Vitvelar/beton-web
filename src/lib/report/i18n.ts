@@ -108,6 +108,36 @@ const is = {
     mjog_alvarleg: "Einkunn 3",
   } as Record<string, string>,
 
+  // NZ-matsorð (companies.rating_scheme = nz_terms; sjálfgefið fyrir NZS 4306). Aðeins
+  // birting: athugasemd → Maintenance, alvarleg → Defect, mjog_alvarleg → Significant defect;
+  // rýmiseinkunn ok/warn/danger/mjog_alvarleg → Satisfactory/Maintenance/Defect/Significant defect.
+  nzRatingSystemHow:
+    "Svona virkar matskerfið: hver athugasemd í skýrslunni er flokkuð sem viðhald, galli eða verulegur galli eftir því hversu alvarleg hún er og hversu brýnt er að bregðast við henni.",
+  nzRatingSystemTypes: "Í skýrslunni eru notaðir þrír flokkar athugasemda.",
+  nzSeverity: {
+    athugasemd: {
+      label: "Viðhald",
+      short: "Viðhald",
+      description: "Slit eða minniháttar ágalli sem sinna ætti í venjulegu viðhaldi.",
+    },
+    alvarleg: {
+      label: "Galli",
+      short: "Galli",
+      description: "Galli sem þarf að gera við eða endurnýja. Hann er ekki brýnn en getur valdið frekara tjóni ef ekkert er gert.",
+    },
+    mjog_alvarleg: {
+      label: "Verulegur galli",
+      short: "Verulegur galli",
+      description: "Galli sem krefst umfangsmikillar viðgerðar eða brýnnar athygli.",
+    },
+  } as Record<SeverityKey, { label: string; short: string; description: string }>,
+  nzRating: {
+    ok: "Viðunandi",
+    warn: "Viðhald",
+    danger: "Galli",
+    mjog_alvarleg: "Verulegur galli",
+  } as Record<string, string>,
+
   summary: "Samantekt",
   introduction: "Inngangur",
   propertyDescription: "Eignalýsing",
@@ -239,6 +269,33 @@ const en: ReportCopy = {
     warn: "Rating 1",
     danger: "Rating 2",
     mjog_alvarleg: "Rating 3",
+  },
+
+  nzRatingSystemHow:
+    "How the rating system works: every observation in the report is classed as maintenance, a defect or a significant defect, according to how serious it is and how urgently it needs attention.",
+  nzRatingSystemTypes: "The report uses three classes of observation.",
+  nzSeverity: {
+    athugasemd: {
+      label: "Maintenance",
+      short: "Maintenance",
+      description: "Wear or a minor fault that should be dealt with as part of normal maintenance.",
+    },
+    alvarleg: {
+      label: "Defect",
+      short: "Defect",
+      description: "A fault that needs repairing or replacing. It is not urgent, but it may lead to further damage if left.",
+    },
+    mjog_alvarleg: {
+      label: "Significant defect",
+      short: "Significant defect",
+      description: "A defect that needs substantial repair or urgent attention.",
+    },
+  },
+  nzRating: {
+    ok: "Satisfactory",
+    warn: "Maintenance",
+    danger: "Defect",
+    mjog_alvarleg: "Significant defect",
   },
 
   summary: "Summary",

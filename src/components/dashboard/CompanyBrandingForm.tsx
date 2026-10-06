@@ -11,20 +11,25 @@ interface Props {
     company_logo_url: string;
     company_terms_url: string;
     company_terms_text: string;
+    qualifications?: string;
   };
   locale: DashboardLocale;
   /** Eigin skilmálatexti (ekki fyrir Beton, sem hefur fasta skilmála í skýrslunni). */
   showTermsText?: boolean;
+  /** Réttindi skoðunarmanns (inspectors.qualifications) — aðeins á app.rondva.com og
+   *  aðeins þegar NZS 4306-flutningurinn er kominn (annars er dálkurinn ekki til). */
+  showQualifications?: boolean;
 }
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/svg+xml";
 const MAX_BYTES = 2 * 1024 * 1024;
 
-export function CompanyBrandingForm({ userId, initial, locale, showTermsText = false }: Props) {
+export function CompanyBrandingForm({ userId, initial, locale, showTermsText = false, showQualifications = false }: Props) {
   const t = dashboardCopy(locale).branding;
   const [companyName, setCompanyName] = useState(initial.company_name);
   const [termsUrl, setTermsUrl] = useState(initial.company_terms_url);
   const [termsText, setTermsText] = useState(initial.company_terms_text);
+  const [qualifications, setQualifications] = useState(initial.qualifications ?? "");
   const [logoUrl, setLogoUrl] = useState(initial.company_logo_url);
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
@@ -58,6 +63,8 @@ export function CompanyBrandingForm({ userId, initial, locale, showTermsText = f
           company_logo_url: nextLogoUrl || null,
           // Aðeins þegar reiturinn sést — Beton-síðan snertir aldrei þennan dálk.
           ...(showTermsText ? { company_terms_text: termsText.trim() || null } : {}),
+          // Eigin röð skoðunarmanns (RLS), eins og hinir reitirnir; aðeins þegar reiturinn sést.
+          ...(showQualifications ? { qualifications: qualifications.trim() || null } : {}),
         })
         .eq("user_id", userId);
       if (error) throw new Error(error.message);
@@ -119,6 +126,23 @@ export function CompanyBrandingForm({ userId, initial, locale, showTermsText = f
             className="w-full rounded-md border border-concrete-dk bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none resize-y"
           />
           <p className="mt-1 text-xs text-fog">{t.termsTextHint}</p>
+        </div>
+      ) : null}
+
+      {showQualifications ? (
+        <div>
+          <label htmlFor="qualifications" className="block text-xs font-mono uppercase tracking-wider text-fog mb-1.5">
+            {t.qualifications}
+          </label>
+          <input
+            id="qualifications"
+            value={qualifications}
+            onChange={(e) => setQualifications(e.target.value)}
+            placeholder={t.qualificationsPlaceholder}
+            maxLength={300}
+            className="w-full rounded-md border border-concrete-dk bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-fog">{t.qualificationsHint}</p>
         </div>
       ) : null}
 
