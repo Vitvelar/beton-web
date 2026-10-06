@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { checkDashboardAccess, loginErrorFor } from "@/lib/access";
 import { getRequestBrand } from "@/lib/request-brand";
+import { ONBOARDING_PATH, onboardingFor } from "@/lib/onboarding";
 
 function loginRedirect(origin: string, error?: string) {
   const loginUrl = new URL("/dashboard/login", origin);
@@ -34,6 +35,12 @@ export async function GET(request: Request) {
       const access = await checkDashboardAccess(supabase, user?.email, brand);
       if (access.allowed) {
         return NextResponse.redirect(new URL("/dashboard", origin));
+      }
+
+      // app.rondva.com: nýr notandi án fyrirtækis skráir það (eða sér að það bíður
+      // samþykkis) — setan helst. Alltaf null á Beton-lénum (óbreytt hér að neðan).
+      if (onboardingFor(brand, access)) {
+        return NextResponse.redirect(new URL(ONBOARDING_PATH, origin));
       }
 
       await supabase.auth.signOut({ scope: "local" });

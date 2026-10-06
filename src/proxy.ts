@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { checkDashboardAccess, loginErrorFor } from "@/lib/access";
+import { ONBOARDING_PATH, onboardingFor } from "@/lib/onboarding";
 import { isWorkerRequest, WORKER_TOKEN_HEADER } from "@/lib/report/shared";
 import { BRANDS, resolveHost, RONDVA_ROUTE_PREFIX } from "@/lib/brand";
 
@@ -154,6 +155,13 @@ export async function proxy(request: NextRequest) {
     const brand = hostConfig?.brand ?? "beton";
     const access = await checkDashboardAccess(supabase, user.email, brand);
     if (!access.allowed) {
+      // app.rondva.com: innskráður notandi án fyrirtækis (eða sem bíður samþykkis)
+      // fer á nýskráningarsíðuna í stað innskráningarvillu. onboardingFor() er
+      // alltaf null utan Rondva, svo Beton-lénin halda nákvæmlega sömu hegðun.
+      if (onboardingFor(brand, access)) {
+        if (pathname === ONBOARDING_PATH) return response;
+        return NextResponse.redirect(new URL(ONBOARDING_PATH, request.url));
+      }
       const loginUrl = new URL("/dashboard/login", request.url);
       loginUrl.searchParams.set("error", brand === "rondva" ? loginErrorFor(access) : "unauthorized");
       return NextResponse.redirect(loginUrl);
