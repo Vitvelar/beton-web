@@ -15,16 +15,40 @@ import type { Brand } from "@/lib/brand";
 //
 // Lokast ef eitthvað bregst (RPC-villa → enginn aðgangur). RLS er samt
 // raunverulega hliðið að gögnunum; þetta ræður aðeins hvort viðmótið opnast.
+//
+// Nýskráning fyrirtækis (app.rondva.com/dashboard/onboarding, src/lib/onboarding.ts)
+// er AÐEINS boðin þegar my_access() svaraði og notandinn á ekkert fyrirtæki
+// (`canRegister`). Villa eða óljóst svar er „no_account" án `canRegister`, eins og
+// áður — þá sést innskráningarsíðan, aldrei nýskráningarformið.
 
 export type AccessDenial = "pending" | "suspended" | "no_account";
 
+/** Fyrirtæki notandans eins og my_access() skilar því — aðeins til birtingar. */
+export interface AccessCompany {
+  name: string;
+  country: string;
+}
+
 export type DashboardAccess =
   | { allowed: true }
-  | { allowed: false; reason: AccessDenial };
+  | {
+      allowed: false;
+      reason: AccessDenial;
+      /** my_access() svaraði og notandinn á EKKERT fyrirtæki (aldrei við villu). */
+      canRegister?: true;
+      /** Fyrirtæki sem bíður samþykkis eða er stöðvað (birtist á biðsíðunni). */
+      company?: AccessCompany;
+    };
 
 interface MyAccessPayload {
   allowed?: boolean;
-  company?: { status?: string } | null;
+  company?: { status?: string; name?: unknown; country?: unknown } | null;
+}
+
+function companySummary(company: { name?: unknown; country?: unknown }): AccessCompany | undefined {
+  const name = typeof company.name === "string" ? company.name.trim() : "";
+  const country = typeof company.country === "string" ? company.country.trim() : "";
+  return name ? { name, country } : undefined;
 }
 
 export async function checkDashboardAccess(
@@ -42,9 +66,13 @@ export async function checkDashboardAccess(
     const payload = data as MyAccessPayload;
     if (payload.allowed === true) return { allowed: true };
 
+    // Skýrt svar um að ekkert fyrirtæki sé til (my_access skilar company: null).
+    if (payload.company === null) return { allowed: false, reason: "no_account", canRegister: true };
+
     const status = payload.company?.status;
-    if (status === "pending") return { allowed: false, reason: "pending" };
-    if (status === "suspended") return { allowed: false, reason: "suspended" };
+    const company = payload.company ? companySummary(payload.company) : undefined;
+    if (status === "pending") return { allowed: false, reason: "pending", ...(company ? { company } : {}) };
+    if (status === "suspended") return { allowed: false, reason: "suspended", ...(company ? { company } : {}) };
     return { allowed: false, reason: "no_account" };
   } catch {
     return { allowed: false, reason: "no_account" };

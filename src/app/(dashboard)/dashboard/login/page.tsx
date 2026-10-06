@@ -5,6 +5,7 @@ import { BetonLogin } from "@/components/dashboard/BetonLogin";
 import { RondvaLogin } from "@/components/rondva/RondvaLogin";
 import { createClient } from "@/lib/supabase/server";
 import { checkDashboardAccess } from "@/lib/access";
+import { ONBOARDING_PATH, onboardingFor } from "@/lib/onboarding";
 import { getRequestBrand } from "@/lib/request-brand";
 
 // admin.beton.is fær óbreytta Beton-innskráningu; app.rondva.com fær Rondva.
@@ -27,8 +28,10 @@ export default async function DashboardLoginPage({
   if (brand === "rondva") {
     // „Log in" á rondva.com vísar hingað; sá sem er þegar inni fer beint á
     // stjórnborðið. Ekki ef villa er í slóðinni (þá á hann að sjá hana).
+    // Innskráður notandi án fyrirtækis (eða sem bíður samþykkis) fer á nýskráninguna.
     const { error } = await searchParams;
-    if (!error && (await hasActiveSession())) redirect("/dashboard");
+    const destination = error ? null : await signedInDestination();
+    if (destination) redirect(destination);
 
     return (
       <Suspense>
@@ -44,15 +47,17 @@ export default async function DashboardLoginPage({
   );
 }
 
-async function hasActiveSession(): Promise<boolean> {
+async function signedInDestination(): Promise<string | null> {
   try {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return false;
-    return (await checkDashboardAccess(supabase, user.email, "rondva")).allowed;
+    if (!user) return null;
+    const access = await checkDashboardAccess(supabase, user.email, "rondva");
+    if (access.allowed) return "/dashboard";
+    return onboardingFor("rondva", access) ? ONBOARDING_PATH : null;
   } catch {
-    return false;
+    return null;
   }
 }
