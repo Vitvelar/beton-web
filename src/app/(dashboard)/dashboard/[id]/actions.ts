@@ -84,6 +84,7 @@ function edgeErrorText(copy: DashboardCopy, code: string | null): string {
     case "generation_in_progress": return copy.credits.in_progress;
     case "company_not_active": return copy.credits.not_active;
     case "credit_check_unavailable": return copy.credits.ledger_unavailable;
+    case "offer_daily_limit": return copy.credits.offer_daily_limit;
     default: return t.generateFailed;
   }
 }

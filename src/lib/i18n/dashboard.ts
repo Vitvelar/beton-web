@@ -327,6 +327,8 @@ const is = {
       "Innifaldar AI-endurgerðir fyrir þessa skýrslu eru búnar. Þú getur áfram breytt textanum og flutt skýrsluna út.",
     in_progress: "Verið er að búa til skýrslu fyrir þessa skoðun.",
     not_active: "Fyrirtækjaaðgangurinn er ekki virkur.",
+    // Kynningartilboð (D3): dagsöryggi allra fyrirtækja náð — ekkert gjaldfært.
+    offer_daily_limit: "Ókeypis skýrslur eru mjög vinsælar í dag — reyndu aftur á morgun.",
   },
   // Nýskráning fyrirtækis (/dashboard/onboarding, AÐEINS app.rondva.com — Beton
   // birtir þetta aldrei). Íslenskan er fyrir Rondva-notendur sem velja íslensku.
@@ -647,6 +649,7 @@ const en: DashboardCopy = {
       "The included AI revisions for this report are used up. You can still edit the text and export the report.",
     in_progress: "An AI report is already being generated for this inspection.",
     not_active: "Your company account isn't active, so AI drafting isn't available.",
+    offer_daily_limit: "Free reports are very popular today — please try again tomorrow.",
   },
   onboarding: {
     metaTitle: "Register your company",

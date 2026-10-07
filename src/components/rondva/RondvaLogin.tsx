@@ -6,9 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 import { BRANDS } from "@/lib/brand";
 
 // Innskráning á app.rondva.com. Aðeins Google og Apple (þegar kveikt er á
-// Apple): viðskiptavinir skrá sig inn með reikningnum sem fyrirtækið þeirra
-// var samþykkt með. Nýskráning er lokuð í Supabase, svo óþekktur reikningur
-// endar aftur hér með ?error=unauthorized.
+// Apple). Nýskráning er opin (2026-10-06): nýr notandi án fyrirtækis fer á
+// /dashboard/onboarding og skráir fyrirtækið þar. ?error=unauthorized kemur aðeins
+// ef Supabase hafnar innskráningunni.
 //
 // Litir koma úr Beton-táknunum sem html[data-brand="rondva"] endurskilgreinir
 // (globals.css): ink = #101418, navy = Rondva Blue, paper, concrete = line,
@@ -23,22 +23,21 @@ const DENIALS = new Set(["unauthorized", "pending", "suspended"]);
 
 const ERRORS: Record<string, { title: string; body: React.ReactNode }> = {
   unauthorized: {
-    title: "No Rondva account for that sign-in",
+    title: "We couldn't open Rondva with that sign-in",
     body: (
       <>
-        Rondva is invite-only while we build it with working inspectors. Try the account your
-        company was approved with, or{" "}
-        <a href={`${R.marketingUrl}/#waitlist`} className="font-semibold text-ink underline underline-offset-4">
-          join the waitlist
+        Please try again. Used Rondva before with a different sign-in method? Sign in with that
+        one, then link this one in Settings. Still stuck? Write to{" "}
+        <a href={`mailto:${R.contactEmail}`} className="font-semibold text-ink underline underline-offset-4">
+          {R.contactEmail}
         </a>
-        . Used Rondva before with a different sign-in method? Sign in with that one, then link
-        this one in Settings.
+        .
       </>
     ),
   },
   pending: {
     title: "Your company is awaiting approval",
-    body: "We review every new company before opening access, and we'll let you know as soon as your account is active.",
+    body: "Some new companies are reviewed before access opens. We'll let you know as soon as your account is active.",
   },
   suspended: {
     title: "This company account is paused",
@@ -203,13 +202,15 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
           </div>
 
           <div className="mt-10 border-t border-concrete pt-6 text-sm leading-relaxed text-fog">
-            New to Rondva? We&apos;re onboarding inspectors in small groups.{" "}
+            New to Rondva? Sign in above to set up your company account &mdash; your first
+            reports are free. The iPhone app is coming to the App Store; until then,{" "}
             <a
               href={`${R.marketingUrl}/#waitlist`}
               className="font-semibold text-ink underline decoration-concrete-dk underline-offset-4 transition-colors hover:decoration-ink"
             >
-              Join the waitlist
-            </a>
+              join the waitlist
+            </a>{" "}
+            and we&apos;ll tell you when it&apos;s live.
           </div>
         </div>
 
