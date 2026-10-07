@@ -3,7 +3,8 @@
 // fyrirtæki. „12 Example Road, Mount Eden, Auckland 1024“: 1970s weatherboard-hús á
 // timburstaurum. „Example Inspections Ltd“ er skáldað. ai_report_data er handskrifað eftir
 // samningnum (plan/rondva/NZ-SKYRSLUSNID-HONNUN.md) — engin AI-keyrsla (layout-sýni).
-// Myndir eru merktir staðgenglar (SVG), aldrei raunmyndir.
+// Myndir eru merktir staðgenglar (SVG), aldrei raunmyndir. Legal description (appið geymir
+// hana í inspections.fastanumer) er tilbúin: „Lot 1 DP 000000“ er ekki til.
 const { placeholderSvg } = require('../report-fixture.cjs');
 
 const INSPECTION_ID = 'nz-sample-0001';
@@ -128,7 +129,7 @@ const NZS4306 = {
 
 function buildNzSampleRecord() {
   const inspection = {
-    address: '12 Example Road, Mount Eden', postal_code: '1024', municipality: 'Auckland', fastanumer: '',
+    address: '12 Example Road, Mount Eden', postal_code: '1024', municipality: 'Auckland', fastanumer: 'Lot 1 DP 000000, Record of Title NA000/000 (sample)',
     customer_name: 'A. Sample Buyer', inspection_date: '2026-10-05', weather: 'Fine', attendees: ['A. Sample Buyer', 'Listing agent'],
     property_data: { tegund: 'Detached house, timber weatherboard on timber piles', staerd_m2: 118, byggingarar: 1974, inspectorName: 'Jordan Sample', nzs4306: NZS4306_CONDITIONS },
     lookup_failed: true,

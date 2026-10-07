@@ -54,6 +54,8 @@ export interface NzReportData {
     address: string;
     postal_code: string;
     municipality: string;
+    /** NZ: „Legal description / title reference“ (appið geymir hana í inspections.fastanumer); vantar í eldri skýrslum. */
+    fastanumer?: string | null;
     customer_name: string;
     inspection_date: string;
     weather: string;
@@ -123,6 +125,7 @@ export function Nzs4306Report({
   const moisture = moistureRowsOf(nzs);
   const yearBuilt = yearBuiltOf(propData);
   const inspectionDate = formatReportDateNz(insp.inspection_date);
+  const legalDescription = legalDescriptionOf(insp);
   const sevKey = (s: string): SeverityKey => (s === "alvarleg" || s === "mjog_alvarleg" ? s : "athugasemd");
 
   // Element sections in contract order; rooms keep their recorded order inside a section.
@@ -257,6 +260,7 @@ export function Nzs4306Report({
           <tbody className="divide-y divide-concrete/50">
             <Row label="Client" value={insp.customer_name} />
             <Row label="Site address" value={siteAddress(insp)} />
+            {legalDescription ? <Row label="Legal description" value={legalDescription} /> : null}
             <Row label="Inspector" value={inspectorName} />
             <Row label="Qualifications" value={qualifications?.trim() || "Not recorded"} />
             <Row label="Company" value={brand.name} />
@@ -306,6 +310,7 @@ export function Nzs4306Report({
         <table className="w-full text-sm mb-6">
           <tbody className="divide-y divide-concrete/50">
             <Row label="Site address" value={siteAddress(insp)} />
+            {legalDescription ? <Row label="Legal description" value={legalDescription} /> : null}
             {propData.tegund ? <Row label="Property type" value={String(propData.tegund)} /> : null}
             {yearBuilt ? <Row label="Year built (approx.)" value={String(yearBuilt)} /> : null}
             {propData.staerd_m2 ? <Row label="Floor area" value={`${propData.staerd_m2} m²`} /> : null}
@@ -612,6 +617,11 @@ function capitalise(text: string | null | undefined): string {
 function roomTitle(room: { name: string; slug: string }): string {
   const base = nzBaseSlug(room.slug);
   return room.name?.trim() || (base ? NZ_ROOMS[base].label : room.slug);
+}
+
+/** „Legal description / title reference“ — tómt þegar ekkert er skráð (þá kemur engin lína). */
+function legalDescriptionOf(insp: NzReportData["inspection"]): string {
+  return typeof insp.fastanumer === "string" ? insp.fastanumer.trim() : "";
 }
 
 function siteAddress(insp: NzReportData["inspection"]): string {

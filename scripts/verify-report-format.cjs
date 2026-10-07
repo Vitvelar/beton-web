@@ -152,8 +152,26 @@ async function nzs4306Checks(output) {
   assert.ok(text.includes("Report text drafted with AI assistance from the inspector's notes and photos. All observations, ratings and conclusions were made and reviewed by Jordan Sample, Example Inspections Ltd."));
   assert.ok(text.includes('5/10/2026') && !text.includes('05.10.2026') && !text.includes('2026-10-05'), 'd/m/yyyy dates');
   assert.ok(text.includes('Prepared in accordance with NZS 4306:2005'));
+  // Legal description (inspections.fastanumer): í vottorðinu og í „Property and inspection conditions“,
+  // aldrei merkt „Fastanúmer“/„Property ID“.
+  const legal = record.ai_report_data.inspection.fastanumer;
+  assert.equal(legal, 'Lot 1 DP 000000, Record of Title NA000/000 (sample)', 'fixture carries a legal description');
+  assert.equal(text.split(`Legal description${legal}`).length - 1, 2, 'legal description row printed in certificate and property conditions');
+  for (const s of ['Fastanúmer', 'Fastanumer', 'Property ID']) assert.ok(!text.includes(s), `no ${s} label`);
+  const legalOrder = text.indexOf('Site address12 Example Road, Mount Eden, Auckland 1024Legal description');
+  assert.ok(legalOrder > -1, 'legal description follows the site address');
   for (const s of ['Greitt er fyrir', 'Takmarkanir', 'Bls.', 'Beton']) assert.ok(!text.includes(s), `no ${s}`);
   console.log('PASS NZS 4306 template: contract section order, significant-defects table, certificate, moisture table (4 rows, no reading invented), limitations verbatim, AI disclosure, d/m/yyyy');
+
+  // Tóm / blanks legal description → engin lína (og aldrei „null“/„undefined“).
+  for (const value of ['', '   ', null, undefined]) {
+    const blank = buildNzSampleRecord();
+    blank.ai_report_data.inspection.fastanumer = value;
+    const blankText = plain(await renderReportMarkup(blank, { pdf: true, dashboardLocale: 'en', brand: 'rondva' }));
+    assert.ok(!blankText.includes('Legal description'), `no legal description row for ${JSON.stringify(value)}`);
+    assert.ok(!blankText.includes('null') && !blankText.includes('undefined'), `no null/undefined text for ${JSON.stringify(value)}`);
+  }
+  console.log('PASS NZS 4306 legal description: printed (certificate + property conditions) only when non-empty, never labelled Fastanúmer');
 
   const none = buildNzSampleRecord();
   for (const room of none.ai_report_data.rooms) for (const o of room.observations) if (o.severity === 'mjog_alvarleg') o.severity = 'alvarleg';
@@ -174,7 +192,7 @@ async function nzs4306Checks(output) {
     assert.match(pdfText, /Page 1 \/ \d+/); assert.ok(!pdfText.includes('Bls.'), 'English/NZ footer says Page, never Bls.');
     let at = -1;
     for (const h of ORDER) { const i = pdfText.indexOf(h, at + 1); assert.ok(i > at, `PDF order: ${h}`); at = i; }
-    for (const s of ['5/10/2026', 'Moisture readings', 'Certificate of Inspection']) assert.ok(pdfText.includes(s), s);
+    for (const s of ['5/10/2026', 'Moisture readings', 'Certificate of Inspection', 'Legal description', 'Lot 1 DP 000000, Record of Title NA000/000 (sample)']) assert.ok(pdfText.includes(s), s);
     console.log(`PASS NZS 4306 PDF via render-pdf.ts: "Page n / N" footer, section order, d/m/yyyy (${pdf})`);
   } finally { await server.close(); }
 }
