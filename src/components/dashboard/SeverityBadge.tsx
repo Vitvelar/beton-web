@@ -27,11 +27,13 @@ export function SeverityBadge({
   const key: Severity = Object.hasOwn(SEVERITY_CLASS, severity) ? severity : "athugasemd";
   const condition = scheme === "condition_1_3";
   const copy = dashboardCopy(locale);
+  // NZ-matsorð (nz_terms): sömu litir og núverandi kerfi, aðeins heitin breytast.
+  const labels = condition ? copy.conditionSeverity : scheme === "nz_terms" ? copy.nzSeverity : copy.severity;
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${(condition ? CONDITION_CLASS : SEVERITY_CLASS)[key]}`}
     >
-      {(condition ? copy.conditionSeverity : copy.severity)[key]}
+      {labels[key]}
     </span>
   );
 }

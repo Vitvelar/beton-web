@@ -4,7 +4,8 @@ import type { User } from "@supabase/supabase-js";
 import { resolveHost, type Brand } from "@/lib/brand";
 import { localeForBrand, USER_LOCALE_KEY, type DashboardLocale } from "@/lib/i18n/dashboard";
 import { createClient } from "@/lib/supabase/server";
-import { resolveReportSettings, type RatingScheme } from "@/lib/report/settings";
+import type { RatingScheme } from "@/lib/report/settings";
+import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
 
 // Vörumerki núverandi beiðni, lesið úr host-haus (sama kort og proxy.ts notar).
 // Aðeins fyrir server components / route handlers — brand.ts sjálft má ekki
@@ -46,14 +47,8 @@ export const getDashboardRatingScheme = cache(async (): Promise<RatingScheme> =>
   if ((await getRequestBrand()) !== "rondva") return "standard";
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("company_members")
-      .select("companies ( report_locale, rating_scheme, country_code )")
-      .limit(1)
-      .maybeSingle();
-    if (error || !data) return "standard";
-    const company = Array.isArray(data.companies) ? data.companies[0] : data.companies;
-    return company ? resolveReportSettings(company).scheme : "standard";
+    const company = await fetchCompanyReportSettings(supabase, { ownerOnly: false });
+    return company ? company.settings.scheme : "standard";
   } catch {
     return "standard";
   }

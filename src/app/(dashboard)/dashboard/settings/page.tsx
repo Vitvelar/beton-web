@@ -8,7 +8,7 @@ import { SignInMethods } from "@/components/dashboard/SignInMethods";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { linkedIdentities } from "@/lib/sign-in-methods";
 import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
-import { resolveReportSettings } from "@/lib/report/settings";
+import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: dashboardCopy(await getDashboardLocale()).settings.metaTitle };
@@ -32,8 +32,11 @@ export default async function SettingsPage() {
 
   // Skýrslumál og matskerfi fyrirtækis: aðeins á app.rondva.com og aðeins fyrir eiganda.
   // Ef dálkarnir eru ekki til enn (flutningurinn ekki keyrður) bregst uppflettingin og
-  // spjaldið felst — vefurinn má því fara út á undan gagnagrunnsbreytingunni.
+  // spjaldið felst — vefurinn má því fara út á undan gagnagrunnsbreytingunni. Sama gildir
+  // um skýrslusniðið (report_standard) og réttindi skoðunarmanns (qualifications): þau
+  // birtast aðeins þegar NZS 4306-flutningurinn er kominn.
   const reportSettings = brand === "rondva" ? await ownerReportSettings(supabase) : null;
+  const qualifications = brand === "rondva" && inspector ? await inspectorQualifications(supabase, user.id) : null;
 
   return (
     <div className="max-w-2xl">
@@ -59,9 +62,11 @@ export default async function SettingsPage() {
             company_logo_url: inspector.company_logo_url ?? "",
             company_terms_url: inspector.company_terms_url ?? "",
             company_terms_text: inspector.company_terms_text ?? "",
+            qualifications: qualifications?.value ?? "",
           }}
           locale={locale}
           showTermsText={brand === "rondva" && inspector.company_name?.trim() !== "Beton ehf."}
+          showQualifications={qualifications !== null}
         />
       ) : (
         <p className="rounded-xl border border-concrete bg-white p-6 text-sm text-fog">
@@ -78,14 +83,25 @@ export default async function SettingsPage() {
 }
 
 async function ownerReportSettings(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const company = await fetchCompanyReportSettings(supabase, { ownerOnly: true });
+  if (!company) return null;
+  const { settings, standardSupported } = company;
+  return {
+    reportLocale: settings.locale,
+    ratingScheme: settings.scheme,
+    reportStandard: settings.standard,
+    standardSupported,
+  };
+}
+
+// Réttindi skoðunarmanns (inspectors.qualifications, NZS 4306-flutningur). null = dálkurinn
+// er ekki til enn → reiturinn felst og vistun snertir hann ekki.
+async function inspectorQualifications(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data, error } = await supabase
-    .from("company_members")
-    .select("role, companies ( report_locale, rating_scheme, country_code )")
-    .eq("role", "owner")
+    .from("inspectors")
+    .select("qualifications")
+    .eq("user_id", userId)
     .maybeSingle();
   if (error || !data) return null;
-  const company = Array.isArray(data.companies) ? data.companies[0] : data.companies;
-  if (!company) return null;
-  const settings = resolveReportSettings(company);
-  return { reportLocale: settings.locale, ratingScheme: settings.scheme };
+  return { value: typeof data.qualifications === "string" ? data.qualifications : "" };
 }

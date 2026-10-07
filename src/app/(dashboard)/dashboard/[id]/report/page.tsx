@@ -31,7 +31,7 @@ import type { Metadata } from "next";
 interface ReportData {
   /** Tungumál skýrslunnar, stimplað við gerð hennar; vantar = íslenska. */
   report_locale?: string;
-  /** Matskerfi (standard | condition_1_3), stimplað við gerð; vantar = standard. */
+  /** Matskerfi (standard | condition_1_3 | nz_terms), stimplað við gerð; vantar = standard. */
   rating_scheme?: string;
   inspection: {
     address: string;
@@ -104,6 +104,11 @@ const CONDITION_ICON: Record<string, string> = {
   alvarleg: "2",
   mjog_alvarleg: "3",
 };
+
+// NZ-matsorð (nz_terms): sömu litir og tákn og núverandi kerfi — aðeins heitin breytast
+// (Maintenance / Defect / Significant defect).
+const NZ_COLORS = SEV_COLORS;
+const NZ_ICON = SEV_ICON;
 
 const SEV_RANK: Record<string, number> = {
   mjog_alvarleg: 0,
@@ -215,10 +220,11 @@ export default async function ReportPage({
   // Matskerfið (stimplað) ræður heitum, skýringum, litum og táknum alvarleika.
   const scheme = ratingSchemeOf(report);
   const condition = scheme === "condition_1_3";
-  const sevText = condition ? t.conditionSeverity : t.severity;
-  const sevColors = condition ? CONDITION_COLORS : SEV_COLORS;
-  const sevIcon = condition ? CONDITION_ICON : SEV_ICON;
-  const roomRating = condition ? t.conditionRating : t.rating;
+  const nzTerms = scheme === "nz_terms";
+  const sevText = condition ? t.conditionSeverity : nzTerms ? t.nzSeverity : t.severity;
+  const sevColors = condition ? CONDITION_COLORS : nzTerms ? NZ_COLORS : SEV_COLORS;
+  const sevIcon = condition ? CONDITION_ICON : nzTerms ? NZ_ICON : SEV_ICON;
+  const roomRating = condition ? t.conditionRating : nzTerms ? t.nzRating : t.rating;
   const ui = dashboardCopy(await getDashboardLocale());
 
   type RawRoom = {
@@ -484,10 +490,10 @@ export default async function ReportPage({
             <span className="text-sev-calm font-bold mr-2">M.</span>{t.ratingSystem}
           </h2>
           <p className="text-sm text-ink/80 leading-relaxed mb-2">
-            {condition ? t.conditionRatingSystemHow : t.ratingSystemHow}
+            {condition ? t.conditionRatingSystemHow : nzTerms ? t.nzRatingSystemHow : t.ratingSystemHow}
           </p>
           <p className="text-sm text-ink/80 leading-relaxed mb-6">
-            {condition ? t.conditionRatingSystemTypes : t.ratingSystemTypes}
+            {condition ? t.conditionRatingSystemTypes : nzTerms ? t.nzRatingSystemTypes : t.ratingSystemTypes}
           </p>
 
           <div className="space-y-6">
@@ -905,7 +911,12 @@ function TermsSection({ n, title, children }: { n: number; title: string; childr
 function ratingColor(value: string, scheme: RatingScheme): string {
   const colors: Record<string, string> = {
     ok: "#8a8278",
-    warn: scheme === "condition_1_3" ? CONDITION_COLORS.athugasemd.color : "#3b4ec9",
+    warn:
+      scheme === "condition_1_3"
+        ? CONDITION_COLORS.athugasemd.color
+        : scheme === "nz_terms"
+          ? NZ_COLORS.athugasemd.color
+          : "#3b4ec9",
     danger: "#c98a2e",
     mjog_alvarleg: "#b53d3d",
   };
