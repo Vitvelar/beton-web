@@ -159,9 +159,13 @@ async function nzs4306Checks(output) {
   assert.equal(text.split(`Legal description${legal}`).length - 1, 2, 'legal description row printed in certificate and property conditions');
   for (const s of ['Fastanúmer', 'Fastanumer', 'Property ID']) assert.ok(!text.includes(s), `no ${s} label`);
   const legalOrder = text.indexOf('Site address12 Example Road, Mount Eden, Auckland 1024Legal description');
+  // Forsíða: fullt heimilisfang (gata + bær/borg + póstnúmer), ekki aðeins gatan.
+  const cover = /<section class="rpt-cover">([\s\S]*?)<\/section>/.exec(markup);
+  assert.ok(cover, 'cover section');
+  assert.ok(plain(cover[1]).includes('12 Example Road, Mount Eden, Auckland 1024'), 'cover shows street, town/city and postcode');
   assert.ok(legalOrder > -1, 'legal description follows the site address');
   for (const s of ['Greitt er fyrir', 'Takmarkanir', 'Bls.', 'Beton']) assert.ok(!text.includes(s), `no ${s}`);
-  console.log('PASS NZS 4306 template: contract section order, significant-defects table, certificate, moisture table (4 rows, no reading invented), limitations verbatim, AI disclosure, d/m/yyyy');
+  console.log('PASS NZS 4306 template: full address on the cover, contract section order, significant-defects table, certificate, moisture table (4 rows, no reading invented), limitations verbatim, AI disclosure, d/m/yyyy');
 
   // Tóm / blanks legal description → engin lína (og aldrei „null“/„undefined“).
   for (const value of ['', '   ', null, undefined]) {

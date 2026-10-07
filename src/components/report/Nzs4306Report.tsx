@@ -183,7 +183,8 @@ export function Nzs4306Report({
           <p className="text-xs font-semibold tracking-[0.2em] text-navy mb-2">{brand.nameUpper}</p>
           <h1 className="text-3xl font-bold text-navy mb-2">Property inspection report</h1>
           <p className="text-sm text-fog mb-3">Prepared in accordance with NZS 4306:2005</p>
-          <p className="text-xl text-ink mb-6">{insp.address}</p>
+          {/* Fullt heimilisfang (gata, bær/borg, póstnúmer) — sama og „Site address“ í vottorðinu. */}
+          <p className="text-xl text-ink mb-6">{siteAddress(insp)}</p>
           {coverPhotoUrl ? (
             <div className="w-full max-w-2xl h-64 sm:h-80 rounded-lg overflow-hidden mb-8 bg-concrete/30">
               {/* eslint-disable-next-line @next/next/no-img-element */}
