@@ -217,6 +217,18 @@ const is = {
     savedWhileRendering:
       "Vistað — en PDF-gerð var þegar í gangi með eldri texta. Ýttu aftur á „Vista og endurgera PDF“ eftir ~1 mínútu svo breytingarnar skili sér í PDF-ið.",
     saveUnconfirmed: "Ekki tókst að staðfesta vistun. Athugaðu tenginguna og reyndu aftur.",
+    // NZS 4306-skýrslur (aðeins þegar skýrslan er á því sniði).
+    nzHeading: "NZS 4306",
+    nzSignificant: "Samantekt verulegra galla",
+    nzSignificantHint: "Taflan yfir verulega galla er alltaf byggð á athugasemdunum sjálfum.",
+    nzMaintenance: "Samantekt viðhalds (gradual deterioration and maintenance)",
+    nzLimitations: "Takmarkanir og svæði sem ekki voru skoðuð",
+    nzLimitationsHint: "Birtast orðrétt í skýrslunni.",
+    nzMoisture: "Rakamælingar",
+    nzMoistureHint: "Mælingar koma aðeins úr athugasemdum þínum. Hægt er að fjarlægja línu en ekki bæta við eða breyta.",
+    nzRemoveRow: "Fjarlægja",
+    nzRestoreRow: "Setja aftur",
+    nzNoMoisture: "Engar rakamælingar.",
   },
   settings: {
     metaTitle: "Stillingar",
@@ -536,6 +548,17 @@ const en: DashboardCopy = {
     savedWhileRendering:
       "Saved — but a PDF was already being generated from the older text. Press “Save and regenerate PDF” again in about a minute so your changes reach the PDF.",
     saveUnconfirmed: "Could not confirm the save. Check your connection and try again.",
+    nzHeading: "NZS 4306",
+    nzSignificant: "Significant defects summary",
+    nzSignificantHint: "The table of significant defects is always built from the observations themselves.",
+    nzMaintenance: "Gradual deterioration and maintenance summary",
+    nzLimitations: "Limitations and areas not inspected",
+    nzLimitationsHint: "Shown word for word in the report.",
+    nzMoisture: "Moisture readings",
+    nzMoistureHint: "Readings come only from your notes. You can remove a row, but not add or change one.",
+    nzRemoveRow: "Remove",
+    nzRestoreRow: "Restore",
+    nzNoMoisture: "No moisture readings.",
   },
   settings: {
     metaTitle: "Settings",

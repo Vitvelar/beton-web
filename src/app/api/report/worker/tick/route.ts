@@ -9,6 +9,7 @@ import {
   isWorkerRequest,
   reportStoragePath,
 } from "@/lib/report/shared";
+import { reportCopy, reportLocaleOf } from "@/lib/report/i18n";
 
 // Background PDF render worker, in-process. Pinged by Supabase pg_cron (and any
 // best-effort kick) — drains the report_jobs queue, rendering the canonical
@@ -84,7 +85,7 @@ async function processJob(
   try {
     const { data: insp, error: ie } = await svc
       .from("inspections")
-      .select("id, inspector_id, address, inspection_date")
+      .select("id, inspector_id, address, inspection_date, report_locale:ai_report_data->>report_locale")
       .eq("id", inspectionId)
       .maybeSingle();
     if (ie) throw new Error(ie.message);
@@ -94,6 +95,8 @@ async function processJob(
     const reportUrl = `${base}/dashboard/${inspectionId}/report?pdf=1`;
     const pdf = await renderReportPdf(reportUrl, {
       extraHeaders: { [WORKER_TOKEN_HEADER]: process.env.REPORT_WORKER_TOKEN! },
+      // „Bls.“ á íslenskum skýrslum (óbreytt), „Page“ á öllum öðrum.
+      pageLabel: reportCopy(reportLocaleOf(insp)).pageLabel,
     });
 
     const path = reportStoragePath({

@@ -20,7 +20,7 @@ const os = require('node:os');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
-const { renderReportMarkup, reportHtml, applicationCss, serveReports, loadRenderer, placeholderSvg } = require('./report-fixture.cjs');
+const { load, renderReportMarkup, reportHtml, applicationCss, serveReports, loadRenderer, placeholderSvg } = require('./report-fixture.cjs');
 
 // Golden: reiknað á origin/main 2370380 (src óbreytt í PR0). Uppfærist AÐEINS með
 // meðvitaðri, skráðri breytingu (sjá PR-lýsingu þeirrar breytingar).
@@ -236,7 +236,13 @@ async function pixels(all, output) {
   assert.deepEqual(bad, [], 'pixel differences');
 }
 
-// Sama val og framleiðslan (worker tick) gerir á fótartexta, ef render-pdf.ts styður það.
-function pixelRenderOptions() { return {}; }
+// Sama val og framleiðslan (worker tick) gerir á fótartexta: „Bls.“ á íslensku, „Page“ annars.
+// Meðvituð breyting í NZ-sniði (vefur) 3/3: enskar skýrslur fá „Page“ í fót í stað „Bls.“ —
+// markup-hash breytist ekki (fóturinn er í puppeteer-sniðmáti), aðeins fótur PDF-síðnanna:
+// REPORT_PIXELS_ALLOW_FOOTER=en-standard,en-condition_1_3 við samanburð við golden úr main.
+function pixelRenderOptions(name) {
+  const { reportCopy, reportLocaleOf } = load('src/lib/report/i18n.ts');
+  return { pageLabel: reportCopy(reportLocaleOf(FIXTURES[name].ai_report_data)).pageLabel };
+}
 
 main().catch(error => { console.error(error); process.exitCode = 1; });
