@@ -11,6 +11,12 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // Apple-kaup og skráning fyrirtækis. Heimildir: beton-app supabase/functions/weather-lookup
 // (README + weather.ts), supabase/migrations/20261007120000_apple_in_app_purchases.sql,
 // src/lib/onboarding.ts (vefsíða fyrirtækis er geymd á notandanum, aðeins til yfirferðar).
+// 2026-10-07 (appið 1.3.0 í App Review): bætt við lagagrunnum, eyðingu reiknings í appinu
+// (ACCOUNT_DELETION.md §2/§8: hvað er eytt og hvað helst), alþjóðlegum flutningi, börnum,
+// NZ Privacy Act 2020 og tölvupósti til aðstoðar. Heimildir: beton-app origin/main
+// (docs/release/ACCOUNT_DELETION.md, IN_APP_PURCHASES.md, PRIVACY_DATA_INVENTORY.md;
+// supabase/functions/delete-account, apple-purchase, weather-lookup). Appið notar enga
+// staðsetningarheimild (app.json/app.config.ts: aðeins myndavél og myndasafn).
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -49,7 +55,7 @@ const processors: Processor[] = [
   {
     name: "OpenStreetMap Foundation (Nominatim)",
     role: "Finds the map coordinates of the inspection address for the weather auto-fill. Receives only the address.",
-    where: "Operated from the United Kingdom",
+    where: "Foundation based in the United Kingdom",
   },
   {
     name: "MET Norway (Norwegian Meteorological Institute)",
@@ -63,7 +69,7 @@ const processors: Processor[] = [
   },
   {
     name: "Apple and Google",
-    role: "Sign-in with your Apple or Google account, under their own privacy policies. Apple also takes App Store payments and sends us signed records of in-app purchases.",
+    role: "Sign-in with your Apple or Google account, under their own privacy policies. Apple also takes App Store payments and sends us signed records of in-app purchases. Google also hosts our email, so messages you send to us pass through Google Workspace.",
     where: "United States",
   },
   {
@@ -275,8 +281,9 @@ const sections: LegalSection[] = [
           stored in your account.
         </p>
         <p>
-          If your company has connected its own Google Drive archive, reports you choose to
-          send there are stored in that Drive, under your company&apos;s control.
+          Rondva does not send your reports to Google Drive or any other storage service. When
+          you export or share a report, it goes where you send it, and what happens to it
+          after that is up to you and your company.
         </p>
       </>
     ),
@@ -304,8 +311,15 @@ const sections: LegalSection[] = [
           it to give the company its report credits, and to take back unused credits if Apple
           refunds the purchase. We keep these records as accounting records for as long as
           accounting law requires (seven years in Iceland), even if the account is later
-          deleted. The legal basis is the agreement with your company (GDPR art. 6(1)(b)) and
-          our legal duty to keep accounting records (art. 6(1)(c)).
+          deleted. If the account is deleted, these records stay but are no longer linked to
+          your account or company. The legal basis is the agreement with your company (GDPR
+          art. 6(1)(b)) and our legal duty to keep accounting records (art. 6(1)(c)).
+        </p>
+        <p>
+          When you tap <strong>Restore purchases</strong>, the app asks Apple for your current
+          subscription and sends the signed record to us in the same way. Deleting your account
+          does not cancel an App Store subscription: cancel it first in your Apple account
+          settings, or Apple keeps charging you.
         </p>
       </>
     ),
@@ -360,6 +374,22 @@ const sections: LegalSection[] = [
     ),
   },
   {
+    id: "contacting-us",
+    title: "When you write to us",
+    body: (
+      <>
+        <p>
+          If you email <LegalLink href={mail}>{R.contactEmail}</LegalLink> we keep your message,
+          your email address and our replies so we can help you and follow up. We keep them for
+          as long as we need to resolve the matter and handle any follow-up. Please don&apos;t
+          send inspection photos or client details unless we ask for them. The legal basis is
+          our legitimate interest in answering you (GDPR art. 6(1)(f)), or the agreement with
+          you or your company when your message is about your account.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "cookies",
     title: "Cookies on rondva.com",
     body: (
@@ -375,6 +405,45 @@ const sections: LegalSection[] = [
     ),
   },
   {
+    id: "legal-bases",
+    title: "Why we may use your data",
+    body: (
+      <>
+        <p>Under the GDPR we need a legal basis for each purpose. In plain terms:</p>
+        <ul className={list}>
+          <li>
+            <strong>Your account, your company&apos;s details and signing in:</strong> the
+            agreement with you or your company (art. 6(1)(b)). Sign-in security records: our
+            legitimate interest in keeping accounts safe (art. 6(1)(f)).
+          </li>
+          <li>
+            <strong>Inspections, photos, reports, AI drafting and the weather auto-fill:</strong>{" "}
+            for these we act for your inspection company as its processor. The company decides
+            why it records the data and on what basis, usually its agreement with its own
+            client. Sending anything to the AI service also needs your explicit confirmation
+            in the app each time.
+          </li>
+          <li>
+            <strong>Purchases:</strong> the agreement with your company (art. 6(1)(b)) and our
+            legal duty to keep accounting records (art. 6(1)(c)).
+          </li>
+          <li>
+            <strong>The waitlist and your emails to us:</strong> our legitimate interest
+            (art. 6(1)(f)), as described in those sections.
+          </li>
+          <li>
+            <strong>Hosting logs and abuse prevention:</strong> our legitimate interest in
+            running and protecting the service (art. 6(1)(f)).
+          </li>
+          <li>
+            <strong>Analytics and marketing cookies on rondva.com:</strong> your consent
+            (art. 6(1)(a)), which you can withdraw at any time.
+          </li>
+        </ul>
+      </>
+    ),
+  },
+  {
     id: "processors",
     title: "Who processes the data",
     body: (
@@ -385,10 +454,97 @@ const sections: LegalSection[] = [
           Each of these acts as a processor under a data-processing agreement, except Apple
           and Google for sign-in and payment, and OpenStreetMap Foundation and MET Norway for
           the weather auto-fill, which are public services that act under their own terms of
-          use. Where a processor is outside the EEA, transfers rest on the EU Standard
-          Contractual Clauses.
-          We don&apos;t sell personal data and don&apos;t share it with anyone else, unless the
-          law requires us to.
+          use. We don&apos;t sell personal data and don&apos;t share it with anyone else,
+          unless the law requires us to.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "transfers",
+    title: "Data moving between countries",
+    body: (
+      <>
+        <p>
+          Our database and file storage are in the European Union (Ireland). Some providers
+          process data elsewhere, mainly in the United States (see the table). Where personal
+          data goes to a country outside the EEA that the European Commission has not found to
+          offer adequate protection, the transfer rests on the EU Standard Contractual Clauses.
+          Norway is in the EEA, and the European Commission has found the United Kingdom
+          adequate.
+        </p>
+        <p>
+          The weather services are the exception: they are public services we have no
+          contract with. They receive only the inspection address (OpenStreetMap) or
+          coordinates rounded to about 100 metres (MET Norway), never a name or account
+          details, and they are bound only by their own terms of use.
+        </p>
+        <p>
+          <strong>If you are in New Zealand:</strong> your information is held by Vitvélar in
+          Iceland and in our providers&apos; systems in Ireland and the United States. We send
+          it abroad to providers that are bound by a contract with us to protect it, and to
+          Apple and Google for the sign-in and payments you choose to use with them. The
+          exception is the weather auto-fill above: the two public weather and map services
+          may not be required to protect an address in a way that is comparable to the New
+          Zealand Privacy Act 2020. They receive only the property&apos;s address
+          (OpenStreetMap) or its rounded coordinates (MET Norway), and only on the day of the
+          inspection while the weather field is empty or when you tap the weather button.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "deletion",
+    title: "Deleting your account",
+    body: (
+      <>
+        <p>
+          You can delete your account in the app: <strong>Settings &rarr; Delete account</strong>{" "}
+          (or, if your company has not been approved yet, <strong>Delete account</strong> at the
+          bottom of the screen you see after signing in). The app asks you to confirm twice. It
+          can&apos;t be undone, so save or share any reports you want to keep first.
+        </p>
+        <p>
+          <strong>What is deleted</strong> from our servers: your sign-in account and its link
+          to your Apple or Google sign-in; your inspections with their rooms, observations,
+          photos and reports; the report PDFs and your company logo in our storage; and, if you
+          are the only member of your company, the company profile and its report credits. On
+          the phone you delete from, the app also removes its local copy. If you signed in with
+          Apple, we also ask Apple to revoke Rondva&apos;s access to your Apple ID.
+        </p>
+        <p>
+          <strong>What stays:</strong>
+        </p>
+        <ul className={list}>
+          <li>
+            Apple purchase records, as accounting records, no longer linked to your account or
+            company (see Purchases).
+          </li>
+          <li>
+            A usage record for each AI draft (date, AI model, cost). It contains no inspection
+            content and, after deletion, no longer points to your account or company.
+          </li>
+          <li>
+            If your company has other members, the company and its data stay; only your own
+            membership is removed.
+          </li>
+          <li>Encrypted backups, until they expire on the normal backup cycle.</li>
+          <li>
+            Copies on other devices where you were signed in, until you remove the app from
+            them, and reports you already exported or sent to clients.
+          </li>
+          <li>
+            Text and photos already sent to Anthropic for a draft, which follow Anthropic&apos;s
+            own retention policy.
+          </li>
+        </ul>
+        <p>
+          Accounts that are managed by a partner company, and accounts with purchase records
+          made outside the App Store, can&apos;t be closed in the app; write to{" "}
+          <LegalLink href={mail}>{R.contactEmail}</LegalLink> and we will close them. The
+          waitlist is separate; ask us to remove you. Deleting your account does not cancel an
+          App Store subscription. More on the{" "}
+          <LegalLink href="/support#delete-account">support page</LegalLink>.
         </p>
       </>
     ),
@@ -401,13 +557,25 @@ const sections: LegalSection[] = [
         <ul className={list}>
           <li>
             <strong>Account, company and inspections:</strong> while the account is active. When
-            you or your company close the account, we delete it along with the inspections,
-            photos and reports stored with it. Copies can remain in our encrypted backups until
-            those expire on the normal backup cycle.
+            you delete your account in the app, or ask us to close it, we delete it along with
+            the inspections, photos and reports stored with it (see Deleting your account for
+            what stays). Copies can remain in our encrypted backups until those expire on the
+            normal backup cycle.
           </li>
           <li>
             <strong>Purchase records:</strong> as long as accounting law requires (seven years in
-            Iceland).
+            Iceland), even if the account is deleted. They are then no longer linked to it.
+          </li>
+          <li>
+            <strong>AI usage records</strong> (date, model, cost, whether a credit was used):
+            kept as a usage history without inspection content.
+          </li>
+          <li>
+            <strong>Looked-up locations for the weather:</strong> up to 30 days in our
+            server&apos;s working memory, never in our database.
+          </li>
+          <li>
+            <strong>Emails to us:</strong> as long as needed to resolve the matter and follow up.
           </li>
           <li>
             <strong>On your phone:</strong> until you delete the inspection or remove the app.
@@ -442,10 +610,37 @@ const sections: LegalSection[] = [
           inspection company that controls it and help it answer.
         </p>
         <p>
+          <strong>If you are in New Zealand,</strong> you can ask us for the personal
+          information we hold about you and ask us to correct it, as the Privacy Act 2020
+          allows (information privacy principles 6 and 7). Write to the same address. If we
+          can&apos;t resolve a concern, you can complain to the{" "}
+          <LegalLink href="https://www.privacy.org.nz">
+            Office of the Privacy Commissioner
+          </LegalLink>
+          .
+        </p>
+        <p>
           If you think we have handled your data incorrectly you can complain to the Icelandic
           Data Protection Authority (Persónuvernd,{" "}
           <LegalLink href="https://www.personuvernd.is">personuvernd.is</LegalLink>) or to the
           supervisory authority in your own country.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "children",
+    title: "Children",
+    body: (
+      <>
+        <p>
+          Rondva is a tool for professionals and their companies. It is not intended for anyone
+          under 18, and we don&apos;t knowingly collect personal data from children. An
+          inspection can still include photos or details of people who happen to be at a
+          property, children among them; the inspection company is responsible for having the
+          right to record that. If you think a child has given us personal data, or you want
+          such data removed from an inspection, write to{" "}
+          <LegalLink href={mail}>{R.contactEmail}</LegalLink> and we will help delete it.
         </p>
       </>
     ),
@@ -473,8 +668,10 @@ export default function RondvaPrivacyPage() {
         <p>
           Short version: you sign in with Apple or Google, and your inspections are stored on
           your phone and in your account. Nothing goes to the AI service unless you confirm it
-          for that report. The app has no advertising or tracking, we don&apos;t sell data, and
-          you can have your account deleted.
+          for that report. The weather field can fill itself in from the address you entered,
+          using two public weather and map services that receive only that address. Payments go
+          through Apple. The app has no advertising or tracking, we don&apos;t sell data, and
+          you can delete your account in the app.
         </p>
       }
       sections={sections}
