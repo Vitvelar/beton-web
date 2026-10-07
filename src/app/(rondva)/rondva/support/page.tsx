@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
 import { BRANDS } from "@/lib/brand";
+import {
+  RONDVA_OFFER,
+  RONDVA_PACK,
+  RONDVA_PLANS,
+  RONDVA_PRICE_NOTE,
+  usd,
+} from "@/lib/rondva-pricing";
 import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/LegalPage";
 
 // rondva.com/support — support-slóð Rondva-appsins (App Store Connect og
@@ -108,14 +115,32 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Every company gets its first <strong>2 AI-drafted reports free</strong>. One report
-          covers the first AI draft for an inspection plus up to 2 AI revisions of it. Editing
-          text by hand, exporting again, and creating a report without AI never use up a
-          report.
+          <strong>Founding offer:</strong> until {RONDVA_OFFER.endsOn}, every company gets{" "}
+          <strong>{RONDVA_OFFER.freeReportsPerMonth} AI-drafted reports free every month</strong>.
+          No card is needed. One report covers the first AI draft for an inspection plus up to 2
+          AI revisions of it. Editing text by hand, exporting again, and creating a report
+          without AI never use up a report.
         </p>
         <p>
-          Paid plans will be sold inside the app through the App Store, at your local App Store
-          price. Until then, if you run out of free reports, write to us.
+          Paid plans will be sold inside the iPhone app through the App Store once it is
+          available:
+        </p>
+        <ul className="list-disc space-y-1 pl-5">
+          {RONDVA_PLANS.map((plan) => (
+            <li key={plan.id}>
+              <strong>{plan.name}</strong>: {usd(plan.price)} per month, {plan.reports} AI-drafted
+              reports per month
+            </li>
+          ))}
+          <li>
+            <strong>{RONDVA_PACK.name}</strong>: {usd(RONDVA_PACK.price)} for {RONDVA_PACK.reports}{" "}
+            extra reports that never expire
+          </li>
+        </ul>
+        <p>
+          Every plan includes 2 AI revisions per report, unlimited manual editing and
+          re-exports, and your company branding. {RONDVA_PRICE_NOTE} Until paid plans are
+          available, if you run out of free reports, write to us.
         </p>
         <p>
           Once subscriptions are available, you manage or cancel them in the iPhone{" "}
@@ -192,7 +217,7 @@ export default function RondvaSupportPage() {
         </p>
       }
       sections={sections}
-      revised="30 September 2026"
+      revised="7 October 2026"
     >
       <div className="mt-10 rounded-card border border-line bg-paper p-6 shadow-[0_24px_60px_-40px_rgba(16,20,24,0.25)]">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">Contact</p>

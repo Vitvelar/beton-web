@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BRANDS } from "@/lib/brand";
+import { RONDVA_OFFER } from "@/lib/rondva-pricing";
 import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/LegalPage";
 
 // rondva.com/terms — notkunarskilmálar Rondva (Terms of Use-tengill sem App Store
@@ -204,10 +205,15 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Each company gets its first 2 AI-drafted reports free, once. One report credit
-          covers the first AI draft for one inspection and up to 2 AI revisions of it. Editing
-          text by hand, exporting again and creating a report without AI never use a credit. A
-          draft that fails doesn&apos;t use a credit.
+          <strong>Founding offer.</strong> Until {RONDVA_OFFER.endsOn}, each company on Rondva
+          gets {RONDVA_OFFER.freeReportsPerMonth} AI-drafted reports free every month, with no
+          card needed. If demand is very high we may limit free reports for a day; you will see
+          a message and can try again the next day.
+        </p>
+        <p>
+          One report credit covers the first AI draft for one inspection and up to 2 AI
+          revisions of it. Editing text by hand, exporting again and creating a report without
+          AI never use a credit. A draft that fails doesn&apos;t use a credit.
         </p>
         <p>When paid plans are offered in the app:</p>
         <ul className={list}>
@@ -215,6 +221,12 @@ const sections: LegalSection[] = [
             You buy them through the App Store. Apple takes the payment under its own terms,
             and the price, currency, tax and billing period are the ones shown in the app
             before you confirm.
+          </li>
+          <li>
+            Plans are a monthly subscription, Solo or Pro, each with a set number of report
+            credits per month, plus a report pack of extra credits. Every plan includes 2 AI
+            revisions per report, unlimited manual editing and re-exports, and your company
+            branding.
           </li>
           <li>
             Subscriptions renew automatically at the end of each period unless you cancel at
@@ -387,7 +399,7 @@ export default function RondvaTermsPage() {
         </p>
       }
       sections={sections}
-      revised="30 September 2026"
+      revised="7 October 2026"
       toc
     />
   );
