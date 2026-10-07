@@ -7,11 +7,17 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // krefst fyrir áskriftir, 3.1.2). Appleyfið sjálft fer eftir Standard EULA Apple;
 // þessir skilmálar ná yfir þjónustuna. Skrifað úr kóða og vöruákvörðunum, ekki af
 // lögfræðingi — sjá OPS-14 í plan/rondva/OPIN-ATRIDI.
+// 2026-10-07 (appið 1.3.0 í App Review): „Terms of Use (EULA)“ á kaupaskjá appsins (app/billing.tsx,
+// BRAND.termsUrl) opnar þessa síðu, svo hún segir berum orðum að Standard EULA Apple gildi um
+// appið sjálft og þessir skilmálar um þjónustuna. Áskriftaratriði 3.1.2 (endurnýjun, afpöntun,
+// Apple ID-gjald), röð notkunar (tilboð → áskrift → pakkar), endurgreiðsla og að eyðing
+// reiknings segir ekki upp áskrift eru úr docs/release/IN_APP_PURCHASES.md og ACCOUNT_DELETION.md
+// í beton-app. Orðalagið „When paid plans are offered in the app“ er haldið (verify-rondva-pricing).
 
 export const metadata: Metadata = {
   title: "Terms of use",
   description:
-    "The terms for using Rondva, the inspection app and dashboard from Vitvélar ehf.: accounts, AI-drafted reports, your content, data processing, free reports and subscriptions, and liability.",
+    "The terms of use for Rondva, the inspection app and dashboard from Vitvélar ehf.: accounts, AI-drafted reports you must review, your content, data processing, free reports, App Store subscriptions and auto-renewal, and liability.",
   alternates: { canonical: `${BRANDS.rondva.marketingUrl}/terms` },
 };
 
@@ -40,6 +46,12 @@ const sections: LegalSection[] = [
           your company. If you can&apos;t or don&apos;t want to, please don&apos;t use Rondva.
           Rondva is not intended for consumers or for anyone under 18.
         </p>
+        <p>
+          This page is the <strong>Terms of Use</strong> that the Rondva app links to (for
+          example from the plans screen) and that the App Store page refers to. The licence for
+          the app itself is Apple&apos;s standard terms, as explained in &ldquo;The iPhone
+          app&rdquo; below.
+        </p>
       </>
     ),
   },
@@ -52,7 +64,8 @@ const sections: LegalSection[] = [
           Rondva lets you record property inspections on your phone (rooms, ratings,
           observations, photos and thermal images), keep them in sync with your account, have
           the report text drafted by an AI service, edit it, and export the report as a PDF
-          with your company&apos;s name and logo.
+          with your company&apos;s name and logo. The weather field of an inspection can fill
+          itself in from a forecast for the address you entered.
         </p>
         <p>
           Rondva is new and still changing. We add, change and sometimes remove features.
@@ -97,8 +110,12 @@ const sections: LegalSection[] = [
         <p>
           The Rondva app from the App Store is licensed to you under Apple&apos;s{" "}
           <LegalLink href={APPLE_EULA}>Standard Licensed Application End User License Agreement</LegalLink>.
-          These terms cover the Rondva service that the app connects to. Apple is not a party
-          to these terms and is not responsible for Rondva or for supporting it; we are.
+          These terms cover the Rondva service that the app connects to. If the two ever
+          disagree about the licence to the app itself, Apple&apos;s terms win; on everything
+          about the Rondva service, these terms apply. The &ldquo;Terms of Use (EULA)&rdquo;
+          link in the app opens this page, and Apple&apos;s standard terms are available at the
+          link above. Apple is not a party to these terms and is not responsible for Rondva or
+          for supporting it; we are.
         </p>
       </>
     ),
@@ -126,6 +143,14 @@ const sections: LegalSection[] = [
             You are responsible towards your own clients for the reports you issue, including
             meeting any professional or legal requirements that apply to inspections where you
             work.
+          </li>
+          <li>
+            An AI draft can misread a photo or add detail that is not there. Check it against
+            what you saw before you issue the report.
+          </li>
+          <li>
+            Weather text that Rondva fills in comes from a forecast for the address, not from a
+            measurement at the property. Check it and correct it if conditions differed.
           </li>
           <li>
             You can always create a report without AI.
@@ -180,8 +205,10 @@ const sections: LegalSection[] = [
           </li>
           <li>
             use only the sub-processors listed in the{" "}
-            <LegalLink href="/privacy#processors">privacy policy</LegalLink>, tell you before we
-            add or replace one, and let you stop using Rondva if you object;
+            <LegalLink href="/privacy#processors">privacy policy</LegalLink> (including the two
+            public services used for the weather auto-fill, which receive only an address or
+            rounded coordinates), tell you before we add or replace one, and let you stop using
+            Rondva if you object;
           </li>
           <li>
             rely on the EU Standard Contractual Clauses or another lawful mechanism where data
@@ -218,9 +245,11 @@ const sections: LegalSection[] = [
         <p>When paid plans are offered in the app:</p>
         <ul className={list}>
           <li>
-            You buy them through the App Store. Apple takes the payment under its own terms,
-            and the price, currency, tax and billing period are the ones shown in the app
-            before you confirm.
+            You buy them in the app, through the App Store. Apple takes the payment under its
+            own terms. The price, currency, tax and billing period are the ones shown in the
+            app before you confirm, and payment is charged to your Apple ID account at
+            confirmation of the purchase. The reports go to the company of the Rondva account
+            you are signed in with.
           </li>
           <li>
             Plans are a monthly subscription, Solo or Pro, each with a set number of report
@@ -229,18 +258,37 @@ const sections: LegalSection[] = [
             branding.
           </li>
           <li>
-            Subscriptions renew automatically at the end of each period unless you cancel at
-            least 24 hours before the period ends. You manage and cancel them in your Apple
-            account settings. Cancelling stops the next renewal; the current period runs to its
-            end.
+            <strong>Auto-renewal.</strong> Subscriptions renew automatically every month at the
+            price shown, unless you cancel at least 24 hours before the end of the current
+            period. Apple charges your account for the renewal within 24 hours before the
+            period ends. You manage and cancel in your Apple account settings (on the iPhone:
+            Settings, your name, Subscriptions; or <strong>Manage subscription</strong> in the
+            app). Cancelling stops the next renewal; the current period runs to its end.
+            Deleting your Rondva account does not cancel a subscription, so cancel it first.
           </li>
           <li>
-            Report credits included in a subscription period are for use in that period.
-            Credits in an extra report pack don&apos;t expire and stay usable after a
-            subscription ends.
+            Report credits included in a subscription period are for use in that period and
+            do not carry over. Credits in an extra report pack don&apos;t expire and stay
+            usable after a subscription ends.
           </li>
           <li>
-            Refunds are handled by Apple under Apple&apos;s rules.
+            Credits are used in this order: free reports from the founding offer first, then
+            the reports of your subscription period, then report packs.
+          </li>
+          <li>
+            If you move from Solo to Pro in the middle of a period, Pro starts straight away
+            with a new period. Apple refunds the unused part of Solo, and the unused Solo
+            reports end. Moving from Pro to Solo takes effect when the current period ends.
+          </li>
+          <li>
+            <strong>Restore purchases</strong> in the app checks your current subscription with
+            Apple again, for example on a new phone. Report packs belong to your Rondva account
+            and are not lost.
+          </li>
+          <li>
+            Refunds are handled by Apple under Apple&apos;s rules. If Apple refunds or revokes
+            a purchase, we take back the unused reports from it; reports you have already
+            drafted stay yours.
           </li>
           <li>
             If we change a price, it applies from your next billing period, and Apple will ask
@@ -303,9 +351,11 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          You can stop using Rondva at any time and ask us to delete your account, as described
-          on the <LegalLink href="/support#delete-account">support page</LegalLink>. Export
-          anything you want to keep first.
+          You can stop using Rondva at any time and delete your account in the app (Settings,
+          then Delete account), or ask us to, as described on the{" "}
+          <LegalLink href="/support#delete-account">support page</LegalLink>. Export anything
+          you want to keep first. Deleting your account does not cancel an App Store
+          subscription; cancel that in your Apple account settings.
         </p>
         <p>
           We may suspend or close an account if it breaks these terms, if continuing would put
@@ -395,7 +445,8 @@ export default function RondvaTermsPage() {
         <p>
           Short version: Rondva is a tool for businesses. Your inspections and reports belong
           to your company, and so does the responsibility for what you send to clients. AI
-          drafts are a starting point you review. Purchases go through the App Store.
+          drafts are a starting point you review. Purchases go through the App Store, and
+          subscriptions renew automatically until you cancel them with Apple.
         </p>
       }
       sections={sections}
