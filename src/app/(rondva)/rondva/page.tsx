@@ -1,4 +1,13 @@
 import Link from "next/link";
+import { BRANDS } from "@/lib/brand";
+import {
+  RONDVA_INCLUDED,
+  RONDVA_OFFER,
+  RONDVA_PACK,
+  RONDVA_PLANS,
+  RONDVA_PRICE_NOTE,
+  usd,
+} from "@/lib/rondva-pricing";
 import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 import { WaitlistForm } from "@/components/rondva/WaitlistForm";
@@ -101,15 +110,17 @@ function SectionHeading({
   eyebrow,
   children,
   light,
+  id,
 }: {
   eyebrow: string;
   children: React.ReactNode;
   light?: boolean;
+  id?: string;
 }) {
   return (
     <div className="rv-reveal max-w-2xl">
       <p className={light ? "rv-eyebrow !text-paper/60" : "rv-eyebrow"}>{eyebrow}</p>
-      <h2 className={`rv-display rv-balance mt-4 text-[34px] sm:text-[44px] md:text-[52px] ${light ? "text-paper" : "text-ink"}`}>
+      <h2 id={id} className={`rv-display rv-balance mt-4 text-[34px] sm:text-[44px] md:text-[52px] ${light ? "text-paper" : "text-ink"}`}>
         {children}
       </h2>
     </div>
@@ -278,45 +289,155 @@ export default function RondvaLandingPage() {
           </div>
         </section>
 
-        {/* 6. Planned pricing */}
-        <section className="px-6 py-20 md:py-28">
-          <div className="mx-auto grid max-w-[1180px] gap-12 md:grid-cols-[1fr_1fr] md:gap-20">
-            <div>
-              <SectionHeading eyebrow="Planned pricing">One price. Edits and re-exports never count.</SectionHeading>
-              <p className="rv-reveal mt-6 max-w-lg leading-relaxed text-muted" style={{ "--i": 1 } as React.CSSProperties}>
-                Manual text edits and re-exporting a PDF never count against your quota and never
-                cost extra. When Rondva opens, purchases will run through the App Store and the price
-                you see in the app will be your local App Store price.
-              </p>
+        {/* 6. Verð — Solo / Pro / Report pack + stofnmannatilboð (tölur í src/lib/rondva-pricing.ts).
+            Ekkert er til sölu á vefnum: kaup verða í iPhone-appinu í gegnum App Store, sem er
+            „coming to the App Store“. Tilboðið nefnir ekki Ísland (íslensk fyrirtæki: eftir boði). */}
+        <section id="pricing" aria-labelledby="pricing-title" className="px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-[1180px]">
+            <SectionHeading id="pricing-title" eyebrow="Pricing">
+              Simple plans. Edits and re-exports never count.
+            </SectionHeading>
+            <p className="rv-reveal mt-6 max-w-2xl text-lg leading-relaxed text-muted" style={{ "--i": 1 } as React.CSSProperties}>
+              Manual text edits and re-exporting a PDF never use up your reports and never cost
+              extra. Plans and report packs are bought in the iPhone app, through the App Store.
+            </p>
+
+            {/* Stofnmannatilboðið — í gildi núna */}
+            <div
+              className="rv-reveal rv-blueprint-light mt-12 rounded-card border border-line-strong p-7 sm:p-10"
+              style={{ "--i": 1 } as React.CSSProperties}
+            >
+              <div className="grid gap-8 lg:grid-cols-[1.25fr_1fr] lg:items-center lg:gap-14">
+                <div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-blue px-3 py-1 text-xs font-semibold text-paper">
+                      <span className="h-1.5 w-1.5 rounded-full bg-paper" aria-hidden="true" />
+                      Live now
+                    </span>
+                    <p className="rv-eyebrow">Founding offer</p>
+                  </div>
+                  <h3 className="rv-display rv-balance mt-5 text-[30px] text-ink sm:text-[40px]">
+                    {RONDVA_OFFER.freeReportsPerMonth} free <span className="whitespace-nowrap">AI-drafted</span> reports <em>every month.</em>
+                  </h3>
+                  <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">
+                    Until {RONDVA_OFFER.endsOn}. No card needed. Manual edits and re-exports stay
+                    free, as always.
+                  </p>
+                </div>
+                <div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <a
+                      href={BRANDS.rondva.appUrl}
+                      className="inline-flex items-center justify-center gap-2 rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-[#2c62ec]"
+                    >
+                      Create your company account
+                      <span aria-hidden="true">→</span>
+                    </a>
+                    <a
+                      href="#waitlist"
+                      className="inline-flex items-center justify-center rounded-full border border-line-strong bg-paper px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-ink"
+                    >
+                      Join the waitlist
+                    </a>
+                  </div>
+                  <p className="mt-4 text-sm leading-relaxed text-muted">
+                    Set up your company account on the web now. The iPhone app is coming to the App
+                    Store; the waitlist tells you when it&apos;s live.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="rv-reveal rounded-card border border-line bg-paper p-8 shadow-[0_24px_60px_-30px_rgba(16,20,24,0.25)]" style={{ "--i": 2 } as React.CSSProperties}>
-              <p className="inline-flex rounded-full bg-paper-alt px-3 py-1 text-xs font-medium text-muted">
-                Pricing below is what we&apos;re planning, not a live offer. Nothing is for sale yet.
-              </p>
-              <p className="rv-tnum mt-6 font-serif text-[52px] font-semibold leading-none tracking-tight text-ink">
-                $99.99 <span className="font-sans text-lg font-medium tracking-normal text-muted">/ month</span>
-              </p>
-              <ul className="mt-7 space-y-3 text-[15px] text-ink">
-                {[
-                  "Your first 2 AI-drafted reports are free",
-                  "20 AI-drafted reports per month",
-                  "2 AI revisions included with every report",
-                  "Unlimited manual editing and re-export — free",
-                ].map((line) => (
-                  <li key={line} className="flex gap-3">
-                    <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue" aria-hidden="true" />
+
+            {/* Þrjú spjöld: Solo, Pro (mælt með) og Report pack */}
+            <ul className="mt-5 grid gap-5 lg:grid-cols-3">
+              {RONDVA_PLANS.map((plan, i) => {
+                const dark = plan.recommended;
+                return (
+                  <li
+                    key={plan.id}
+                    className={`rv-reveal relative flex flex-col rounded-card border p-7 sm:p-8 ${
+                      dark
+                        ? "border-ink bg-ink text-paper shadow-[0_30px_70px_-30px_rgba(16,20,24,0.55)]"
+                        : "border-line bg-paper shadow-[0_24px_60px_-34px_rgba(16,20,24,0.22)]"
+                    }`}
+                    style={{ "--i": i } as React.CSSProperties}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="font-serif text-[26px] font-semibold tracking-tight">{plan.name}</h3>
+                      {dark ? (
+                        <span className="rounded-full bg-blue px-3 py-1 text-xs font-semibold text-paper">
+                          Recommended
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className={`mt-1 text-sm ${dark ? "text-paper/70" : "text-muted"}`}>{plan.blurb}</p>
+                    <p className="rv-tnum mt-7 font-serif text-[46px] font-semibold leading-none tracking-tight sm:text-[52px]">
+                      {usd(plan.price)}{" "}
+                      <span className={`whitespace-nowrap font-sans text-base font-medium tracking-normal ${dark ? "text-paper/70" : "text-muted"}`}>
+                        / month
+                      </span>
+                    </p>
+                    <div className={`mt-7 border-t pt-6 ${dark ? "border-paper/15" : "border-line"}`}>
+                      <p className="flex items-baseline gap-3">
+                        <span className="rv-tnum font-serif text-[36px] font-semibold leading-none">{plan.reports}</span>
+                        <span className="text-[15px] leading-snug">AI-drafted reports per month</span>
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+              <li
+                className="rv-reveal relative flex flex-col rounded-card border border-line bg-paper p-7 shadow-[0_24px_60px_-34px_rgba(16,20,24,0.22)] sm:p-8"
+                style={{ "--i": RONDVA_PLANS.length } as React.CSSProperties}
+              >
+                <h3 className="font-serif text-[26px] font-semibold tracking-tight">{RONDVA_PACK.name}</h3>
+                <p className="mt-1 text-sm text-muted">{RONDVA_PACK.blurb}</p>
+                <p className="rv-tnum mt-7 font-serif text-[46px] font-semibold leading-none tracking-tight sm:text-[52px]">
+                  {usd(RONDVA_PACK.price)}{" "}
+                  <span className="whitespace-nowrap font-sans text-base font-medium tracking-normal text-muted">one-time</span>
+                </p>
+                <div className="mt-7 border-t border-line pt-6">
+                  <p className="flex items-baseline gap-3">
+                    <span className="rv-tnum font-serif text-[36px] font-semibold leading-none">{RONDVA_PACK.reports}</span>
+                    <span className="text-[15px] leading-snug">extra AI-drafted reports</span>
+                  </p>
+                  <p className="mt-3 text-[15px] text-muted">They never expire.</p>
+                </div>
+              </li>
+            </ul>
+
+            {/* Innifalið í öllum áætlunum */}
+            <div
+              className="rv-reveal mt-5 rounded-card border border-line bg-paper-alt/60 p-6 sm:p-7"
+              style={{ "--i": 1 } as React.CSSProperties}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Included in every plan</p>
+              <ul className="mt-4 grid gap-3 sm:grid-cols-3 sm:gap-6">
+                {RONDVA_INCLUDED.map((line) => (
+                  <li key={line} className="flex gap-3 text-[15px] leading-snug text-ink">
+                    <svg
+                      viewBox="0 0 20 20"
+                      className="mt-px h-5 w-5 shrink-0 text-blue"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m4 10.5 4 4 8-9" />
+                    </svg>
                     {line}
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 flex items-baseline justify-between border-t border-line pt-6">
-                <div>
-                  <p className="font-semibold text-ink">Additional reports</p>
-                  <p className="text-sm text-muted">10 extra AI-drafted reports</p>
-                </div>
-                <p className="rv-tnum font-serif text-2xl font-semibold text-ink">$39.99</p>
-              </div>
             </div>
+
+            <p className="rv-reveal mt-6 max-w-3xl text-sm leading-relaxed text-muted" style={{ "--i": 1 } as React.CSSProperties}>
+              {RONDVA_PRICE_NOTE}{" "}
+              Plans and report packs go on sale in the iPhone app once Rondva is on the App Store.
+              It&apos;s coming soon, and nothing can be bought on this page.
+            </p>
           </div>
         </section>
 
