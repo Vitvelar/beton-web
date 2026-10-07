@@ -7,6 +7,10 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // sannreynt í kóða) og samræmd við App Privacy-svör Rondva. Engar fastar
 // geymslutímalengdir nema þær sem eru ákveðnar (biðlisti 24 mán., bókhald 7 ár).
 // Akkerin (#processors o.fl.) eru notuð af /terms og appinu: ekki endurnefna.
+// 2026-10-07 (OPS-14, til yfirferðar lögfræðings): veðurþjónustur (Nominatim + MET Norway),
+// Apple-kaup og skráning fyrirtækis. Heimildir: beton-app supabase/functions/weather-lookup
+// (README + weather.ts), supabase/migrations/20261007120000_apple_in_app_purchases.sql,
+// src/lib/onboarding.ts (vefsíða fyrirtækis er geymd á notandanum, aðeins til yfirferðar).
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -43,13 +47,23 @@ const processors: Processor[] = [
     where: "United States",
   },
   {
+    name: "OpenStreetMap Foundation (Nominatim)",
+    role: "Finds the map coordinates of the inspection address for the weather auto-fill. Receives only the address.",
+    where: "Operated from the United Kingdom",
+  },
+  {
+    name: "MET Norway (Norwegian Meteorological Institute)",
+    role: "Gives the weather forecast for those coordinates. Receives only the coordinates.",
+    where: "Norway",
+  },
+  {
     name: "Resend",
     role: "Sends email: the notice to us when someone joins the waitlist, and emails we send to you.",
     where: "United States (sending from the EU)",
   },
   {
     name: "Apple and Google",
-    role: "Sign-in with your Apple or Google account, under their own privacy policies. Apple also takes App Store payments.",
+    role: "Sign-in with your Apple or Google account, under their own privacy policies. Apple also takes App Store payments and sends us signed records of in-app purchases.",
     where: "United States",
   },
   {
@@ -134,6 +148,14 @@ const sections: LegalSection[] = [
           change it.
         </p>
         <p>
+          When you register a company in the dashboard, we ask for the company name, the
+          country and, if you want to give it, a website. The name and country create the
+          company and set its defaults, such as the report language and rating scheme. The
+          website is optional; we save it with your account and may use it to check that the
+          company is genuine when we review a new registration. It never changes what you can
+          access.
+        </p>
+        <p>
           We use this to let you in, connect you to your company and put your company&apos;s
           name on its reports. The legal basis is the agreement with you or your company (GDPR
           art. 6(1)(b)) and, for sign-in security records, our legitimate interest in keeping
@@ -196,6 +218,52 @@ const sections: LegalSection[] = [
     ),
   },
   {
+    id: "weather",
+    title: "Weather auto-fill",
+    body: (
+      <>
+        <p>
+          In the Rondva app the weather field of an inspection can fill itself in. This happens
+          when you create the inspection, or open its details, on the day of the inspection and
+          the weather field is still empty, or when you tap the weather button. You can always
+          change the text or type the weather yourself.
+        </p>
+        <p>To work out the weather, the app asks our server, and our server then:</p>
+        <ul className={list}>
+          <li>
+            sends the inspection&apos;s address (street, town or suburb and city, postcode) and
+            your company&apos;s country to <strong>Nominatim</strong>, the geocoding service of
+            the <strong>OpenStreetMap Foundation</strong>, to get the coordinates of the place;
+          </li>
+          <li>
+            sends those coordinates, rounded to about 100 metres, to <strong>MET Norway</strong>{" "}
+            (the Norwegian Meteorological Institute), which returns its forecast. We pick the
+            hour that matches the inspection and turn it into a short text such as &ldquo;Fair,
+            12 °C, light wind&rdquo;.
+          </li>
+        </ul>
+        <p>
+          Nothing else is sent: not your name, email address or account details, not the
+          client&apos;s name, and no notes or photos. The requests come from our server, so
+          both services see our server&apos;s IP address and not your phone&apos;s. The app does
+          not use your phone&apos;s location for this, only the address you entered.
+        </p>
+        <p>
+          The only thing saved is the short weather text, in the inspection&apos;s weather field.
+          The coordinates are not saved with the inspection. Our server may keep a looked-up
+          location in its working memory for up to 30 days, because OpenStreetMap&apos;s usage
+          policy asks services to reuse results, but it is not stored in our database.
+        </p>
+        <p>
+          Location data &copy; OpenStreetMap contributors, available under the{" "}
+          <LegalLink href="https://www.openstreetmap.org/copyright">Open Database License</LegalLink>.
+          Weather data from MET Norway, licensed under{" "}
+          <LegalLink href="https://api.met.no/doc/License">CC BY 4.0</LegalLink>.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "dashboard",
     title: "The web dashboard",
     body: (
@@ -220,10 +288,24 @@ const sections: LegalSection[] = [
       <>
         <p>
           When paid plans are offered in the app, you buy them through the App Store. Apple
-          handles the payment; we never see your card details. Apple tells us what was bought,
-          when, a transaction identifier and whether it is active, refunded or expired, and we
-          link that to your company to give it report credits. We keep these records for as
-          long as accounting law requires (seven years in Iceland).
+          processes the payment under its own terms; we never see your card details or Apple
+          ID.
+        </p>
+        <p>
+          For each purchase Apple gives us a digitally signed record, through the app and as
+          notices from Apple&apos;s servers about renewals and refunds, and our server checks
+          Apple&apos;s signature before using it. The record contains the product, the purchase
+          and expiry dates, transaction identifiers, the store country and price, and whether
+          the purchase renewed, expired or was refunded. The app gives Apple a random purchase
+          identifier, not your account ID, so the record can be matched to your account.
+        </p>
+        <p>
+          We link the record to the account that made the purchase and to its company, and use
+          it to give the company its report credits, and to take back unused credits if Apple
+          refunds the purchase. We keep these records as accounting records for as long as
+          accounting law requires (seven years in Iceland), even if the account is later
+          deleted. The legal basis is the agreement with your company (GDPR art. 6(1)(b)) and
+          our legal duty to keep accounting records (art. 6(1)(c)).
         </p>
       </>
     ),
@@ -301,8 +383,10 @@ const sections: LegalSection[] = [
         <ProcessorTable />
         <p>
           Each of these acts as a processor under a data-processing agreement, except Apple
-          and Google for sign-in and payment, which act under their own terms. Where a
-          provider is outside the EEA, transfers rest on the EU Standard Contractual Clauses.
+          and Google for sign-in and payment, and OpenStreetMap Foundation and MET Norway for
+          the weather auto-fill, which are public services that act under their own terms of
+          use. Where a processor is outside the EEA, transfers rest on the EU Standard
+          Contractual Clauses.
           We don&apos;t sell personal data and don&apos;t share it with anyone else, unless the
           law requires us to.
         </p>
@@ -394,7 +478,7 @@ export default function RondvaPrivacyPage() {
         </p>
       }
       sections={sections}
-      revised="30 September 2026"
+      revised="7 October 2026"
       toc
     />
   );
