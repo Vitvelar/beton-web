@@ -18,6 +18,9 @@ const text = (src) =>
     .replace(/&apos;/g, "'")
     .replace(/&ldquo;|&rdquo;/g, '"')
     .replace(/&copy;/g, '©')
+    .replace(/&rarr;/g, '→')
+    .replace(/&mdash;/g, '—')
+    .replace(/&amp;/g, '&')
     .replace(/\s+/g, ' ');
 
 const PAGE = 'src/app/(rondva)/rondva/privacy/page.tsx';
@@ -93,5 +96,50 @@ pass('company registration: name, country and optional website described; websit
 assert.match(code, /revised="7 October 2026"/);
 for (const s of ['Anthropic', 'Supabase', 'Vercel', 'Expo (650 Industries)', 'Resend', 'Google Analytics and Meta']) assert.ok(plain.includes(s), `${s} still listed`);
 pass('revision date updated; existing providers still listed');
+
+// 7. Lagagrunnar: hver tilgangur með grein GDPR; vinnsluaðili fyrir skoðanir; samþykki fyrir vefkökur.
+const bases = section('legal-bases');
+for (const s of [
+  'art. 6(1)(b)', 'art. 6(1)(c)', 'art. 6(1)(f)', 'art. 6(1)(a)',
+  'we act for your inspection company as its processor', 'explicit confirmation in the app each time',
+  'Analytics and marketing cookies on rondva.com', 'your consent',
+]) assert.ok(bases.includes(s), `legal-bases section says: ${s}`);
+pass('legal bases listed per purpose (contract, accounting duty, legitimate interest, consent), processor role for inspections');
+
+// 8. Eyðing reiknings í appinu: leiðin, hvað er eytt, hvað helst, Apple-afturköllun, áskrift segist ekki upp.
+const deletion = section('deletion');
+for (const s of [
+  'Settings → Delete account', 'ask Apple to revoke', 'inspections with their rooms, observations, photos and reports',
+  'only member of your company', 'Apple purchase records, as accounting records, no longer linked',
+  'usage record for each AI draft', 'no inspection content', 'Encrypted backups', 'Anthropic',
+  'managed by a partner company', 'does not cancel an App Store subscription',
+]) assert.ok(deletion.includes(s), `deletion section says: ${s}`);
+assert.ok(section('retention').includes('even if the account is deleted'), 'retention: purchase records survive deletion');
+assert.ok(section('purchases').includes('Deleting your account does not cancel an App Store subscription'), 'purchases: deletion does not cancel the subscription');
+pass('account deletion in the app: path, what is deleted, what stays, Apple revoke, subscription not cancelled');
+
+// 9. Flutningur milli landa (EES, SCC, NZ Privacy Act 2020) og börn.
+const transfers = section('transfers');
+for (const s of ['European Union (Ireland)', 'Standard Contractual Clauses', 'public services we have no contract with', 'If you are in New Zealand', 'Privacy Act 2020']) {
+  assert.ok(transfers.includes(s), `transfers section says: ${s}`);
+}
+const rights = section('rights');
+for (const s of ['If you are in New Zealand', 'principles 6 and 7', 'Office of the Privacy Commissioner', 'Persónuvernd']) {
+  assert.ok(rights.includes(s), `rights section says: ${s}`);
+}
+const children = section('children');
+for (const s of ['not intended for anyone under 18', "don't knowingly collect personal data from children"]) assert.ok(children.includes(s), `children section says: ${s}`);
+pass('international transfers (EEA/SCC, public weather services, NZ), NZ access/correction + Privacy Commissioner, children');
+
+// 10. Samræmi við appið: engin staðsetningarheimild, ekkert Google Drive fyrir Rondva-viðskiptavini,
+//     tölvupóstur til aðstoðar og tengiliðurinn.
+assert.ok(section('inspections').includes("does not use your device's location, contacts or microphone"), 'no device location/contacts/microphone');
+assert.ok(!/drive archive|connected its own google drive/i.test(plain), 'Rondva sends nothing to Google Drive; the page must not claim a Drive archive');
+assert.ok(section('dashboard').includes('Rondva does not send your reports to Google Drive or any other storage service'), 'dashboard: no Drive');
+assert.ok(section('contacting-us').includes('rondva@rondva.com') || /mail\}/.test(code), 'contact path for emails');
+assert.match(read('src/lib/brand.ts'), /contactEmail: "rondva@rondva\.com"/);
+assert.ok(plain.includes('Google also hosts our email'), 'Google Workspace email named as a processor');
+assert.ok(!/Operated from the United Kingdom/.test(plain), 'no unverified server-location claim for OpenStreetMap');
+pass('matches the app: no device location, no Google Drive for Rondva, email contact, Google email hosting named, no server-location claim for OSMF');
 
 console.log(`${n} Rondva privacy checks passed; no network calls made.`);

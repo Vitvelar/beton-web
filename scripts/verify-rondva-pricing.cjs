@@ -3,7 +3,7 @@
 // (mælt með), Report pack $29.99/10 sem renna ekki út, stofnmannatilboð 20 ókeypis skýrslur á
 // mánuði til 31. janúar 2027. Athugar líka að síðurnar noti tölurnar úr einni heimild, að
 // gömlu verðin og „2 free reports“ séu horfin, að tilboðið nefni ekki Ísland og að textinn
-// haldi áfram að segja satt: appið er „coming to the App Store“, ekkert er til sölu á vefnum.
+// haldi áfram að segja satt: appið er „coming to the App Store“, ekkert er til sölu á vefnum (/support segir að kaup séu í appinu 1.3.0 og síðar).
 // Keyrt með `node scripts/verify-rondva-pricing.cjs` — engin bygging, engin netköll.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -128,7 +128,9 @@ for (const claim of [/available (now )?on the App Store/i, /download on the App 
   assert.ok(!claim.test(landingCode), `landing must not claim ${claim}`);
   assert.ok(!claim.test(stripComments(support)), `support must not claim ${claim}`);
 }
-assert.match(stripComments(support), /once it is\s+available/);
+// /support: kaupin eru í appinu (1.3.0 og síðar), ekkert á vefnum.
+assert.match(stripComments(support), /bought inside the Rondva iPhone app \(version 1\.3\.0 and later\)/);
+assert.match(stripComments(support), /Nothing can\s+be bought on this website/);
 assert.match(stripComments(terms), /When paid plans are offered in the app/);
 // Innskráningarsíðan lofar „first reports are free“ án talna — engin 2.
 assert.ok(!/\b2 (free )?reports\b/i.test(stripComments(login)));
