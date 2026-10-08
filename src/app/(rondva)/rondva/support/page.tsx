@@ -100,17 +100,19 @@ const sections: LegalSection[] = [
         <p>
           On the day of the inspection, if the weather field is empty, Rondva fills it in with
           a short forecast for the property, such as &ldquo;Fair, 12 °C, light wind&rdquo;. You can
-          also tap the weather button yourself. It needs the street address, a suburb or town
+          also tap the weather button yourself. It needs a suburb or town
           or a postcode, and your company&apos;s country (which you chose when you registered).
-          If the address can&apos;t be found, add the suburb or city or the postcode, or type
+          If the place can&apos;t be found, add the suburb or city or the postcode, or type
           the weather in.
         </p>
         <p>
           It is a forecast, not a measurement at the property, so check it and change it if
-          conditions were different. Only the address you entered is used. Rondva never asks
+          conditions were different. Only the suburb or town, postcode and country are
+          used to find the place; the street address is not sent anywhere. Rondva never asks
           for your phone&apos;s location. What is sent, and to whom, is in the{" "}
           <LegalLink href="/privacy#weather">privacy policy</LegalLink>. Weather data from MET
-          Norway (CC BY 4.0); location data &copy; OpenStreetMap contributors.
+          Norway (CC BY 4.0). Location data: GeoNames (CC BY 4.0),{" "}
+          <LegalLink href="https://www.geonames.org">geonames.org</LegalLink>.
         </p>
       </>
     ),
@@ -312,7 +314,7 @@ export default function RondvaSupportPage() {
         </p>
       }
       sections={sections}
-      revised="7 October 2026"
+      revised="8 October 2026"
     >
       <div className="mt-10 rounded-card border border-line bg-paper p-6 shadow-[0_24px_60px_-40px_rgba(16,20,24,0.25)]">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">Contact</p>

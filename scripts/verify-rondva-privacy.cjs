@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS verify script, same as the other scripts/verify-*.cjs */
-// rondva.com/privacy (OPS-14): textinn nefnir veðurþjónusturnar (OpenStreetMap Nominatim og
+// rondva.com/privacy (OPS-14): textinn nefnir veðurþjónusturnar (MET Norway; staðsetning úr eigin GeoNames-töflu, ekki OpenStreetMap Nominatim og
 // MET Norway), Apple-kaup og skráningu fyrirtækis, heldur akkerum sem /terms og appið vísa á og
 // segir ekkert sem kóðinn gerir ekki (t.d. engin gögn um notanda til veðurþjónustu).
 // Keyrt með `node scripts/verify-rondva-privacy.cjs` — engin bygging, engin netköll.
@@ -49,28 +49,33 @@ pass('existing anchors kept (terms still links to /privacy#processors), #weather
 // 2. Veðurútfylling: hvað er sent, hvert, hvað ekki, og tilvísanir leyfanna.
 const weather = section('weather');
 for (const s of [
-  'Nominatim', 'OpenStreetMap Foundation', 'MET Norway', 'Norwegian Meteorological Institute',
-  'address (street, town or suburb and city, postcode)', "company's country", 'coordinates, rounded to about 100 metres',
+  'GeoNames', 'our own database, in the European Union', 'MET Norway', 'Norwegian Meteorological Institute',
+  'only the town or', 'postcode', "company's country", 'The street address is not used for this and', 'is not sent anywhere',
+  'coordinates, rounded to about 100 metres',
   'on the day of the inspection', 'weather field is still empty', 'type the weather yourself',
-  'Nothing else is sent', 'not your name, email address or account details', "not the client's name", 'no notes or photos',
-  "both services see our server's IP address and not your phone's", "does not use your phone's location",
-  'The coordinates are not saved with the inspection', 'not stored in our database',
-  '© OpenStreetMap contributors', 'CC BY 4.0',
+  'Nothing else is sent', 'not the street address, not your name, email address or account details', "not the client's name", 'no notes or photos',
+  "MET Norway sees our server's IP address and not your phone's", "does not use your phone's location",
+  'The coordinates are not saved with the inspection', 'not written to our logs', 'no personal data',
+  'This work includes data from GeoNames', 'Creative Commons Attribution 4.0', 'Weather data from MET Norway', 'CC BY 4.0',
 ]) assert.ok(weather.includes(s), `weather section says: ${s}`);
-assert.match(code, /https:\/\/www\.openstreetmap\.org\/copyright/);
+for (const s of ['Nominatim', 'OpenStreetMap', 'Open Database License', 'working memory']) assert.ok(!weather.includes(s), `weather section no longer mentions: ${s}`);
+assert.ok(!/Nominatim|OpenStreetMap/i.test(text(code.replace(/\/\/[^\n]*/g, ''))), 'no OpenStreetMap/Nominatim anywhere on /privacy (comments excluded)');
+assert.match(code, /https:\/\/www\.geonames\.org/);
+assert.match(code, /https:\/\/creativecommons\.org\/licenses\/by\/4\.0\//);
 assert.match(code, /https:\/\/api\.met\.no\/doc\/License/);
 assert.ok(!/fastanumer|fastanúmer/i.test(weather), 'no Icelandic property-ID wording in the weather section');
-pass('weather auto-fill: address + country to Nominatim, rounded coordinates to MET Norway, nothing else, OSM and CC BY 4.0 attribution with links');
+pass('weather auto-fill: place found in our own EU table (GeoNames), only rounded coordinates to MET Norway, street address sent nowhere, GeoNames + MET CC BY 4.0 attribution with links, no OSM/Nominatim');
 
 // 3. Vinnsluaðilatafla: báðar þjónusturnar, Apple-línan og undanþágan frá vinnslusamningi.
 const processors = section('processors');
 const table = code.slice(code.indexOf('const processors'), code.indexOf('function ProcessorTable'));
-for (const s of ['name: "OpenStreetMap Foundation (Nominatim)"', 'name: "MET Norway (Norwegian Meteorological Institute)"', 'Receives only the address.', 'Receives only the coordinates.']) {
+for (const s of ['name: "MET Norway (Norwegian Meteorological Institute)"', 'Receives only coordinates rounded to about 100 metres.']) {
   assert.ok(table.includes(s), `processor table: ${s}`);
 }
+assert.ok(!/OpenStreetMap|Nominatim|GeoNames/.test(table), 'processor table: OSMF removed, GeoNames is a data source not a recipient');
 assert.ok(text(table).includes('Apple also takes App Store payments and sends us signed records of in-app purchases'), 'Apple row covers purchases');
-assert.ok(processors.includes('OpenStreetMap Foundation and MET Norway for the weather auto-fill, which are public services that act under their own terms of use'), 'no DPA claimed for the public services');
-pass('processor table lists OpenStreetMap Foundation + MET Norway and Apple purchase records; text does not claim a DPA for the public services');
+assert.ok(processors.includes('MET Norway for the weather auto-fill, which is a public service that acts under its own terms of use'), 'no DPA claimed for the public services');
+pass('processor table lists MET Norway (no OpenStreetMap Foundation) and Apple purchase records; text does not claim a DPA for the public services');
 
 // 4. Apple-kaup.
 const purchases = section('purchases');
@@ -93,7 +98,7 @@ for (const s of [
 pass('company registration: name, country and optional website described; website never affects access');
 
 // 6. Dagsetning uppfærð og ekkert úr gamla orðalaginu horfið óvart.
-assert.match(code, /revised="7 October 2026"/);
+assert.match(code, /revised="8 October 2026"/);
 for (const s of ['Anthropic', 'Supabase', 'Vercel', 'Expo (650 Industries)', 'Resend', 'Google Analytics and Meta']) assert.ok(plain.includes(s), `${s} still listed`);
 pass('revision date updated; existing providers still listed');
 
@@ -120,7 +125,7 @@ pass('account deletion in the app: path, what is deleted, what stays, Apple revo
 
 // 9. Flutningur milli landa (EES, SCC, NZ Privacy Act 2020) og börn.
 const transfers = section('transfers');
-for (const s of ['European Union (Ireland)', 'Standard Contractual Clauses', 'public services we have no contract with', 'If you are in New Zealand', 'Privacy Act 2020']) {
+for (const s of ['European Union (Ireland)', 'Standard Contractual Clauses', 'MET Norway is a public service we have no contract with', 'If you are in New Zealand', 'Privacy Act 2020']) {
   assert.ok(transfers.includes(s), `transfers section says: ${s}`);
 }
 const rights = section('rights');
@@ -129,7 +134,7 @@ for (const s of ['If you are in New Zealand', 'principles 6 and 7', 'Office of t
 }
 const children = section('children');
 for (const s of ['not intended for anyone under 18', "don't knowingly collect personal data from children"]) assert.ok(children.includes(s), `children section says: ${s}`);
-pass('international transfers (EEA/SCC, public weather services, NZ), NZ access/correction + Privacy Commissioner, children');
+pass('international transfers (EEA/SCC, public weather service, NZ), NZ access/correction + Privacy Commissioner, children');
 
 // 10. Samræmi við appið: engin staðsetningarheimild, ekkert Google Drive fyrir Rondva-viðskiptavini,
 //     tölvupóstur til aðstoðar og tengiliðurinn.
@@ -139,7 +144,7 @@ assert.ok(section('dashboard').includes('Rondva does not send your reports to Go
 assert.ok(section('contacting-us').includes('rondva@rondva.com') || /mail\}/.test(code), 'contact path for emails');
 assert.match(read('src/lib/brand.ts'), /contactEmail: "rondva@rondva\.com"/);
 assert.ok(plain.includes('Google also hosts our email'), 'Google Workspace email named as a processor');
-assert.ok(!/Operated from the United Kingdom/.test(plain), 'no unverified server-location claim for OpenStreetMap');
-pass('matches the app: no device location, no Google Drive for Rondva, email contact, Google email hosting named, no server-location claim for OSMF');
+assert.ok(!/Operated from the United Kingdom/.test(plain), 'no unverified server-location claim');
+pass('matches the app: no device location, no Google Drive for Rondva, email contact, Google email hosting named, no server-location claim');
 
 console.log(`${n} Rondva privacy checks passed; no network calls made.`);
