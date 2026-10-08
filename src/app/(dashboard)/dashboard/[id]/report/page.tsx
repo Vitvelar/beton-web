@@ -1,5 +1,5 @@
 import "@/lib/report/typography.css";
-import { formatReportDate } from "@/lib/report/date";
+import { englishVariantOf, formatAreaFor, formatReportDateFor } from "@/lib/report/english-variant";
 import { reportPrintCss } from "@/lib/report/print-css";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -37,6 +37,8 @@ interface ReportData {
   rating_scheme?: string;
   /** Skýrslusnið (default | nzs_4306), stimplað við gerð; vantar = núverandi snið. */
   report_standard?: string;
+  /** Enskt afbrigði (en-NZ/AU/GB/IE/US/CA), stimplað við gerð; vantar = almenn enska (eins og áður). */
+  english_variant?: string;
   /** NZS 4306-hluti (aðeins þegar report_standard = nzs_4306) — sjá src/lib/report/nzs4306.ts. */
   nzs4306?: NzReportData["nzs4306"];
   inspection: {
@@ -222,7 +224,11 @@ export default async function ReportPage({
   // Skýrslumálið (stimplað í skýrsluna) ræður efninu; hnapparnir efst eru hluti
   // af stjórnborðinu og fylgja viðmótsmáli notandans.
   const locale = reportLocaleOf(report);
-  const t = reportCopy(locale);
+  // Enskt afbrigði (stimplað): dagsetningar, stærð (en-US) og stafsetning fastra texta (en-US).
+  // Enginn stimpill (íslenska, almenn enska, eldri skýrslur) = 'en' = nákvæmlega eins og áður.
+  const variant = englishVariantOf(report);
+  const formatDate = (value: string | null | undefined) => formatReportDateFor(value, variant);
+  const t = reportCopy(locale, variant);
   // Matskerfið (stimplað) ræður heitum, skýringum, litum og táknum alvarleika.
   const scheme = ratingSchemeOf(report);
   const condition = scheme === "condition_1_3";
@@ -425,7 +431,7 @@ export default async function ReportPage({
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-fog">{t.inspectionDate}</p>
-                <p className="font-semibold text-ink mt-1">{formatReportDate(report.inspection.inspection_date)}</p>
+                <p className="font-semibold text-ink mt-1">{formatDate(report.inspection.inspection_date)}</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-fog">{t.inspector}</p>
@@ -562,7 +568,7 @@ export default async function ReportPage({
                 <InfoTableRow label={t.propertyId} value={report.inspection.fastanumer} />
               )}
               {propData.tegund ? <InfoTableRow label={t.propertyType} value={String(propData.tegund)} /> : null}
-              {propData.staerd_m2 ? <InfoTableRow label={t.size} value={`${propData.staerd_m2} m²`} /> : null}
+              {propData.staerd_m2 ? <InfoTableRow label={t.size} value={formatAreaFor(propData.staerd_m2, variant)} /> : null}
               {propData.byggingarar ? <InfoTableRow label={t.yearBuilt} value={String(propData.byggingarar)} /> : null}
               {propData.byggingarafangi ? <InfoTableRow label={t.buildStage} value={String(propData.byggingarafangi)} /> : null}
             </tbody>
@@ -572,7 +578,7 @@ export default async function ReportPage({
           <table className="w-full text-sm">
             <tbody className="divide-y divide-concrete/50">
               <InfoTableRow label={t.customer} value={report.inspection.customer_name} />
-              <InfoTableRow label={t.inspectionDate} value={formatReportDate(report.inspection.inspection_date)} />
+              <InfoTableRow label={t.inspectionDate} value={formatDate(report.inspection.inspection_date)} />
               <InfoTableRow label={t.inspector} value={inspectorName} />
               {report.inspection.attendees?.length > 0 && (
                 <InfoTableRow label={t.attendees} value={report.inspection.attendees.join(", ")} />
@@ -857,7 +863,7 @@ export default async function ReportPage({
             <span>
               {t.reportCreated}{" "}
               {inspection.report_generated_at
-                ? formatReportDate(inspection.report_generated_at)
+                ? formatDate(inspection.report_generated_at)
                 : "—"}
             </span>
           </div>
