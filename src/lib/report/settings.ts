@@ -1,4 +1,5 @@
 import { isReportLocale, type ReportLocale } from "./i18n";
+import { type EnglishVariant, resolveEnglishVariant } from "./english-variant";
 
 // Tungumál, matskerfi og skýrslusnið fyrirtækis (companies.report_locale / rating_scheme /
 // report_standard, beton-app flutningar 20260927…_company_report_language og NZS 4306).
@@ -25,6 +26,8 @@ export interface ReportSettings {
   locale: ReportLocale;
   scheme: RatingScheme;
   standard: ReportStandard;
+  /** Aðeins á ensku: afbrigði eftir landi (english-variant.ts). Íslenska fær engan lykil. */
+  englishVariant?: EnglishVariant;
 }
 
 /** Eldri skýrslur og notendur án fyrirtækis: nákvæmlega eins og fyrir breytinguna. */
@@ -43,13 +46,13 @@ export function resolveReportSettings(
   const standard: ReportStandard = isReportStandard(company.report_standard)
     ? company.report_standard
     : country === "NZ" ? "nzs_4306" : "default";
-  return {
-    locale: isReportLocale(company.report_locale) ? company.report_locale : country === "IS" ? "is" : "en",
-    scheme: isRatingScheme(company.rating_scheme)
-      ? company.rating_scheme
-      : standard === "nzs_4306" ? "nz_terms" : CONDITION_RATING_COUNTRIES.has(country) ? "condition_1_3" : "standard",
-    standard,
-  };
+  const locale: ReportLocale = isReportLocale(company.report_locale) ? company.report_locale : country === "IS" ? "is" : "en";
+  const scheme: RatingScheme = isRatingScheme(company.rating_scheme)
+    ? company.rating_scheme
+    : standard === "nzs_4306" ? "nz_terms" : CONDITION_RATING_COUNTRIES.has(country) ? "condition_1_3" : "standard";
+  return locale === "en"
+    ? { locale, scheme, standard, englishVariant: resolveEnglishVariant(country) }
+    : { locale, scheme, standard };
 }
 
 /** Matskerfi vistaðrar skýrslu; engin/óþekkt gildi = núverandi kerfi (eldri skýrslur). */
