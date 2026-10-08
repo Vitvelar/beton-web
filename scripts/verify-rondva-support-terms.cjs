@@ -76,13 +76,16 @@ for (const s of [
   'Subscriptions renew automatically every month at the price shown, unless you cancel at least 24 hours before the end of the current period',
   'within 24 hours before the period ends', 'Apple account settings', 'Manage subscription', 'Cancelling stops the next renewal',
   'Deleting your Rondva account does not cancel a subscription', 'do not carry over', "don't expire",
-  'free reports from the founding offer first, then the reports of your subscription period, then report packs',
+  'free reports from your first month first, then the reports of your subscription period, then report packs',
   'Pro starts straight away', 'unused Solo reports end', 'Restore purchases', 'Refunds are handled by Apple',
-  'we take back the unused reports', 'Founding offer', 'AI-drafted reports free every month',
+  'we take back the unused reports', 'First month free.', 'AI-drafted reports free for the first',
+  'whichever runs out first', 'nothing is charged afterwards', 'once per company and once per person',
+  'same Apple or Google sign-in or email address', 'does not get another free month',
 ]) assert.ok(pricing.includes(s), `terms/pricing says: ${s}`);
 assert.ok(section('terms', 'ending').includes('does not cancel an App Store subscription'), 'terms/ending: deletion does not cancel the subscription');
 assert.ok(!/iceland|icelandic/i.test(pricing), 'terms pricing section does not mention Iceland');
-pass('terms: App Store purchase, Apple ID charge, auto-renewal and 24 h cancellation, manage in Apple settings, credit order, Solo→Pro, restore, refund, launch offer');
+assert.ok(!/founding offer|every month, with no|31 January 2027/i.test(pricing), 'terms: the founding offer (20 a month until 31 January 2027) is gone');
+pass('terms: App Store purchase, Apple ID charge, auto-renewal and 24 h cancellation, manage in Apple settings, credit order, Solo→Pro, restore, refund, free first month (once per company/person)');
 
 // 4. Gervigreindardrög: skoðunarmaður yfirfer og ber ábyrgð; veðurtexti er spá.
 const reports = section('terms', 'reports');
@@ -127,7 +130,7 @@ for (const s of ['forecast, not a measurement', "never asks for your phone's loc
 pass('/support: restore purchases, manage/cancel (app and iPhone), refunds, charged-but-no-reports, in-app deletion + email fallback, what stays, weather FAQ');
 
 // 7. Heildarsamræmi: dagsetning, ekkert „coming soon“ um kaup í /support, hvergi „no automated account deletion“.
-for (const page of ['terms', 'support', 'privacy']) assert.match(codes[page], /revised="7 October 2026"/, `${page}: revision date`);
+for (const page of ['terms', 'support', 'privacy']) assert.match(codes[page], /revised="8 October 2026"/, `${page}: revision date`);
 for (const page of ['terms', 'support', 'privacy']) {
   assert.ok(!/no automated account deletion|can only be deleted by (emailing|writing)/i.test(plains[page]), `${page}: no stale "email only" deletion claim`);
 }

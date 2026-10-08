@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS verify script, same as the other scripts/verify-*.cjs */
 // Verð Rondva (src/lib/rondva-pricing.ts) og textinn á rondva.com: Solo $49.99/8, Pro $99.99/30
-// (mælt með), Report pack $29.99/10 sem renna ekki út, stofnmannatilboð 20 ókeypis skýrslur á
-// mánuði til 31. janúar 2027. Athugar líka að síðurnar noti tölurnar úr einni heimild, að
+// (mælt með), Report pack $29.99/10 sem renna ekki út, fyrsti mánuður frír: 20 ókeypis AI-skýrslur
+// í 30 daga frá virkjun (kom 2026-10-08 í stað stofnmannatilboðsins 20 á mánuði til 31. janúar 2027). Athugar líka að síðurnar noti tölurnar úr einni heimild, að
 // gömlu verðin og „2 free reports“ séu horfin, að tilboðið nefni ekki Ísland og að textinn
 // haldi áfram að segja satt: appið er „coming to the App Store“, ekkert er til sölu á vefnum (/support segir að kaup séu í appinu 1.3.0 og síðar).
 // Keyrt með `node scripts/verify-rondva-pricing.cjs` — engin bygging, engin netköll.
@@ -29,7 +29,7 @@ const { usd } = mod.exports;
 const RONDVA_PLANS = plain(mod.exports.RONDVA_PLANS);
 const RONDVA_PACK = plain(mod.exports.RONDVA_PACK);
 const RONDVA_INCLUDED = plain(mod.exports.RONDVA_INCLUDED);
-const RONDVA_OFFER = plain(mod.exports.RONDVA_OFFER);
+const RONDVA_TRIAL = plain(mod.exports.RONDVA_TRIAL);
 const RONDVA_PRICE_NOTE = mod.exports.RONDVA_PRICE_NOTE;
 
 let n = 0;
@@ -58,14 +58,14 @@ assert.deepEqual(RONDVA_INCLUDED, [
 ]);
 pass('every plan includes 2 AI revisions, unlimited editing and re-exports, company branding');
 
-// 4. Stofnmannatilboðið: 20 á mánuði til 31. janúar 2027, ekkert kort, ekkert Ísland.
-assert.equal(RONDVA_OFFER.freeReportsPerMonth, 20);
-assert.equal(RONDVA_OFFER.endsOn, '31 January 2027');
-for (const text of [RONDVA_OFFER.endsOn, RONDVA_PRICE_NOTE, RONDVA_PACK.blurb, ...RONDVA_PLANS.map((p) => p.blurb), ...RONDVA_INCLUDED]) {
+// 4. Fyrsti mánuður frír: 20 skýrslur / 30 dagar, ekkert kort, ekkert Ísland; stofnmannatilboðið horfið.
+assert.deepEqual(RONDVA_TRIAL, { freeReports: 20, days: 30 });
+assert.equal(mod.exports.RONDVA_OFFER, undefined, 'RONDVA_OFFER (20 a month until 31 January 2027) is gone');
+for (const text of [RONDVA_PRICE_NOTE, RONDVA_PACK.blurb, ...RONDVA_PLANS.map((p) => p.blurb), ...RONDVA_INCLUDED]) {
   assert.ok(!/iceland|icelandic/i.test(text), `no mention of Iceland in: ${text}`);
 }
 assert.equal(RONDVA_PRICE_NOTE, 'Prices in USD; your App Store shows your local price incl. tax.');
-pass('founding offer is 20 free reports a month until 31 January 2027; no mention of Iceland; USD / local-price note is exact');
+pass('first month free is 20 AI reports for 30 days; founding offer gone; no mention of Iceland; USD / local-price note is exact');
 
 // 5. Síðurnar nota heimildina og sýna tilboðið og athugasemdina.
 const landing = read('src/app/(rondva)/rondva/page.tsx');
@@ -81,7 +81,9 @@ for (const [name, src] of [['landing', landing], ['support', support]]) {
   for (const price of ['49.99', '99.99', '29.99']) {
     assert.ok(!code.includes(price), `${name} must read ${price} from rondva-pricing.ts, not hardcode it`);
   }
-  assert.match(code, /RONDVA_OFFER/, `${name} shows the founding offer`);
+  assert.match(code, /RONDVA_TRIAL\.freeReports/, `${name} shows the free first month`);
+  assert.match(code, /RONDVA_TRIAL\.days/, `${name} shows the 30 days`);
+  assert.ok(!/RONDVA_OFFER|Founding offer|founding offer|every month\.|free every month|31 January 2027/.test(code), `${name}: founding-offer copy removed`);
 }
 assert.match(landing, /RONDVA_PRICE_NOTE/);
 assert.match(landing, /RONDVA_PLANS\.map/);
@@ -90,7 +92,9 @@ assert.match(landing, /RONDVA_INCLUDED/);
 assert.match(landing, /Recommended/);
 assert.match(landing, /id="pricing"/);
 assert.match(support, /RONDVA_PRICE_NOTE/);
-pass('landing and support read prices from one module and show offer, plans, pack and the USD note');
+assert.match(stripComments(terms), /RONDVA_TRIAL\.freeReports/);
+assert.ok(!/RONDVA_OFFER|Founding offer|31 January 2027/.test(stripComments(terms)), 'terms: founding-offer copy removed');
+pass('landing, support and terms read prices and the free first month from one module; founding-offer copy removed');
 
 // 6. Gömul verð og „2 free reports“ eru farin úr öllu Rondva-svæðinu.
 const rondvaFiles = [

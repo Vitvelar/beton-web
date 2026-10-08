@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BRANDS } from "@/lib/brand";
 import {
-  RONDVA_OFFER,
+  RONDVA_TRIAL,
   RONDVA_PACK,
   RONDVA_PLANS,
   RONDVA_PRICE_NOTE,
@@ -144,10 +144,12 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          <strong>Founding offer:</strong> until {RONDVA_OFFER.endsOn}, every company gets{" "}
-          <strong>{RONDVA_OFFER.freeReportsPerMonth} AI-drafted reports free every month</strong>.
-          No card is needed. One report covers the first AI draft for an inspection plus up to 2
-          AI revisions of it. Editing text by hand, exporting again, and creating a report
+          <strong>First month free:</strong> every new company gets{" "}
+          <strong>{RONDVA_TRIAL.freeReports} AI-drafted reports free for its first {RONDVA_TRIAL.days} days</strong>,
+          counted from the day its company account is activated, whichever runs out first. No
+          card is needed and nothing is charged when the month ends. The free month is given once
+          per company and per sign-in. One report covers the first AI draft for an inspection plus
+          up to 2 AI revisions of it. Editing text by hand, exporting again, and creating a report
           without AI never use up a report.
         </p>
         <p>
@@ -171,8 +173,9 @@ const sections: LegalSection[] = [
         <p>
           Every plan includes 2 AI revisions per report, unlimited manual editing and
           re-exports, and your company branding. {RONDVA_PRICE_NOTE} Reports are used in this
-          order: free reports first, then your plan&apos;s reports for the month (they don&apos;t
-          carry over), then report packs. When you run out, the app offers plans and packs.
+          order: reports from your free first month first, then your plan&apos;s reports for the
+          month (they don&apos;t carry over), then report packs. When the free month ends or you
+          run out, the app offers plans and packs.
           Your existing reports stay available to view, edit and export. If something looks
           wrong with your reports or a purchase, write to us.
         </p>
@@ -312,7 +315,7 @@ export default function RondvaSupportPage() {
         </p>
       }
       sections={sections}
-      revised="7 October 2026"
+      revised="8 October 2026"
     >
       <div className="mt-10 rounded-card border border-line bg-paper p-6 shadow-[0_24px_60px_-40px_rgba(16,20,24,0.25)]">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">Contact</p>

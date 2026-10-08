@@ -93,7 +93,19 @@ for (const s of [
 pass('company registration: name, country and optional website described; website never affects access');
 
 // 6. Dagsetning uppfærð og ekkert úr gamla orðalaginu horfið óvart.
-assert.match(code, /revised="7 October 2026"/);
+assert.match(code, /revised="8 October 2026"/);
+// Prufumánuðurinn (trial_claims): hvað, hvers vegna, lagagrunnur, varðveisla og að það lifi eyðingu.
+for (const [id, needles] of [
+  ['account', ['Free first month.', 'one-way fingerprint', 'salted SHA-256 hash', 'stable account identifier from your Apple or Google sign-in', 'email address',
+               "can't be turned back", 'kept for 24 months, also after the account is deleted', 'preventing abuse of the free month', 'art. 6(1)(f)']],
+  ['deletion', ['fingerprints used for the free first month', "doesn't give a new free month", 'deleted 24 months after the free month was given']],
+  ['retention', ['Free-month fingerprints', '24 months from when the free month was given', 'deleted automatically']],
+  ['legal-bases', ['free-month fingerprints']],
+]) {
+  const sec = section(id);
+  for (const s of needles) assert.ok(sec.includes(s), `privacy #${id} says: ${s}`);
+}
+pass('free first month: one-way salted fingerprint of the sign-in identifier and email, purpose, art. 6(1)(f), kept 24 months also after deletion');
 for (const s of ['Anthropic', 'Supabase', 'Vercel', 'Expo (650 Industries)', 'Resend', 'Google Analytics and Meta']) assert.ok(plain.includes(s), `${s} still listed`);
 pass('revision date updated; existing providers still listed');
 
