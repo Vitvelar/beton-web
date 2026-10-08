@@ -92,8 +92,8 @@ for (const s of [
   'comes from a forecast for the address, not from a measurement', 'You can always create a report without AI',
 ]) assert.ok(reports.includes(s), `terms/reports says: ${s}`);
 const processing = section('terms', 'data-processing');
-assert.ok(processing.includes('public services used for the weather auto-fill'), 'terms/data-processing names the weather services');
-pass('terms: AI drafts must be reviewed, inspector stays responsible, weather text is a forecast, weather services named among sub-processors');
+assert.ok(processing.includes('public weather service used for the weather auto-fill'), 'terms/data-processing names the weather service');
+pass('terms: AI drafts must be reviewed, inspector stays responsible, weather text is a forecast, weather service named among sub-processors');
 
 // 5. /support: tölvupóstur, enginn eyðublað eða netkall.
 const R = read('src/lib/brand.ts');
@@ -123,11 +123,13 @@ const pricingSupport = section('support', 'pricing');
 assert.ok(pricingSupport.includes('Settings → Plan & billing'), 'support/pricing: where plans are bought');
 assert.ok(!/once it is\s+available|Until paid plans are\s+available/i.test(plains.support), 'support no longer says plans are not yet available');
 const weatherSupport = section('support', 'weather');
-for (const s of ['forecast, not a measurement', "never asks for your phone's location", 'MET Norway', 'OpenStreetMap contributors']) assert.ok(weatherSupport.includes(s), `support/weather says: ${s}`);
+for (const s of ['forecast, not a measurement', "never asks for your phone's location", 'MET Norway', 'GeoNames (CC BY 4.0)', 'geonames.org', 'street address is not sent anywhere']) assert.ok(weatherSupport.includes(s), `support/weather says: ${s}`);
+assert.ok(!/OpenStreetMap|Nominatim/i.test(codes.support + codes.terms), 'support/terms no longer mention OpenStreetMap/Nominatim');
+assert.ok(!codes.terms.includes('two\n            public services'), 'terms: single public weather service');
 pass('/support: restore purchases, manage/cancel (app and iPhone), refunds, charged-but-no-reports, in-app deletion + email fallback, what stays, weather FAQ');
 
 // 7. Heildarsamræmi: dagsetning, ekkert „coming soon“ um kaup í /support, hvergi „no automated account deletion“.
-for (const page of ['terms', 'support', 'privacy']) assert.match(codes[page], /revised="7 October 2026"/, `${page}: revision date`);
+for (const page of ['terms', 'support', 'privacy']) assert.match(codes[page], /revised="8 October 2026"/, `${page}: revision date`);
 for (const page of ['terms', 'support', 'privacy']) {
   assert.ok(!/no automated account deletion|can only be deleted by (emailing|writing)/i.test(plains[page]), `${page}: no stale "email only" deletion claim`);
 }

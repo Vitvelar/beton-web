@@ -205,9 +205,9 @@ const sections: LegalSection[] = [
           </li>
           <li>
             use only the sub-processors listed in the{" "}
-            <LegalLink href="/privacy#processors">privacy policy</LegalLink> (including the two
-            public services used for the weather auto-fill, which receive only an address or
-            rounded coordinates), tell you before we add or replace one, and let you stop using
+            <LegalLink href="/privacy#processors">privacy policy</LegalLink> (including the
+            public weather service used for the weather auto-fill, which receives only rounded
+            coordinates), tell you before we add or replace one, and let you stop using
             Rondva if you object;
           </li>
           <li>
@@ -450,7 +450,7 @@ export default function RondvaTermsPage() {
         </p>
       }
       sections={sections}
-      revised="7 October 2026"
+      revised="8 October 2026"
       toc
     />
   );

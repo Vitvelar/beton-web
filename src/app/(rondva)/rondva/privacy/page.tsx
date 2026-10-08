@@ -7,7 +7,9 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // sannreynt í kóða) og samræmd við App Privacy-svör Rondva. Engar fastar
 // geymslutímalengdir nema þær sem eru ákveðnar (biðlisti 24 mán., bókhald 7 ár).
 // Akkerin (#processors o.fl.) eru notuð af /terms og appinu: ekki endurnefna.
-// 2026-10-07 (OPS-14, til yfirferðar lögfræðings): veðurþjónustur (Nominatim + MET Norway),
+// 2026-10-08: staðsetning fyrir veður kemur nú úr eigin töflu (GeoNames, CC BY 4.0) í gagnagrunni okkar í ESB
+// í stað OpenStreetMap Nominatim; aðeins hnit námunduð í ~100 m fara til MET Norway (beton-app PR #45).
+// 2026-10-07 (OPS-14, til yfirferðar lögfræðings): veðurþjónusta (MET Norway; áður einnig Nominatim),
 // Apple-kaup og skráning fyrirtækis. Heimildir: beton-app supabase/functions/weather-lookup
 // (README + weather.ts), supabase/migrations/20261007120000_apple_in_app_purchases.sql,
 // src/lib/onboarding.ts (vefsíða fyrirtækis er geymd á notandanum, aðeins til yfirferðar).
@@ -53,13 +55,8 @@ const processors: Processor[] = [
     where: "United States",
   },
   {
-    name: "OpenStreetMap Foundation (Nominatim)",
-    role: "Finds the map coordinates of the inspection address for the weather auto-fill. Receives only the address.",
-    where: "Foundation based in the United Kingdom",
-  },
-  {
     name: "MET Norway (Norwegian Meteorological Institute)",
-    role: "Gives the weather forecast for those coordinates. Receives only the coordinates.",
+    role: "Gives the weather forecast for the inspection's location. Receives only coordinates rounded to about 100 metres.",
     where: "Norway",
   },
   {
@@ -237,9 +234,11 @@ const sections: LegalSection[] = [
         <p>To work out the weather, the app asks our server, and our server then:</p>
         <ul className={list}>
           <li>
-            sends the inspection&apos;s address (street, town or suburb and city, postcode) and
-            your company&apos;s country to <strong>Nominatim</strong>, the geocoding service of
-            the <strong>OpenStreetMap Foundation</strong>, to get the coordinates of the place;
+            looks up the place in our own database, in the European Union, using only the town or
+            suburb, the postcode and your company&apos;s country. The database is built from the
+            open data of <strong>GeoNames</strong>. The street address is not used for this and
+            is not sent anywhere. The lookup gives the coordinates of the postcode area or
+            suburb, not of the building;
           </li>
           <li>
             sends those coordinates, rounded to about 100 metres, to <strong>MET Norway</strong>{" "}
@@ -249,22 +248,27 @@ const sections: LegalSection[] = [
           </li>
         </ul>
         <p>
-          Nothing else is sent: not your name, email address or account details, not the
-          client&apos;s name, and no notes or photos. The requests come from our server, so
-          both services see our server&apos;s IP address and not your phone&apos;s. The app does
-          not use your phone&apos;s location for this, only the address you entered.
+          Nothing else is sent: not the street address, not your name, email address or account
+          details, not the client&apos;s name, and no notes or photos. The request comes from our
+          server, so MET Norway sees our server&apos;s IP address and not your phone&apos;s. The
+          app does not use your phone&apos;s location for this, only the town or suburb and
+          postcode you entered.
         </p>
         <p>
           The only thing saved is the short weather text, in the inspection&apos;s weather field.
-          The coordinates are not saved with the inspection. Our server may keep a looked-up
-          location in its working memory for up to 30 days, because OpenStreetMap&apos;s usage
-          policy asks services to reuse results, but it is not stored in our database.
+          The coordinates are not saved with the inspection, and the address and the place
+          looked up are not written to our logs. The place table holds only public geographic
+          data and no personal data.
         </p>
         <p>
-          Location data &copy; OpenStreetMap contributors, available under the{" "}
-          <LegalLink href="https://www.openstreetmap.org/copyright">Open Database License</LegalLink>.
           Weather data from MET Norway, licensed under{" "}
-          <LegalLink href="https://api.met.no/doc/License">CC BY 4.0</LegalLink>.
+          <LegalLink href="https://api.met.no/doc/License">CC BY 4.0</LegalLink>. Location data:
+          GeoNames (<LegalLink href="https://www.geonames.org">geonames.org</LegalLink>). This work
+          includes data from GeoNames, licensed under{" "}
+          <LegalLink href="https://creativecommons.org/licenses/by/4.0/">
+            Creative Commons Attribution 4.0
+          </LegalLink>
+          . The data is provided as is, without a guarantee of accuracy.
         </p>
       </>
     ),
@@ -452,9 +456,8 @@ const sections: LegalSection[] = [
         <ProcessorTable />
         <p>
           Each of these acts as a processor under a data-processing agreement, except Apple
-          and Google for sign-in and payment, and OpenStreetMap Foundation and MET Norway for
-          the weather auto-fill, which are public services that act under their own terms of
-          use. We don&apos;t sell personal data and don&apos;t share it with anyone else,
+          and Google for sign-in and payment, and MET Norway for the weather auto-fill, which is
+          a public service that acts under its own terms of use. We don&apos;t sell personal data and don&apos;t share it with anyone else,
           unless the law requires us to.
         </p>
       </>
@@ -474,21 +477,20 @@ const sections: LegalSection[] = [
           adequate.
         </p>
         <p>
-          The weather services are the exception: they are public services we have no
-          contract with. They receive only the inspection address (OpenStreetMap) or
-          coordinates rounded to about 100 metres (MET Norway), never a name or account
-          details, and they are bound only by their own terms of use.
+          The weather service is the exception: MET Norway is a public service we have no
+          contract with. It receives only coordinates rounded to about 100 metres, never an
+          address, a name or account details, and it is bound only by its own terms of use.
         </p>
         <p>
           <strong>If you are in New Zealand:</strong> your information is held by Vitvélar in
           Iceland and in our providers&apos; systems in Ireland and the United States. We send
           it abroad to providers that are bound by a contract with us to protect it, and to
           Apple and Google for the sign-in and payments you choose to use with them. The
-          exception is the weather auto-fill above: the two public weather and map services
-          may not be required to protect an address in a way that is comparable to the New
-          Zealand Privacy Act 2020. They receive only the property&apos;s address
-          (OpenStreetMap) or its rounded coordinates (MET Norway), and only on the day of the
-          inspection while the weather field is empty or when you tap the weather button.
+          exception is the weather auto-fill above: the public weather service (MET Norway)
+          may not be required to protect location data in a way that is comparable to the New
+          Zealand Privacy Act 2020. It receives only coordinates rounded to about 100 metres,
+          not the property&apos;s address, and only on the day of the inspection while the
+          weather field is empty or when you tap the weather button.
         </p>
       </>
     ),
@@ -571,8 +573,8 @@ const sections: LegalSection[] = [
             kept as a usage history without inspection content.
           </li>
           <li>
-            <strong>Looked-up locations for the weather:</strong> up to 30 days in our
-            server&apos;s working memory, never in our database.
+            <strong>Weather lookups:</strong> the address and the coordinates are not stored.
+            Only the short weather text stays in the inspection.
           </li>
           <li>
             <strong>Emails to us:</strong> as long as needed to resolve the matter and follow up.
@@ -668,14 +670,14 @@ export default function RondvaPrivacyPage() {
         <p>
           Short version: you sign in with Apple or Google, and your inspections are stored on
           your phone and in your account. Nothing goes to the AI service unless you confirm it
-          for that report. The weather field can fill itself in from the address you entered,
-          using two public weather and map services that receive only that address. Payments go
+          for that report. The weather field can fill itself in from the town and postcode you entered,
+          and only coordinates rounded to about 100 metres go to a public weather service. Payments go
           through Apple. The app has no advertising or tracking, we don&apos;t sell data, and
           you can delete your account in the app.
         </p>
       }
       sections={sections}
-      revised="7 October 2026"
+      revised="8 October 2026"
       toc
     />
   );
