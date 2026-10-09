@@ -7,6 +7,10 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // sannreynt í kóða) og samræmd við App Privacy-svör Rondva. Engar fastar
 // geymslutímalengdir nema þær sem eru ákveðnar (biðlisti 24 mán., bókhald 7 ár).
 // Akkerin (#processors o.fl.) eru notuð af /terms og appinu: ekki endurnefna.
+// 2026-10-09: nýr kafli „Business contacts we write to“ (#business-contacts) — GDPR art. 14 fyrir sölupóst á
+// skoðunarmenn sem birta vinnunetfang í opinberum skrám (t.d. NZIBI). Texti úr plan/rondva/NZ-SOLUPOSTAR-UTGAFA.md
+// §1.4–1.5 (hagsmunamat, 12 mán. geymsla, útilokunarlisti). Póstfóturinn vísar á rondva.com/privacy#business-contacts:
+// EKKI endurnefna akkerið. Til yfirferðar lögfræðings (NZ „harvesting“-spurningin) áður en listinn stækkar umfram NZIBI.
 // 2026-10-08: staðsetning fyrir veður kemur nú úr eigin töflu (GeoNames, CC BY 4.0) í gagnagrunni okkar í ESB
 // í stað OpenStreetMap Nominatim; aðeins hnit námunduð í ~100 m fara til MET Norway (beton-app PR #45).
 // 2026-10-07 (OPS-14, til yfirferðar lögfræðings): veðurþjónusta (MET Norway; áður einnig Nominatim),
@@ -113,8 +117,9 @@ const sections: LegalSection[] = [
         </p>
         <ul className={list}>
           <li>
-            For your Rondva account, the waitlist and this website, Vitvélar is the{" "}
-            <strong>controller</strong>.
+            For your Rondva account, the waitlist, this website and the{" "}
+            <LegalLink href="#business-contacts">business contacts we write to</LegalLink>,
+            Vitvélar is the <strong>controller</strong>.
           </li>
           <li>
             For the inspections recorded in Rondva, the inspection company that uses Rondva is
@@ -378,6 +383,69 @@ const sections: LegalSection[] = [
     ),
   },
   {
+    id: "business-contacts",
+    title: "Business contacts we write to",
+    body: (
+      <>
+        <p>
+          <strong>Who we are.</strong> {R.company} (company registration no. {R.companyId}),{" "}
+          {R.companyAddress}, makes Rondva and is the controller for this section. Contact:{" "}
+          <LegalLink href={mail}>{R.contactEmail}</LegalLink>.
+        </p>
+        <p>
+          <strong>Who we write to.</strong> Building inspectors who publish a work email address
+          in a public register or on their company&apos;s own website, for example the New
+          Zealand Institute of Building Inspectors directory (nzibi.co.nz). We write to them
+          about Rondva, because it is a tool for exactly their job. This is a short series of
+          up to three emails, not a newsletter. The emails carry no tracking pixels and no
+          tracked links.
+        </p>
+        <p>
+          <strong>What we hold.</strong> Your name, your work email address, your company&apos;s
+          name and website as published, where we found them, and a note of when we wrote and
+          whether you replied or asked us to stop. Nothing else. We use it only to write to you
+          about Rondva, we don&apos;t sell or share it, and we don&apos;t build a profile of
+          you. We send and store the emails with Google Workspace (see{" "}
+          <LegalLink href="#processors">Who processes the data</LegalLink>).
+        </p>
+        <p>
+          <strong>Why we may do this.</strong> Our legitimate interest in telling professionals
+          about a product made for their work (GDPR art. 6(1)(f)). We weighed it against your
+          interests: we write to a work address that is published for business contact,
+          the intrusion is small, you can stop it with one reply, and an inspector can
+          reasonably expect an email about tools for inspections. You can object at any time
+          (see below).
+        </p>
+        <p>
+          <strong>How long we keep it.</strong> For 12 months after our last email to you, unless
+          we start talking, and then we handle it as described under{" "}
+          <LegalLink href="#contacting-us">When you write to us</LegalLink>. If you ask us to
+          stop, we keep your email address and nothing else on a do-not-contact list so that we
+          never write to you again. That is the one thing we keep beyond 12 months, and only
+          to respect your request.
+        </p>
+        <p>
+          <strong>Stop, object or ask what we hold.</strong> Reply &ldquo;unsubscribe&rdquo; to any of our
+          emails, or write to <LegalLink href={mail}>{R.contactEmail}</LegalLink>, and we remove
+          you straight away and don&apos;t write again. You can also ask us what we hold about
+          you, have it corrected or deleted, or object to our using it. Objecting to direct
+          marketing always succeeds. We reply within one month.
+        </p>
+        <p>
+          <strong>Complaints.</strong> You can complain to the Icelandic Data Protection Authority
+          (Persónuvernd,{" "}
+          <LegalLink href="https://www.personuvernd.is">personuvernd.is</LegalLink>), which
+          supervises us, or to the supervisory authority in your own country. If you are in New
+          Zealand, you can also contact the{" "}
+          <LegalLink href="https://www.privacy.org.nz">
+            Office of the Privacy Commissioner
+          </LegalLink>
+          .
+        </p>
+      </>
+    ),
+  },
+  {
     id: "contacting-us",
     title: "When you write to us",
     body: (
@@ -434,6 +502,12 @@ const sections: LegalSection[] = [
           <li>
             <strong>The waitlist and your emails to us:</strong> our legitimate interest
             (art. 6(1)(f)), as described in those sections.
+          </li>
+          <li>
+            <strong>Business contacts we write to:</strong> our legitimate interest in telling
+            inspectors about a tool for their work (art. 6(1)(f)), as described in{" "}
+            <LegalLink href="#business-contacts">that section</LegalLink>. You can object at any
+            time.
           </li>
           <li>
             <strong>Hosting logs and abuse prevention:</strong> our legitimate interest in
@@ -580,6 +654,11 @@ const sections: LegalSection[] = [
             <strong>Emails to us:</strong> as long as needed to resolve the matter and follow up.
           </li>
           <li>
+            <strong>Business contacts we write to:</strong> 12 months after our last email, unless
+            we start talking. If you ask us to stop, only your email address is kept, on a
+            do-not-contact list, so we never write to you again.
+          </li>
+          <li>
             <strong>On your phone:</strong> until you delete the inspection or remove the app.
           </li>
           <li>
@@ -677,7 +756,7 @@ export default function RondvaPrivacyPage() {
         </p>
       }
       sections={sections}
-      revised="8 October 2026"
+      revised="9 October 2026"
       toc
     />
   );

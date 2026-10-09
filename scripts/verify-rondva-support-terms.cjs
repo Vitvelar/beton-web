@@ -129,7 +129,8 @@ assert.ok(!codes.terms.includes('two\n            public services'), 'terms: sin
 pass('/support: restore purchases, manage/cancel (app and iPhone), refunds, charged-but-no-reports, in-app deletion + email fallback, what stays, weather FAQ');
 
 // 7. Heildarsamræmi: dagsetning, ekkert „coming soon“ um kaup í /support, hvergi „no automated account deletion“.
-for (const page of ['terms', 'support', 'privacy']) assert.match(codes[page], /revised="8 October 2026"/, `${page}: revision date`);
+for (const page of ['terms', 'support']) assert.match(codes[page], /revised="8 October 2026"/, `${page}: revision date`);
+assert.match(codes.privacy, /revised="9 October 2026"/, 'privacy: revision date (business-contacts section added 9 Oct)');
 for (const page of ['terms', 'support', 'privacy']) {
   assert.ok(!/no automated account deletion|can only be deleted by (emailing|writing)/i.test(plains[page]), `${page}: no stale "email only" deletion claim`);
 }

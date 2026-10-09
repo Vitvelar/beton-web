@@ -98,7 +98,7 @@ for (const s of [
 pass('company registration: name, country and optional website described; website never affects access');
 
 // 6. Dagsetning uppfærð og ekkert úr gamla orðalaginu horfið óvart.
-assert.match(code, /revised="8 October 2026"/);
+assert.match(code, /revised="9 October 2026"/);
 for (const s of ['Anthropic', 'Supabase', 'Vercel', 'Expo (650 Industries)', 'Resend', 'Google Analytics and Meta']) assert.ok(plain.includes(s), `${s} still listed`);
 pass('revision date updated; existing providers still listed');
 
@@ -146,5 +146,25 @@ assert.match(read('src/lib/brand.ts'), /contactEmail: "rondva@rondva\.com"/);
 assert.ok(plain.includes('Google also hosts our email'), 'Google Workspace email named as a processor');
 assert.ok(!/Operated from the United Kingdom/.test(plain), 'no unverified server-location claim');
 pass('matches the app: no device location, no Google Drive for Rondva, email contact, Google email hosting named, no server-location claim');
+
+// 11. „Business contacts we write to“ (GDPR art. 14 fyrir sölupóst, NZ-SOLUPOSTAR-UTGAFA §1.4–1.5): póstfóturinn
+//     vísar á rondva.com/privacy#business-contacts, svo akkerið má ekki hverfa.
+assert.ok(ids.includes('business-contacts'), 'anchor #business-contacts exists (the email footer links to it)');
+const biz = section('business-contacts');
+for (const s of [
+  'Who we are', 'company registration no.', 'Who we write to', 'publish a work email address in a public register', 'nzibi.co.nz',
+  'up to three emails', 'no tracking pixels', 'art. 6(1)(f)', 'legitimate interest', 'weighed it against your interests',
+  '12 months after our last email', 'unless we start talking', 'do-not-contact list', 'your email address and nothing else',
+  'Reply "unsubscribe"', 'object', 'ask us what we hold about you', 'Objecting to direct marketing always succeeds',
+  'Icelandic Data Protection Authority', 'Persónuvernd', 'Office of the Privacy Commissioner', 'Google Workspace',
+]) assert.ok(biz.includes(s), `business-contacts section says: ${s}`);
+assert.ok(biz.includes('{R.contactEmail}') || code.slice(code.indexOf('id: "business-contacts"'), code.indexOf('id: "contacting-us"')).includes('{R.contactEmail}'), 'business-contacts section gives the contact address (rondva@rondva.com via brand.ts)');
+assert.match(code, /https:\/\/www\.personuvernd\.is/);
+assert.match(code, /https:\/\/www\.privacy\.org\.nz/);
+assert.ok(section('legal-bases').includes('Business contacts we write to'), 'legal-bases lists business contacts');
+assert.ok(section('retention').includes('Business contacts we write to') && section('retention').includes('12 months after our last email'), 'retention lists business contacts (12 months)');
+assert.ok(section('who').includes('business contacts we write to'), 'who-is-responsible names business contacts');
+assert.ok(!/we do not use the list for/i.test(biz) && !/guarantee|verified|reviewed/i.test(biz), 'no overclaiming in the new section');
+pass('business contacts: who we are, public-register source (NZIBI), up to three emails without tracking, art. 6(1)(f), 12 months + email-only suppression list, unsubscribe/object/access, Persónuvernd + NZ Privacy Commissioner, #business-contacts anchor');
 
 console.log(`${n} Rondva privacy checks passed; no network calls made.`);
