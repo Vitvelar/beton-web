@@ -10,10 +10,10 @@ export default function RondvaNotFound() {
         <div className="mx-auto max-w-2xl px-6 py-24 text-center">
           <p className="rv-eyebrow">404</p>
           <h1 className="mt-4 text-3xl font-semibold tracking-tight">
-            There is nothing here yet.
+            There is nothing at this address.
           </h1>
           <p className="mt-4 text-muted">
-            Rondva is in development. The page you asked for does not exist.
+            The page you asked for does not exist.
           </p>
           <Link
             href="/"

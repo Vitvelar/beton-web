@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { inter, sourceSerif } from "@/lib/fonts/rondva";
 import { BRANDS } from "@/lib/brand";
+import { RONDVA_OFFER_LINE } from "@/lib/rondva-pricing";
 import { RondvaAnalytics } from "@/components/rondva/RondvaAnalytics";
 import { ConsentBanner } from "@/components/rondva/ConsentBanner";
 import "./rondva.css";
@@ -10,9 +11,9 @@ import "./rondva.css";
 // rondva.com/* (sjá rewrite í src/proxy.ts).
 
 const SITE = BRANDS.rondva.marketingUrl;
-const TITLE = "Rondva — Walk the property. Rondva drafts the report.";
-const DESCRIPTION =
-  "Rondva is a field app for independent property inspectors. Record rooms, photos, thermal images and severity on your phone; Rondva drafts the report text and summary. In development — join the waitlist.";
+const TITLE = "Rondva: AI-drafted NZS 4306 building inspection reports | iPhone app";
+// Staðreyndir fyrir leitarvélar og svarvélar: hvað, fyrir hverja, hvar, kaup.
+const DESCRIPTION = `Rondva is an iPhone app that drafts NZS 4306:2005 building inspection reports from the inspector's photos, notes and ratings, even with no signal on site. You review every word and the PDF goes out under your company name. On the App Store. ${RONDVA_OFFER_LINE}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
