@@ -149,7 +149,9 @@ async function nzs4306Checks(output) {
   assert.ok(!plain(moisture[1]).includes('ground cover'), 'a note without a reading is not a moisture row');
   // Takmarkanir orðrétt, AI-yfirlýsing úr sniðmáti, d/m/yyyy, aldrei Beton-texti.
   assert.ok(markup.includes(nz.conditions.limitations.replace(/'/g, '&#x27;')), 'limitations verbatim');
-  assert.ok(text.includes("Report text drafted with AI assistance from the inspector's notes and photos. All observations, ratings and conclusions were made and reviewed by Jordan Sample, Example Inspections Ltd."));
+  // PDF-heiðarleiki (report-2 PR 1 / positioning-3): engin yfirferðarfullyrðing, ekkert módel, dagsetning rituð d/m/yyyy.
+  assert.ok(text.includes('Observations and ratings by Jordan Sample, Example Inspections Ltd. Text drafted with AI assistance (5/10/2026). Not yet reviewed or issued.'));
+  for (const s of ['Drafting model', 'none (hand-written', 'made and reviewed by']) assert.ok(!text.includes(s), `no "${s}" in the PDF text`);
   assert.ok(text.includes('5/10/2026') && !text.includes('05.10.2026') && !text.includes('2026-10-05'), 'd/m/yyyy dates');
   assert.ok(text.includes('Prepared in accordance with NZS 4306:2005'));
   // Legal description (inspections.fastanumer): í vottorðinu og í „Property and inspection conditions“,
@@ -165,6 +167,41 @@ async function nzs4306Checks(output) {
   assert.ok(plain(cover[1]).includes('12 Example Road, Mount Eden, Auckland 1024'), 'cover shows street, town/city and postcode');
   assert.ok(legalOrder > -1, 'legal description follows the site address');
   for (const s of ['Greitt er fyrir', 'Takmarkanir', 'Bls.', 'Beton']) assert.ok(!text.includes(s), `no ${s}`);
+  // Vottorð: aldrei „Qualifications … Not recorded“; „Prepared and issued by …“ úr gögnum; dagsetning merkt „Draft generated“.
+  assert.ok(text.includes('Prepared and issued by Jordan Sample, NZIBI member, LBP 000000 (sample)'), 'certificate prepared-by line with qualifications');
+  const certBlock = text.slice(text.indexOf('Certificate of Inspection'), text.indexOf('Property and inspection conditions'));
+  assert.ok(certBlock.includes('5/10/2026Draft generated') && !certBlock.includes('Date of inspection5/10/2026Date'), 'certificate signature date is labelled "Draft generated"');
+  assert.ok(!certBlock.includes('5/10/2026Date') , 'signature date box is no longer labelled just "Date"');
+  const certificateOf = async mutate => {
+    const r = buildNzSampleRecord(); mutate(r);
+    const t = plain(await renderReportMarkup(r, { pdf: true, dashboardLocale: 'en', brand: 'rondva' }));
+    return t.slice(t.indexOf('Certificate of Inspection'), t.indexOf('Property and inspection conditions'));
+  };
+  for (const value of [null, '', '   ']) {
+    const cert = await certificateOf(r => { r.inspectors.qualifications = value; });
+    assert.ok(!/Qualifications/.test(cert), `no Qualifications row for ${JSON.stringify(value)}`);
+    assert.ok(!/Qualifications[^]{0,12}Not recorded/.test(cert), 'never "Qualifications: Not recorded"');
+    assert.ok(cert.includes('Prepared and issued by Jordan Sample') && !cert.includes('Prepared and issued by Jordan Sample,'), `name only for ${JSON.stringify(value)}`);
+  }
+  console.log('PASS NZS 4306 certificate: no "Not recorded" for qualifications, "Prepared and issued by" from data, date labelled "Draft generated", disclosure without model and without review claim');
+
+  // Defects-tafla (report-3): `alvarleg` undir Significant defects, „None recorded.“ ef engin, ein föst sérfræðingssetning.
+  const defectsHeading = text.indexOf('DefectsRef');
+  assert.ok(defectsHeading > text.indexOf('Significant defects') && defectsHeading < text.indexOf('Summary of findings'), 'Defects table sits between Significant defects and Summary of findings');
+  const defectObs = record.ai_report_data.rooms.flatMap(r => r.observations).filter(o => o.severity === 'alvarleg');
+  assert.ok(defectObs.length >= 1, 'fixture has Defects');
+  const summaryBlock = text.slice(text.indexOf('Executive summary'), text.indexOf('Summary of findings'));
+  for (const o of defectObs) assert.ok(summaryBlock.includes(o.title), `Defects table lists "${o.title}"`);
+  const SPECIALIST = 'Minor items and maintenance observations are listed in the element sections (§4 onward). Items above may require evaluation by a suitably qualified specialist before purchase.';
+  assert.equal(text.split(SPECIALIST).length - 1, 1, 'specialist sentence printed once');
+  assert.ok(text.indexOf(SPECIALIST) > defectsHeading && text.indexOf(SPECIALIST) < text.indexOf('Summary of findings'), 'specialist sentence follows the tables');
+  const noDefects = buildNzSampleRecord();
+  for (const room of noDefects.ai_report_data.rooms) for (const o of room.observations) if (o.severity === 'alvarleg') o.severity = 'athugasemd';
+  const noDefectsText = plain(await renderReportMarkup(noDefects, { pdf: true }));
+  assert.ok(noDefectsText.includes('DefectsNone recorded.'), 'no alvarleg → "None recorded."');
+  assert.ok(noDefectsText.includes(SPECIALIST), 'specialist sentence also printed when there are no Defects');
+  console.log('PASS NZS 4306 Defects table: alvarleg rows under Significant defects, "None recorded." when empty, fixed specialist sentence once, no keyword list');
+
   console.log('PASS NZS 4306 template: full address on the cover, contract section order, significant-defects table, certificate, moisture table (4 rows, no reading invented), limitations verbatim, AI disclosure, d/m/yyyy');
 
   // Tóm / blanks legal description → engin lína (og aldrei „null“/„undefined“).
@@ -194,10 +231,23 @@ async function nzs4306Checks(output) {
     fs.writeFileSync(pdf, await loadRenderer().renderReportPdf(server.url('nz'), { pageLabel: label }));
     const pdfText = execFileSync('pdftotext', ['-layout', pdf, '-'], { encoding: 'utf8' });
     assert.match(pdfText, /Page 1 \/ \d+/); assert.ok(!pdfText.includes('Bls.'), 'English/NZ footer says Page, never Bls.');
+    // Fótur með fyrirtækisnafni fyrir skýrslur sem eru ekki íslenskar: „{Company} · Page n of N“.
+    const copy = reportCopy(reportLocaleOf(record.ai_report_data));
+    const branded = path.join(output, 'nzs4306-footer.pdf');
+    fs.writeFileSync(branded, await loadRenderer().renderReportPdf(server.url('nz'), { pageLabel: copy.pageLabel, pageOfLabel: copy.pageOfLabel, footerCompany: 'Example Inspections Ltd' }));
+    const brandedText = execFileSync('pdftotext', ['-layout', branded, '-'], { encoding: 'utf8' });
+    assert.match(brandedText, /Example Inspections Ltd · Page 1 of \d+/); assert.match(brandedText, /Example Inspections Ltd · Page 2 of \d+/);
+    assert.ok(!/Page 1 \/ \d+/.test(brandedText) && !brandedText.includes('Bls.'), 'branded footer replaces the "Page n / N" footer');
+    // Beton (is): fótstrengurinn er bæti fyrir bæti eins og áður; fyrirtækisnafn aldrei í íslenskum fæti.
+    const rp = load('src/lib/report/render-pdf.ts');
+    assert.equal(rp.buildFooterTemplate({ pageLabel: 'Bls.' }),
+      '<div style="width:100%;text-align:center;font-size:8px;color:#8a8278;font-family:Helvetica,Arial,sans-serif;">Bls. <span class="pageNumber"></span> / <span class="totalPages"></span></div>');
+    assert.equal(rp.buildFooterTemplate({ pageLabel: 'Bls.', footerCompany: null }), rp.buildFooterTemplate({ pageLabel: 'Bls.' }));
+    assert.ok(rp.buildFooterTemplate({ pageLabel: 'Page', pageOfLabel: 'of', footerCompany: 'A & B <Ltd>' }).includes('A &amp; B &lt;Ltd&gt; · Page'), 'company name is HTML-escaped');
     let at = -1;
     for (const h of ORDER) { const i = pdfText.indexOf(h, at + 1); assert.ok(i > at, `PDF order: ${h}`); at = i; }
     for (const s of ['5/10/2026', 'Moisture readings', 'Certificate of Inspection', 'Legal description', 'Lot 1 DP 000000, Record of Title NA000/000 (sample)']) assert.ok(pdfText.includes(s), s);
-    console.log(`PASS NZS 4306 PDF via render-pdf.ts: "Page n / N" footer, section order, d/m/yyyy (${pdf})`);
+    console.log(`PASS NZS 4306 PDF via render-pdf.ts: "Page n / N" footer, "{Company} · Page n of N" footer, section order, d/m/yyyy (${pdf})`);
   } finally { await server.close(); }
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });
