@@ -1,16 +1,25 @@
+import fs from "node:fs";
+import path from "node:path";
+import Image from "next/image";
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
+import { HAS_SAMPLE, SAMPLE_REPORT_URL } from "@/lib/rondva-links";
 import {
   RONDVA_INCLUDED,
   RONDVA_OFFER,
+  RONDVA_OFFER_LINE,
   RONDVA_PACK,
   RONDVA_PLANS,
   RONDVA_PRICE_NOTE,
   usd,
 } from "@/lib/rondva-pricing";
+import { organizationLd, softwareApplicationLd } from "@/lib/rondva-seo";
 import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
-import { WaitlistForm } from "@/components/rondva/WaitlistForm";
+import { AppStoreBadge, AppStoreQr } from "@/components/rondva/AppStoreBadge";
+import { JsonLd } from "@/components/rondva/JsonLd";
+import { SectionHeading } from "@/components/rondva/SectionHeading";
+import { WhereAiStops } from "@/components/rondva/WhereAiStops";
 import { HeroFilm } from "@/components/rondva/HeroFilm";
 import { PhoneFrame } from "@/components/rondva/PhoneFrame";
 import { RevealObserver } from "@/components/rondva/Reveal";
@@ -21,16 +30,28 @@ import {
   IconReview,
   IconExport,
   IconLogo,
-  IconShield,
 } from "@/components/rondva/RondvaIcons";
 
-// Skjámyndir úr ensku útgáfunni fara í public/rondva/screens/. Þar til þær
-// eru til birtist ramminn tómur — aldrei íslensk skjámynd (birtingarregla 4).
-const SCREENS: { src?: string; alt: string }[] = [
-  { src: "/rondva/screens/overview.webp", alt: "Rondva — inspection overview with property details and severity counts" },
-  { src: "/rondva/screens/room.webp", alt: "Rondva — room screen with ratings and observations" },
+// Skjámyndir úr ensku NZS 4306-útgáfunni (release-assets/rondva-1.3.0/screenshots, skornar niður í
+// skjásvæðið, webp) í public/rondva/screens/. Aldrei íslensk skjámynd (birtingarregla 4).
+// `aspect` er hlutfall skorinnar myndar (breidd/hæð) svo ramminn klippi ekkert.
+const SCREENS: { src?: string; alt: string; aspect: string }[] = [
+  {
+    src: "/rondva/screens/offline-nz.webp",
+    alt: "Rondva on an iPhone with no signal: the Exterior area of a New Zealand inspection, with a photo and ratings for weatherboards, cladding, ground clearance, joinery, flashings, sealants and paint",
+    aspect: "!aspect-[997/1881]",
+  },
+  {
+    src: "/rondva/screens/overview-nz.webp",
+    alt: "Rondva inspection overview for a New Zealand property: address, legal description (Lot and DP), year built, customer, inspector and weather, with counts of minor, serious and very serious findings",
+    aspect: "!aspect-[997/2010]",
+  },
 ];
 const HAS_SCREENS = SCREENS.every((s) => !!s.src);
+
+// „Who builds Rondva“: mynd af stofnanda. Skráin er sett í public/rondva/hjalti.jpg þegar hún er til;
+// þar til þá birtast upphafsstafir. Athugað við bygginguna (síðan er kyrrstæð).
+const HAS_FOUNDER_PHOTO = fs.existsSync(path.join(process.cwd(), "public", "rondva", "hjalti.jpg"));
 
 const steps = [
   {
@@ -87,46 +108,6 @@ const whatYouGet = [
   },
 ];
 
-const whereAiStops = [
-  {
-    title: "Rondva never changes your assessment.",
-    body: "Severity is yours. The AI writes around it, never over it.",
-  },
-  {
-    title: "A Rondva report is not a certified engineering conclusion",
-    body: "and doesn’t present itself as one. It’s your professional inspection, written up.",
-  },
-  {
-    title: "Nothing is claimed to be complete.",
-    body: "No app can guarantee every defect in a building is found — Rondva documents what you observed and recorded.",
-  },
-  {
-    title: "You review before anything leaves the app.",
-    body: "Nothing is sent to a client automatically.",
-  },
-];
-
-function SectionHeading({
-  eyebrow,
-  children,
-  light,
-  id,
-}: {
-  eyebrow: string;
-  children: React.ReactNode;
-  light?: boolean;
-  id?: string;
-}) {
-  return (
-    <div className="rv-reveal max-w-2xl">
-      <p className={light ? "rv-eyebrow !text-paper/60" : "rv-eyebrow"}>{eyebrow}</p>
-      <h2 id={id} className={`rv-display rv-balance mt-4 text-[34px] sm:text-[44px] md:text-[52px] ${light ? "text-paper" : "text-ink"}`}>
-        {children}
-      </h2>
-    </div>
-  );
-}
-
 export default function RondvaLandingPage() {
   return (
     <>
@@ -134,6 +115,7 @@ export default function RondvaLandingPage() {
       <noscript>
         <style>{`.rv-reveal{opacity:1!important;transform:none!important}`}</style>
       </noscript>
+      <JsonLd nodes={[organizationLd(), softwareApplicationLd()]} />
       <RondvaHeader />
       <main className="flex-1">
         {/* 1. Hetjuhlutinn — dökkt teikniblað: fyrirsögn, lína og hnappar fyrst, kynningarmyndin
@@ -145,7 +127,7 @@ export default function RondvaLandingPage() {
           <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 sm:pt-16 md:pb-24 md:pt-20 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14 lg:pb-24 lg:pt-20 xl:grid-cols-[0.85fr_1.15fr] xl:pb-28 xl:pt-24">
             <div className="relative z-20">
               <p className="rv-reveal rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
-                Field app for property inspectors · In development
+                Inspection app for iPhone · On the App Store
               </p>
               <h1
                 id="hero-title"
@@ -165,16 +147,18 @@ export default function RondvaLandingPage() {
                 summary — you stay the author of every judgement in it.
               </p>
               <div
-                className="rv-reveal mt-9 flex flex-wrap items-center gap-4"
+                className="rv-reveal mt-9 flex flex-wrap items-center gap-x-5 gap-y-4"
                 style={{ "--i": 3 } as React.CSSProperties}
               >
-                <a
-                  href="#waitlist"
-                  className="inline-flex items-center gap-2 rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-[#2c62ec]"
-                >
-                  Join the waitlist
-                  <span aria-hidden="true">→</span>
-                </a>
+                <AppStoreBadge />
+                {HAS_SAMPLE ? (
+                  <a
+                    href={SAMPLE_REPORT_URL}
+                    className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
+                  >
+                    See a sample report
+                  </a>
+                ) : null}
                 <a
                   href="#how"
                   className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
@@ -182,11 +166,21 @@ export default function RondvaLandingPage() {
                   See how it works
                 </a>
               </div>
+              <AppStoreQr className="rv-reveal mt-8" />
               <p
                 className="rv-reveal mt-6 text-sm text-paper/55"
                 style={{ "--i": 4 } as React.CSSProperties}
               >
-                In development. We&apos;re building with working inspectors before we open sales.
+                {RONDVA_OFFER_LINE}
+              </p>
+              <p
+                className="rv-reveal mt-2 text-sm text-paper/55"
+                style={{ "--i": 4 } as React.CSSProperties}
+              >
+                In New Zealand?{" "}
+                <Link href="/nz" className="font-semibold text-paper/85 underline underline-offset-4 hover:text-paper">
+                  See the NZS 4306 page →
+                </Link>
               </p>
             </div>
 
@@ -205,9 +199,10 @@ export default function RondvaLandingPage() {
             <SectionHeading eyebrow="Who it’s for">Built for the one-person operation, not the enterprise.</SectionHeading>
             <div className="rv-reveal space-y-5 text-lg leading-relaxed text-muted md:pt-14" style={{ "--i": 1 } as React.CSSProperties}>
               <p>
-                Rondva is being built for{" "}
+                Rondva is built for{" "}
                 <strong className="font-semibold text-ink">independent inspectors and small inspection firms</strong>{" "}
-                — the one-person operation and the three-person team, not the enterprise.
+                — built around the inspector on site. Two or three of you? We&apos;ll link your colleagues to one
+                company account.
               </p>
               <p className="rv-display text-[26px] text-ink sm:text-[30px]">
                 If you spend the evening after an inspection retyping notes into a document,{" "}
@@ -237,12 +232,19 @@ export default function RondvaLandingPage() {
                 ))}
               </ol>
               {HAS_SCREENS ? (
-                <div className="rv-reveal relative hidden md:block" style={{ "--i": 2 } as React.CSSProperties}>
-                  <div className="flex items-end gap-6">
-                    <PhoneFrame src={SCREENS[0].src} alt={SCREENS[0].alt} />
-                    <PhoneFrame src={SCREENS[1].src} alt={SCREENS[1].alt} className="mb-16 !w-[220px]" />
+                <figure className="rv-reveal relative mx-auto lg:mx-0" style={{ "--i": 2 } as React.CSSProperties}>
+                  <div className="flex items-end justify-center gap-6">
+                    <PhoneFrame src={SCREENS[0].src} alt={SCREENS[0].alt} className={SCREENS[0].aspect} />
+                    <PhoneFrame
+                      src={SCREENS[1].src}
+                      alt={SCREENS[1].alt}
+                      className={`${SCREENS[1].aspect} mb-16 hidden !w-[220px] md:block`}
+                    />
                   </div>
-                </div>
+                  <figcaption className="mt-5 max-w-[34rem] text-center text-sm leading-relaxed text-muted lg:text-left">
+                    Captures with no signal: under the house, in the roof space.
+                  </figcaption>
+                </figure>
               ) : null}
             </div>
           </div>
@@ -268,30 +270,92 @@ export default function RondvaLandingPage() {
           </div>
         </section>
 
-        {/* 5. Where the AI stops — þyngsti kaflinn */}
-        <section className="rv-blueprint rv-grain relative px-6 py-24 text-paper md:py-32">
-          <div className="relative mx-auto max-w-[1180px]">
-            <div className="flex items-start gap-5">
-              <IconShield className="mt-1 hidden h-9 w-9 shrink-0 text-blue sm:block" />
-              <SectionHeading eyebrow="Where the AI stops" light>
-                This matters more than any feature, <em className="text-paper/70">so we&apos;ll be direct about it.</em>
-              </SectionHeading>
+        {/* 5. Where the AI stops — þyngsti kaflinn (sameiginlegur með /nz). */}
+        <WhereAiStops />
+
+        {/* 6a. Who builds Rondva — andlit, heimilisfang og tryggingar fyrir ofan verð. Tölurnar eru
+            með leyfi viðskiptavinar (9.10.2026, nafnlaust). Ekkert svarloforð: Hjalti ákveður það. */}
+        <section id="who" aria-labelledby="who-title" className="px-6 py-20 md:py-28">
+          <div className="mx-auto max-w-[1180px]">
+            <SectionHeading id="who-title" eyebrow="Who builds Rondva">
+              A person you can write to.
+            </SectionHeading>
+            <div className="mt-12 grid gap-10 md:grid-cols-[auto_1fr] md:gap-14">
+              <div className="rv-reveal flex items-center gap-5 md:flex-col md:items-start" style={{ "--i": 0 } as React.CSSProperties}>
+                {HAS_FOUNDER_PHOTO ? (
+                  <Image
+                    src="/rondva/hjalti.jpg"
+                    alt="Hjalti Sigmundsson"
+                    width={112}
+                    height={112}
+                    className="h-28 w-28 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-ink font-serif text-[34px] font-semibold tracking-tight text-paper"
+                  >
+                    HS
+                  </span>
+                )}
+                <div>
+                  <p className="font-serif text-[22px] font-semibold tracking-tight text-ink">Hjalti Sigmundsson</p>
+                  <a
+                    href="mailto:hjalti@rondva.com"
+                    className="mt-1 inline-block text-[15px] text-muted underline underline-offset-4 hover:text-blue"
+                  >
+                    hjalti@rondva.com
+                  </a>
+                </div>
+              </div>
+              <div className="rv-reveal" style={{ "--i": 1 } as React.CSSProperties}>
+                <p className="max-w-2xl text-lg leading-relaxed text-muted">
+                  Built in Reykjavík with a pre-purchase inspection firm that writes every one of its reports in
+                  Rondva. Writing up a typical report there went from about 3 hours 40 minutes to about 30 minutes.
+                </p>
+                <p className="mt-5 text-sm text-muted">
+                  {BRANDS.rondva.company} · reg. no. {BRANDS.rondva.companyId} · {BRANDS.rondva.companyAddress}
+                </p>
+                <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+                  {[
+                    <>
+                      <Link href="/privacy" className="underline underline-offset-4 hover:text-blue">
+                        Your data is stored in the EU (Ireland)
+                      </Link>
+                    </>,
+                    <>Every report says it was AI-drafted and reviewed by you.</>,
+                    <>
+                      Billed by Apple in your currency. Cancel any time in Settings, no contract.{" "}
+                      <Link href="/terms#availability" className="underline underline-offset-4 hover:text-blue">
+                        60 days&apos; notice and a full export if we ever shut down
+                      </Link>
+                    </>,
+                  ].map((line, i) => (
+                    <li key={i} className="flex gap-3 rounded-card border border-line bg-paper p-5 text-[15px] leading-snug text-ink">
+                      <svg
+                        viewBox="0 0 20 20"
+                        className="mt-px h-5 w-5 shrink-0 text-blue"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="m4 10.5 4 4 8-9" />
+                      </svg>
+                      <span>{line}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <ol className="mt-14 grid gap-x-12 gap-y-10 md:grid-cols-2">
-              {whereAiStops.map((item, i) => (
-                <li key={item.title} className="rv-reveal border-t border-paper/15 pt-6" style={{ "--i": i } as React.CSSProperties}>
-                  <span className="rv-tnum text-xs font-semibold tracking-[0.14em] text-blue">0{i + 1}</span>
-                  <p className="mt-3 font-serif text-[24px] font-semibold leading-snug tracking-tight">{item.title}</p>
-                  <p className="mt-2 text-lg leading-relaxed text-paper/70">{item.body}</p>
-                </li>
-              ))}
-            </ol>
           </div>
         </section>
 
         {/* 6. Verð — Solo / Pro / Report pack + stofnmannatilboð (tölur í src/lib/rondva-pricing.ts).
-            Ekkert er til sölu á vefnum: kaup verða í iPhone-appinu í gegnum App Store, sem er
-            „coming to the App Store“. Tilboðið nefnir ekki Ísland (íslensk fyrirtæki: eftir boði). */}
+            Ekkert er til sölu á vefnum: kaup eru í iPhone-appinu í gegnum App Store.
+            Tilboðið nefnir ekki Ísland (íslensk fyrirtæki: eftir boði). */}
         <section id="pricing" aria-labelledby="pricing-title" className="px-6 py-20 md:py-28">
           <div className="mx-auto max-w-[1180px]">
             <SectionHeading id="pricing-title" eyebrow="Pricing">
@@ -325,24 +389,19 @@ export default function RondvaLandingPage() {
                   </p>
                 </div>
                 <div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+                    <AppStoreBadge />
                     <a
                       href={BRANDS.rondva.appUrl}
-                      className="inline-flex items-center justify-center gap-2 rounded-full bg-blue px-7 py-3.5 text-sm font-semibold text-paper transition-colors hover:bg-[#2c62ec]"
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-line-strong bg-paper px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-ink"
                     >
                       Create your company account
                       <span aria-hidden="true">→</span>
                     </a>
-                    <a
-                      href="#waitlist"
-                      className="inline-flex items-center justify-center rounded-full border border-line-strong bg-paper px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-ink"
-                    >
-                      Join the waitlist
-                    </a>
                   </div>
                   <p className="mt-4 text-sm leading-relaxed text-muted">
-                    Set up your company account on the web now. The iPhone app is coming to the App
-                    Store; the waitlist tells you when it&apos;s live.
+                    Get the iPhone app on the App Store. You can also set up your company account on the
+                    web, and sign in with the same Apple or Google account in the app.
                   </p>
                 </div>
               </div>
@@ -435,33 +494,25 @@ export default function RondvaLandingPage() {
 
             <p className="rv-reveal mt-6 max-w-3xl text-sm leading-relaxed text-muted" style={{ "--i": 1 } as React.CSSProperties}>
               {RONDVA_PRICE_NOTE}{" "}
-              Plans and report packs go on sale in the iPhone app once Rondva is on the App Store.
-              It&apos;s coming soon, and nothing can be bought on this page.
+              Plans and report packs are bought in the iPhone app, through the App Store. Nothing can
+              be bought on this page.
             </p>
           </div>
         </section>
 
-        {/* 7. Waitlist */}
-        <section id="waitlist" className="rv-blueprint-light px-6 py-20 md:py-28">
-          <div className="mx-auto max-w-2xl text-center">
-            <div className="rv-reveal">
-              <p className="rv-eyebrow">Waitlist</p>
-              <h2 className="rv-display rv-balance mt-4 text-[34px] text-ink sm:text-[44px]">
-                We&apos;re opening a small number of places first.
-              </h2>
-              <p className="mt-5 text-lg leading-relaxed text-muted">
-                Leave your email and the country you inspect in. We&apos;ll write when Rondva is
-                ready for you to try — no newsletter, no drip campaign.
-              </p>
-            </div>
-            <div className="rv-reveal mt-10 text-left" style={{ "--i": 1 } as React.CSSProperties}>
-              <WaitlistForm />
-            </div>
-            <p className="rv-reveal mt-6 text-sm text-muted" style={{ "--i": 2 } as React.CSSProperties}>
-              Questions first?{" "}
-              <Link href="/privacy" className="underline underline-offset-4">How we handle your data</Link>
-            </p>
-          </div>
+        {/* 7. Fyrir þá sem eru ekki á iPhone (kom í stað biðlistans). */}
+        <section className="rv-blueprint-light px-6 py-14 md:py-16">
+          <p className="rv-reveal mx-auto max-w-2xl text-center text-lg leading-relaxed text-ink">
+            Not on iPhone? Email{" "}
+            <a href={`mailto:${BRANDS.rondva.contactEmail}`} className="font-semibold underline underline-offset-4 hover:text-blue">
+              {BRANDS.rondva.contactEmail}
+            </a>
+            .
+          </p>
+          <p className="rv-reveal mx-auto mt-3 max-w-2xl text-center text-sm text-muted" style={{ "--i": 1 } as React.CSSProperties}>
+            Questions first?{" "}
+            <Link href="/privacy" className="underline underline-offset-4">How we handle your data</Link>
+          </p>
         </section>
       </main>
       <RondvaFooter />

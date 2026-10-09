@@ -7,7 +7,9 @@ import {
   RONDVA_PRICE_NOTE,
   usd,
 } from "@/lib/rondva-pricing";
+import { faqPageLd } from "@/lib/rondva-seo";
 import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/LegalPage";
+import { JsonLd } from "@/components/rondva/JsonLd";
 
 // rondva.com/support — support-slóð Rondva-appsins (App Store Connect og
 // lib/brand.ts í beton-app vísa hingað). Akkerin (#delete-account o.fl.) eru
@@ -18,21 +20,73 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // eyðublöð: samband er tölvupóstur (rondva@rondva.com). Heiti hnappa eru úr lib/i18n/catalog.ts.
 
 export const metadata: Metadata = {
-  title: "Support",
+  title: "Support and FAQ",
   description:
-    "Help with the Rondva app and dashboard: signing in, company access, AI-drafted reports, weather on the report, free reports and pricing, subscriptions, restoring purchases and refunds, deleting your account, and how to reach us by email.",
+    "Answers about Rondva: NZS 4306 reports, working with no signal, what the AI does, where your photos are stored, pricing and tax invoices, adding a colleague, subscriptions and refunds, what happens if Rondva shuts down, and deleting your account.",
   alternates: { canonical: `${BRANDS.rondva.marketingUrl}/support` },
 };
 
 const R = BRANDS.rondva;
 const mail = `mailto:${R.contactEmail}`;
 
+// Hver kafli er spurning og byrjar á beinu svari (fyrsta setning). Sami texti fer í FAQPage JSON-LD,
+// svo svarið sem vélarnar lesa er það sem notandinn sér. Akkerin (id) eru óbreytt og hluti af
+// samningnum við appið.
+const [solo, pro] = RONDVA_PLANS;
+const ANSWERS: Record<string, string> = {
+  "getting-started":
+    "Download Rondva from the App Store, sign in with Apple or Google and register your company. The same account opens the web dashboard at app.rondva.com.",
+  nzs4306:
+    "Yes. For New Zealand pre-purchase inspections, Rondva drafts the report in NZS 4306:2005 order from your photos, notes, moisture readings and ratings. You review it, and the PDF goes out under your company name.",
+  access:
+    "Rondva accounts belong to companies, including one-person firms. The first time you sign in, the app asks you to register yours.",
+  team:
+    "Yes. We link your colleagues to one company account, usually within one working day of them emailing rondva@rondva.com.",
+  inspections:
+    "Add the property, the rooms you walk, a rating for each area and an observation for each finding, with photos and a severity that you choose.",
+  offline:
+    "Yes. Everything you record is saved on your phone first, so you can keep inspecting with no signal, for example under the house or in the roof space. It syncs when you are back online.",
+  weather:
+    "Yes. If the weather field is empty on the day of the inspection, Rondva fills it in with a short forecast for the property, which you can check and change.",
+  reports:
+    "The AI drafts the report text and a summary from your notes, ratings and photos. The severities stay the ones you set, and Rondva asks you each time before anything is sent to the AI service.",
+  pricing: `Solo is ${usd(solo.price)} a month for ${solo.reports} AI-drafted reports and Pro is ${usd(pro.price)} a month for ${pro.reports}; a report pack adds ${RONDVA_PACK.reports} reports for ${usd(RONDVA_PACK.price)}. You buy in the app, through the App Store.`,
+  "tax-invoice":
+    "Apple is the seller of record, so your receipt comes from Apple: you find it in your Apple purchase history and in the receipt email Apple sends after each charge. Need a GST/VAT invoice addressed to your company? Email rondva@rondva.com.",
+  subscriptions:
+    "In the app, open Settings, then Plan & billing, then Manage subscription, or open Subscriptions in your iPhone's Settings. Apple handles payments, cancellations and refunds.",
+  language:
+    "The app is in English and Icelandic, and the language your reports are written in is a company setting.",
+  "delete-account":
+    "Yes, in the app: Settings, then Delete account. It permanently deletes your account and everything in it.",
+  "data-location":
+    "In the European Union (Ireland). Our database and file storage, which hold your photos and reports, are there.",
+  shutdown:
+    "We would tell you at least 60 days in advance, so you can export your reports.",
+};
+
+// Svarið sem fyrsta málsgrein kaflans; netfangið verður tengill (textinn er óbreyttur).
+function Lead({ id }: { id: string }) {
+  const parts = ANSWERS[id].split(R.contactEmail);
+  return (
+    <p className="font-medium text-ink">
+      {parts.map((part, i) => (
+        <span key={i}>
+          {part}
+          {i < parts.length - 1 ? <LegalLink href={mail}>{R.contactEmail}</LegalLink> : null}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 const sections: LegalSection[] = [
   {
     id: "getting-started",
-    title: "Getting started",
+    title: "How do I get started with Rondva?",
     body: (
       <>
+        <Lead id="getting-started" />
         <p>
           Rondva is an iPhone app for recording property inspections, with a web dashboard at{" "}
           <LegalLink href={R.appUrl}>app.rondva.com</LegalLink>. You sign in to both with the
@@ -47,14 +101,34 @@ const sections: LegalSection[] = [
     ),
   },
   {
-    id: "access",
-    title: "Company accounts and access",
+    id: "nzs4306",
+    title: "Does Rondva write NZS 4306 reports?",
     body: (
       <>
+        <Lead id="nzs4306" />
         <p>
-          Rondva accounts belong to companies, including one-person firms. The first time you
-          sign in, the app asks you to register your company: its name, its country and, if
-          you like, a website. Some new companies are reviewed before access opens. Until
+          The NZS 4306 report has a Certificate of Inspection for you to sign, the areas
+          inspected and not inspected, your limitations, a table of moisture readings, a note
+          on gradual deterioration and maintenance, and a note that AI was used. You pick the
+          rating for each area, and the AI cannot change it. You are responsible for the
+          content before you issue the report; see{" "}
+          <a href="#reports" className="underline underline-offset-4">what the AI does</a>.
+        </p>
+        <p>
+          Read more on the{" "}
+          <LegalLink href="/nz">New Zealand NZS 4306 page</LegalLink>.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "access",
+    title: "How do company accounts and access work?",
+    body: (
+      <>
+        <Lead id="access" />
+        <p>
+          You register your company&apos;s name, its country and, if you like, a website. Some new companies are reviewed before access opens. Until
           your company has been approved, the app tells you that access isn&apos;t active yet,
           and we let you know as soon as it is. Not sure where your company stands? Write to
           us.
@@ -74,33 +148,62 @@ const sections: LegalSection[] = [
     ),
   },
   {
-    id: "inspections",
-    title: "Recording an inspection",
+    id: "team",
+    title: "More than one inspector?",
     body: (
       <>
+        <Lead id="team" />
+        <ol className="list-decimal space-y-1 pl-5">
+          <li>Each inspector installs Rondva and signs in with Apple or Google.</li>
+          <li>
+            Each one <strong>stops at the company screen</strong> and emails the address they
+            signed in with to{" "}
+            <LegalLink href={mail}>{R.contactEmail}</LegalLink>.
+          </li>
+          <li>We link everyone to one company account, usually within one working day.</li>
+        </ol>
         <p>
-          Add the property, the rooms you walk, a rating per room and an observation for
-          each thing you find, with photos and a severity that you choose. Thermal images
-          can be imported from your photo library, for example from a thermal camera&apos;s
-          own app.
+          You share the plan, the report credits, your logo and your terms. Each inspector sees
+          only their own inspections. Self-serve team invites are coming.
         </p>
+      </>
+    ),
+  },
+  {
+    id: "inspections",
+    title: "How do I record an inspection?",
+    body: (
+      <>
+        <Lead id="inspections" />
         <p>
-          Everything is saved on your phone first, so you can keep working without a
-          signal. It syncs to your account when you&apos;re back online and then appears on
-          app.rondva.com.
+          Thermal images can be imported from your photo library, for example from a thermal
+          camera&apos;s own app.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "offline",
+    title: "Does it work with no signal?",
+    body: (
+      <>
+        <Lead id="offline" />
+        <p>
+          Once you are back online it syncs to your account and appears on app.rondva.com.
+          Recording never needs a connection; creating an AI draft does.
         </p>
       </>
     ),
   },
   {
     id: "weather",
-    title: "Weather on the report",
+    title: "Does Rondva fill in the weather?",
     body: (
       <>
+        <Lead id="weather" />
         <p>
-          On the day of the inspection, if the weather field is empty, Rondva fills it in with
-          a short forecast for the property, such as &ldquo;Fair, 12 °C, light wind&rdquo;. You can
-          also tap the weather button yourself. It needs a suburb or town
+          The forecast reads like &ldquo;Fair, 12 °C, light wind&rdquo;. You can also tap the
+          weather button yourself. It needs a suburb or town
           or a postcode, and your company&apos;s country (which you chose when you registered).
           If the place can&apos;t be found, add the suburb or city or the postcode, or type
           the weather in.
@@ -119,18 +222,17 @@ const sections: LegalSection[] = [
   },
   {
     id: "reports",
-    title: "AI-drafted reports",
+    title: "What does the AI do in a report?",
     body: (
       <>
+        <Lead id="reports" />
         <p>
-          When you create a report, Rondva asks you each time before anything is sent to the
-          AI service, and shows exactly what will be sent. The AI drafts the report text and
-          a summary from your notes, ratings and photos. The severities stay the ones you
-          set. You can also choose to create the report without AI.
+          Rondva shows exactly what will be sent before you confirm. You can also choose to
+          create the report without AI.
         </p>
         <p>
-          Read the draft and change anything you like, on the phone or on app.rondva.com, and
-          export it as a PDF (or a Word file from the app). Nothing is sent to your client
+          Read the draft and change anything you like, on app.rondva.com, in any browser,
+          including your phone&apos;s, and export it as a PDF (or a Word file from the app). Nothing is sent to your client
           automatically.
         </p>
         <p>
@@ -142,9 +244,10 @@ const sections: LegalSection[] = [
   },
   {
     id: "pricing",
-    title: "Free reports, pricing and credits",
+    title: "How much does Rondva cost?",
     body: (
       <>
+        <Lead id="pricing" />
         <p>
           <strong>Founding offer:</strong> until {RONDVA_OFFER.endsOn}, every company gets{" "}
           <strong>{RONDVA_OFFER.freeReportsPerMonth} AI-drafted reports free every month</strong>.
@@ -182,10 +285,20 @@ const sections: LegalSection[] = [
     ),
   },
   {
-    id: "subscriptions",
-    title: "Subscriptions, restoring purchases and refunds",
+    id: "tax-invoice",
+    title: "Do I get a tax invoice?",
     body: (
       <>
+        <Lead id="tax-invoice" />
+      </>
+    ),
+  },
+  {
+    id: "subscriptions",
+    title: "How do I cancel, restore purchases or get a refund?",
+    body: (
+      <>
+        <Lead id="subscriptions" />
         <p>
           <strong>Restore purchases.</strong> On a new phone, or after reinstalling the app,
           sign in with the same Rondva account, then go to{" "}
@@ -222,23 +335,24 @@ const sections: LegalSection[] = [
   },
   {
     id: "language",
-    title: "Languages",
+    title: "Which languages does Rondva support?",
     body: (
       <>
+        <Lead id="language" />
         <p>
-          The app is in English and Icelandic. Change it under{" "}
-          <strong>Settings → Language</strong>. The language your reports are written in is a
-          company setting, which you&apos;ll find under <strong>Settings</strong> on
-          app.rondva.com.
+          Change the app language under <strong>Settings → Language</strong>. The report
+          language is a company setting, which you&apos;ll find under <strong>Settings</strong>{" "}
+          on app.rondva.com.
         </p>
       </>
     ),
   },
   {
     id: "delete-account",
-    title: "Deleting your account and data",
+    title: "Can I delete my account and data?",
     body: (
       <>
+        <Lead id="delete-account" />
         <p>
           You can delete your Rondva account in the app:{" "}
           <strong>Settings &rarr; Delete account</strong> (or, if your company hasn&apos;t been
@@ -272,7 +386,7 @@ const sections: LegalSection[] = [
           backup cycle; copies on other devices where you were signed in, until you remove the
           app there; and reports you already exported or sent to clients. If your company has
           other members, the company and its data stay, and only your own membership is
-          removed. The waitlist is separate: ask us to remove you.
+          removed. Anything you sent us by email is separate: ask us to remove it.
         </p>
         <p>
           If you signed in with Apple, you can also stop using Apple sign-in for Rondva on your
@@ -284,8 +398,38 @@ const sections: LegalSection[] = [
     ),
   },
   {
+    id: "data-location",
+    title: "Where are my photos stored?",
+    body: (
+      <>
+        <Lead id="data-location" />
+        <p>
+          When you create a report with AI and confirm it, the inspection&apos;s notes,
+          ratings and photos go to Anthropic in the United States to draft the text; photos are
+          shared as links that stop working after 10 minutes, and we don&apos;t use your content
+          to train AI models. If you create the report without AI, nothing is sent to Anthropic.
+          The details are in the <LegalLink href="/privacy#ai">privacy policy</LegalLink>.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "shutdown",
+    title: "What happens if Rondva shuts down?",
+    body: (
+      <>
+        <Lead id="shutdown" />
+        <p>
+          See <LegalLink href="/terms#availability">Availability in the terms</LegalLink>.
+          Because the app saves your work on the phone first, you can usually keep recording
+          while our servers are down.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "privacy",
-    title: "Privacy and security",
+    title: "How is my data handled, and how do I report a security problem?",
     body: (
       <>
         <p>
@@ -302,8 +446,13 @@ const sections: LegalSection[] = [
   },
 ];
 
+// FAQPage: spurning (heiti kaflans) + sami svartexti og sést í kaflanum. Kaflar án svars (privacy) fylgja ekki með.
+const FAQ = sections.filter((s) => ANSWERS[s.id] && s.id !== "privacy").map((s) => ({ q: s.title, a: ANSWERS[s.id] }));
+
 export default function RondvaSupportPage() {
   return (
+    <>
+    <JsonLd nodes={[faqPageLd(FAQ)]} />
     <LegalPage
       eyebrow="Support"
       title="Help with Rondva"
@@ -314,7 +463,7 @@ export default function RondvaSupportPage() {
         </p>
       }
       sections={sections}
-      revised="8 October 2026"
+      revised="9 October 2026"
     >
       <div className="mt-10 rounded-card border border-line bg-paper p-6 shadow-[0_24px_60px_-40px_rgba(16,20,24,0.25)]">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">Contact</p>
@@ -335,5 +484,6 @@ export default function RondvaSupportPage() {
         </p>
       </div>
     </LegalPage>
+    </>
   );
 }
