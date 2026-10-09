@@ -78,7 +78,7 @@ for (const s of [
   'Deleting your Rondva account does not cancel a subscription', 'do not carry over', "don't expire",
   'free reports from your first month first, then the reports of your subscription period, then report packs',
   'Pro starts straight away', 'unused Solo reports end', 'Restore purchases', 'Refunds are handled by Apple',
-  'we take back the unused reports', 'First month free.', 'AI-drafted reports free for the first',
+  'we take back the unused reports', 'First month free.', 'AI-drafted reports free for', 'first AI-drafted report (not from sign-up)',
   'whichever runs out first', 'nothing is charged afterwards', 'once per company and once per person',
   'same Apple or Google sign-in or email address', 'does not get another free month',
 ]) assert.ok(pricing.includes(s), `terms/pricing says: ${s}`);

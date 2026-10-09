@@ -320,9 +320,10 @@ export default function RondvaLandingPage() {
                     {RONDVA_TRIAL.freeReports} free <span className="whitespace-nowrap">AI-drafted</span> reports <em>in your first month.</em>
                   </h3>
                   <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">
-                    For the first {RONDVA_TRIAL.days} days after your company account is activated, whichever
-                    runs out first. No card needed and nothing renews on its own; after that, choose a plan or
-                    a report pack. Manual edits and re-exports stay free, as always.
+                    The {RONDVA_TRIAL.days} days start when you draft your first report, not when you sign up,
+                    and the free reports end after {RONDVA_TRIAL.days} days or when they run out, whichever comes
+                    first. No card needed and nothing renews on its own; after that, choose a plan or a report
+                    pack. Manual edits and re-exports stay free, as always.
                   </p>
                 </div>
                 <div>

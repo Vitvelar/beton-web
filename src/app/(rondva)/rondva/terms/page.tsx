@@ -233,8 +233,8 @@ const sections: LegalSection[] = [
       <>
         <p>
           <strong>First month free.</strong> Each new company on Rondva gets{" "}
-          {RONDVA_TRIAL.freeReports} AI-drafted reports free for the first {RONDVA_TRIAL.days} days
-          after its company account is activated, whichever runs out first, with no card needed.
+          {RONDVA_TRIAL.freeReports} AI-drafted reports free for {RONDVA_TRIAL.days} days from the
+          company&apos;s first AI-drafted report (not from sign-up), whichever runs out first, with no card needed.
           Free reports that are not used in those {RONDVA_TRIAL.days} days end, and nothing is
           charged afterwards. The free month is given once per company and once per person: if
           an account that has had it is deleted and registered again with the same Apple or

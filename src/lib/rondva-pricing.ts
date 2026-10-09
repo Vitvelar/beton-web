@@ -56,7 +56,7 @@ export const RONDVA_INCLUDED = [
 /**
  * Fyrsti mánuður frír (ákvörðun eiganda 2026-10-08; kom í stað stofnmannatilboðsins „20 á
  * mánuði til 31. janúar 2027“): hvert nýtt fyrirtæki fær EINU SINNI `freeReports` AI-drög sem
- * gilda í `days` daga frá því fyrirtækjaaðgangurinn er virkjaður, hvort sem fyrr kemur. Ekkert
+ * gilda í `days` daga frá FYRSTU AI-skýrslu fyrirtækisins (ekki frá skráningu eða virkjun; PRUFUTIMI-HONNUN §2a, `starts_on = 'first_ai_report'`), hvort sem fyrr kemur. Ekkert
  * kort, engin sjálfvirk greiðsla á eftir. Sama regla í gagnagrunni: beton-app
  * supabase/migrations/20261008150000_report_trial_month.sql (report_trial_policy 20 / 30).
  */

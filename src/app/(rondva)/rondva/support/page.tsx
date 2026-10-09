@@ -147,8 +147,8 @@ const sections: LegalSection[] = [
       <>
         <p>
           <strong>First month free:</strong> every new company gets{" "}
-          <strong>{RONDVA_TRIAL.freeReports} AI-drafted reports free for its first {RONDVA_TRIAL.days} days</strong>,
-          counted from the day its company account is activated, whichever runs out first. No
+          <strong>{RONDVA_TRIAL.freeReports} AI-drafted reports free for {RONDVA_TRIAL.days} days</strong>,
+          counted from the company&apos;s first AI-drafted report (not from sign-up), whichever runs out first. No
           card is needed and nothing is charged when the month ends. The free month is given once
           per company and per sign-in. One report covers the first AI draft for an inspection plus
           up to 2 AI revisions of it. Editing text by hand, exporting again, and creating a report
