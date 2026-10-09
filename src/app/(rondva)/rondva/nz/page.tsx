@@ -156,7 +156,7 @@ export default function RondvaNzPage() {
               className="rv-reveal rv-display rv-balance mt-6 max-w-4xl text-[40px] sm:text-[56px] md:text-[64px]"
               style={{ "--i": 1 } as React.CSSProperties}
             >
-              Your NZS 4306 report, <em>drafted from your site notes.</em>
+              Your <span className="whitespace-nowrap">NZS 4306</span> report, <em>drafted from your site notes.</em>
             </h1>
             <p
               className="rv-reveal mt-7 max-w-2xl text-lg leading-relaxed text-paper/80 md:text-xl"

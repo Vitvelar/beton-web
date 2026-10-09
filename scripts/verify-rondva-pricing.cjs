@@ -254,7 +254,7 @@ const nzCode = stripComments(nz);
 const nzPlain = nz.replace(/\s+/g, ' ');
 assert.match(nzCode, /title: \{ absolute: TITLE \}/);
 assert.ok(nzPlain.includes('const TITLE = "NZS 4306 building inspection reports, drafted on your iPhone | Rondva"'));
-assert.ok(nzPlain.includes('Your NZS 4306 report, <em>drafted from your site notes.</em>'));
+assert.ok(nzPlain.replace('<span className="whitespace-nowrap">NZS 4306</span>', 'NZS 4306').includes('Your NZS 4306 report, <em>drafted from your site notes.</em>'));
 assert.ok(nzPlain.includes('Photos, notes, moisture readings and your own rating for each area, even under the house with no signal. Rondva drafts the report in NZS 4306:2005 order. You review every word, and the PDF goes out under your company name.'));
 assert.ok(nzPlain.includes("Rondva is an iPhone app that drafts NZS 4306:2005 pre-purchase inspection reports from the inspector's photos, notes and ratings. The inspector reviews and issues the report."));
 assert.ok(nzPlain.includes('Captures with no signal: under the house, in the roof space.'));
