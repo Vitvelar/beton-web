@@ -240,9 +240,14 @@ async function pixels(all, output) {
 // Meðvituð breyting í NZ-sniði (vefur) 3/3: enskar skýrslur fá „Page“ í fót í stað „Bls.“ —
 // markup-hash breytist ekki (fóturinn er í puppeteer-sniðmáti), aðeins fótur PDF-síðnanna:
 // REPORT_PIXELS_ALLOW_FOOTER=en-standard,en-condition_1_3 við samanburð við golden úr main.
+// NZ-sniðið 4/PR 1: ensk skýrsla fær líka fyrirtækisnafn í fót („{Company} · Page n of N“) — sami fyrirvari.
 function pixelRenderOptions(name) {
   const { reportCopy, reportLocaleOf } = load('src/lib/report/i18n.ts');
-  return { pageLabel: reportCopy(reportLocaleOf(FIXTURES[name].ai_report_data)).pageLabel };
+  // Sama og tick-leiðin: fyrirtækisnafn í fæti aðeins á skýrslum sem eru ekki íslenskar („{Company} · Page n of N“).
+  const copy = reportCopy(reportLocaleOf(FIXTURES[name].ai_report_data));
+  const isIcelandic = reportLocaleOf(FIXTURES[name].ai_report_data) === 'is';
+  const company = isIcelandic ? null : (FIXTURES[name].inspectors?.company_name?.trim() || 'Beton ehf.');
+  return { pageLabel: copy.pageLabel, pageOfLabel: copy.pageOfLabel, footerCompany: company };
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });

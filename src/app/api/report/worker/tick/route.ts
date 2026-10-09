@@ -10,6 +10,7 @@ import {
   reportStoragePath,
 } from "@/lib/report/shared";
 import { reportCopy, reportLocaleOf } from "@/lib/report/i18n";
+import { resolveBranding } from "@/lib/report/branding";
 
 // Background PDF render worker, in-process. Pinged by Supabase pg_cron (and any
 // best-effort kick) — drains the report_jobs queue, rendering the canonical
@@ -93,10 +94,23 @@ async function processJob(
 
     const base = (process.env.REPORT_RENDER_BASE_URL ?? "https://beton.is").replace(/\/$/, "");
     const reportUrl = `${base}/dashboard/${inspectionId}/report?pdf=1`;
+    const locale = reportLocaleOf(insp);
+    const copy = reportCopy(locale);
+    // Fyrirtækisnafn í fæti á skýrslum sem eru ekki íslenskar: sama nafn og skýrslusíðan sýnir
+    // (resolveBranding). Íslenskar (Beton) skýrslur sækja ekkert aukalega og halda „Bls. n / N“ óbreyttu.
+    let footerCompany: string | null = null;
+    if (locale !== "is") {
+      const { data: inspector } = insp.inspector_id
+        ? await svc.from("inspectors").select("company_name").eq("id", insp.inspector_id).maybeSingle()
+        : { data: null };
+      footerCompany = resolveBranding(inspector ?? null).name;
+    }
     const pdf = await renderReportPdf(reportUrl, {
       extraHeaders: { [WORKER_TOKEN_HEADER]: process.env.REPORT_WORKER_TOKEN! },
       // „Bls.“ á íslenskum skýrslum (óbreytt), „Page“ á öllum öðrum.
-      pageLabel: reportCopy(reportLocaleOf(insp)).pageLabel,
+      pageLabel: copy.pageLabel,
+      pageOfLabel: copy.pageOfLabel,
+      footerCompany,
     });
 
     const path = reportStoragePath({
