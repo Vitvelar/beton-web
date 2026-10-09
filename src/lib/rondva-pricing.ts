@@ -82,6 +82,17 @@ export const RONDVA_OFFER_LINE = "Your first reports are free. No card.";
 export const RONDVA_PRICE_NOTE =
   "Charged by Apple in your currency incl. GST/VAT. Solo is NZ$99.99 in New Zealand, A$79.99 in Australia and EUR 59.99 in Ireland.";
 
+/**
+ * NZ-verð á /nz. Aðeins Solo er staðfest í App Store Connect (NZ$99.99); Pro og Report pack eru
+ * EKKI gefin upp í NZ$ fyrr en þau eru lesin úr ASC — ekki giska. Verð á skýrslu er reiknað.
+ */
+export const RONDVA_NZ_SOLO = { price: "99.99", currency: "NZ$" } as const;
+
+export function nzSoloPerReport(): string {
+  const solo = RONDVA_PLANS.find((p) => p.id === "solo");
+  return solo ? (Number(RONDVA_NZ_SOLO.price) / solo.reports).toFixed(2) : "";
+}
+
 /** Verð á vefnum eru í USD og merkt „US$“ svo NZ/AU-gestur lesi þau ekki sem eigin dollara. */
 export function usd(price: string): string {
   return `US$${price}`;
