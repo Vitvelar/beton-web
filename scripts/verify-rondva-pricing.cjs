@@ -21,8 +21,8 @@ const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s
 const cache = new Map();
 function load(rel) {
   if (cache.has(rel)) return cache.get(rel);
-  const module = { exports: {} };
-  cache.set(rel, module.exports);
+  const mod = { exports: {} };
+  cache.set(rel, mod.exports);
   const resolve = (id) => {
     if (id.startsWith('@/')) return `src/${id.slice(2)}.ts`;
     if (id.startsWith('./') || id.startsWith('../')) return path.join(path.dirname(rel), `${id}.ts`);
@@ -30,8 +30,8 @@ function load(rel) {
   };
   const code = ts.transpileModule(read(rel), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
   vm.runInNewContext(code, {
-    exports: module.exports,
-    module,
+    exports: mod.exports,
+    module: mod,
     Response,
     JSON,
     Number,
@@ -39,8 +39,8 @@ function load(rel) {
     Object,
     require: (id) => (resolve(id) ? load(resolve(id)) : require(id)),
   });
-  cache.set(rel, module.exports);
-  return module.exports;
+  cache.set(rel, mod.exports);
+  return mod.exports;
 }
 // vm-samhengið hefur eigin Array/Object-frumgerðir: JSON-umferð svo deepStrictEqual sjái venjuleg gögn.
 const plain = (x) => JSON.parse(JSON.stringify(x));
