@@ -34,7 +34,7 @@ export function AppStoreQr({ className, tone = "dark" }: { className?: string; t
         height={96}
         className="h-24 w-24 rounded-lg"
       />
-      <p className={`max-w-[7rem] text-sm leading-snug ${tone === "dark" ? "text-paper/70" : "text-muted"}`}>Scan with your iPhone</p>
+      <p className={`max-w-[7rem] text-sm leading-snug ${tone === "dark" ? "text-paper/70" : "text-fog"}`}>Scan with your iPhone</p>
     </div>
   );
 }

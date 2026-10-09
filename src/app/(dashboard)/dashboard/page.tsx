@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
-import { getDashboardLocale } from "@/lib/request-brand";
+import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
+import { RondvaDashboardEmpty } from "@/components/rondva/RondvaDashboardEmpty";
 import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 import type { InspectionStatus } from "@/lib/supabase/types";
 
@@ -37,6 +38,10 @@ export default async function DashboardPage() {
   }
 
   if (!inspections || inspections.length === 0) {
+    // Rondva (enska): þrjú skref í stað dauðs enda. Beton fær nákvæmlega sama texta og áður.
+    if (locale === "en" && (await getRequestBrand()) === "rondva") {
+      return <RondvaDashboardEmpty />;
+    }
     return (
       <div className="text-center py-20">
         <h2 className="text-lg font-semibold text-ink mb-2">
