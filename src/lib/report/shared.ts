@@ -9,10 +9,14 @@ export const REPORT_BUCKET = "inspection-reports";
 
 // True when the request carries the internal worker token. Returns false if the
 // token env is unset, so an un-configured deployment never trusts the header.
+// Samanburður í föstum tíma (óháð því hvar fyrsti munur er), hreint JS svo hann virki
+// bæði í proxy.ts og route handlers. Lengd tókans er föst og ekki leyndarmál.
 export function isWorkerRequest(headerValue: string | null | undefined): boolean {
   const expected = process.env.REPORT_WORKER_TOKEN;
-  if (!expected) return false;
-  return !!headerValue && headerValue === expected;
+  if (!expected || !headerValue || headerValue.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= headerValue.charCodeAt(i) ^ expected.charCodeAt(i);
+  return diff === 0;
 }
 
 function asciiSafe(value: string): string {

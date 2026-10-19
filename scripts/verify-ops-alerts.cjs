@@ -207,6 +207,22 @@ const check = async (name, fn) => { await fn(); n++; console.log(`PASS ${name}`)
     delete process.env.RESEND_API_KEY;
   });
 
+  await check('isWorkerRequest: tímaöruggur samanburður (rétt/rangt/sama lengd/önnur lengd/tómt/env vantar)', () => {
+    const { isWorkerRequest } = load('src/lib/report/shared.ts', {});
+    const src = fs.readFileSync(path.join(ROOT, 'src/lib/report/shared.ts'), 'utf8');
+    assert.ok(!/headerValue\s*===\s*expected/.test(src), 'enginn === samanburður á tóka');
+    assert.equal(isWorkerRequest(TOKEN), true);
+    assert.equal(isWorkerRequest('test-worker-tokeX'), false);
+    assert.equal(isWorkerRequest('Test-worker-token'), false);
+    assert.equal(isWorkerRequest(TOKEN + 'x'), false);
+    assert.equal(isWorkerRequest(''), false);
+    assert.equal(isWorkerRequest(null), false);
+    const saved = process.env.REPORT_WORKER_TOKEN;
+    delete process.env.REPORT_WORKER_TOKEN;
+    try { assert.equal(isWorkerRequest(TOKEN), false); assert.equal(isWorkerRequest(''), false); }
+    finally { process.env.REPORT_WORKER_TOKEN = saved; }
+  });
+
   await check('enginn lykill eða netfang annað en rondva@/alerts@ harðkóðað', () => {
     for (const f of ['src/lib/ops/alerts.ts', 'src/app/api/ops/alerts/drain/route.ts']) {
       const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
