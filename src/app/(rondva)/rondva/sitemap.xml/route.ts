@@ -5,6 +5,8 @@ export const dynamic = "force-static";
 const PAGES: Array<{ path: string; priority: string; changefreq: string }> = [
   { path: "/", priority: "1.0", changefreq: "weekly" },
   { path: "/nz", priority: "0.9", changefreq: "monthly" },
+  { path: "/guides/nzs-4306-pre-purchase-report", priority: "0.7", changefreq: "monthly" },
+  { path: "/compare/inspectpro", priority: "0.6", changefreq: "monthly" },
   { path: "/support", priority: "0.5", changefreq: "monthly" },
   { path: "/privacy", priority: "0.3", changefreq: "yearly" },
   { path: "/terms", priority: "0.3", changefreq: "yearly" },
