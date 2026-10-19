@@ -404,11 +404,14 @@ export async function issueReport(
 
   // Bakka útgáfunni út (drög aftur, fyrri staða) ef ekki tókst að tryggja ferskt render — annars
   // segði skoðunin „útgefin“ á meðan PDF-ið sem hægt er að sækja er enn drögin.
+  // Skilyrt á að snapshot-ið beri enn ÞESSA útgáfu (issued_at): ef ný AI-keyrsla eða annar skrifari
+  // setti nýtt snapshot í biðinni (allt að ~6 s) má bakkið EKKI yfirskrifa það með gamla textanum.
   const revert = async () => {
     const { error } = await supabase
       .from("inspections")
       .update({ ai_report_data: report, ...original, updated_at: new Date().toISOString() })
-      .eq("id", inspectionId);
+      .eq("id", inspectionId)
+      .eq("ai_report_data->issue->>issued_at", built.issue.issued_at);
     if (error) console.error("issueReport revert failed:", error.message);
   };
   let queuedFresh = false;

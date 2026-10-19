@@ -194,6 +194,7 @@ async function main() {
   assert.ok(/snapshotToken\(report\) !== expectedToken/.test(issueFn) && /\.eq\("status", "report_ready"\)/.test(issueFn) && /\.eq\("updated_at", inspection\.updated_at\)/.test(issueFn), 'issue is conditional on the reviewed snapshot (token + status + updated_at)');
   assert.ok(/confirmed !== true/.test(issueFn), 'issue needs the explicit confirmation');
   assert.ok(/await revert\(\)/.test(issueFn) && /issueRenderBusy/.test(issueFn), 'issue is rolled back when no fresh PDF render can be queued');
+  assert.ok(/\.eq\("ai_report_data->issue->>issued_at", built\.issue\.issued_at\)/.test(issueFn), 'the rollback only applies while the snapshot still carries THIS issue (never clobbers a newer AI run/edit)');
   assert.ok(!/anthropic|generate-report|functions\.invoke/i.test(issueFn), 'issuing never runs the AI');
   const updateFn = actions.slice(actions.indexOf('export async function updateReportText'), actions.indexOf('export async function issueReport'));
   assert.ok(/\.\.\.withoutIssue\(snapshot\)/.test(updateFn), 'a text edit drops the issue (report returns to draft)');
