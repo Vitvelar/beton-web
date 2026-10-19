@@ -1,14 +1,21 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { RondvaDashboardEmpty } from "@/components/rondva/RondvaDashboardEmpty";
 import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
+import { shellCopy } from "@/lib/i18n/dashboard-shell";
 import type { InspectionStatus } from "@/lib/supabase/types";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: dashboardCopy(await getDashboardLocale()).list.title };
+}
 
 export default async function DashboardPage() {
   const locale = await getDashboardLocale();
   const t = dashboardCopy(locale).list;
+  const shell = shellCopy(locale);
   const supabase = await createClient();
 
   const { data: inspections, error } = await supabase
@@ -31,83 +38,95 @@ export default async function DashboardPage() {
 
   if (error) {
     return (
-      <div className="rounded-xl bg-sev-danger/10 p-6 text-sev-danger">
+      <div role="alert" className="rounded-xl border border-danger bg-danger-tint p-6 text-danger">
         {fill(t.loadError, { message: error.message })}
       </div>
     );
   }
 
   if (!inspections || inspections.length === 0) {
-    // Rondva (enska): þrjú skref í stað dauðs enda. Beton fær nákvæmlega sama texta og áður.
-    if (locale === "en" && (await getRequestBrand()) === "rondva") {
-      return <RondvaDashboardEmpty />;
+    // Rondva: þrjú skref í stað dauðs enda (is/en eftir vali notandans). Beton fær
+    // sama texta og áður, nú með fyrirsögn (H1) og einu næsta skrefi.
+    if ((await getRequestBrand()) === "rondva") {
+      return <RondvaDashboardEmpty locale={locale} />;
     }
     return (
-      <div className="text-center py-20">
-        <h2 className="text-lg font-semibold text-ink mb-2">
-          {t.emptyTitle}
-        </h2>
-        <p className="text-fog">
-          {t.emptyBody}
-        </p>
+      <div>
+        <h1 className="mb-6 text-2xl font-semibold text-ink">{t.title}</h1>
+        <div className="rounded-xl border border-concrete bg-surface px-6 py-16 text-center">
+          <h2 className="mb-2 text-lg font-semibold text-ink">{t.emptyTitle}</h2>
+          <p className="text-fog">{t.emptyBody}</p>
+          <p className="mx-auto mt-3 max-w-md text-fog">{shell.list.emptyNext}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-ink mb-6">{t.title}</h1>
+      <h1 className="mb-6 text-2xl font-semibold text-ink">{t.title}</h1>
 
-      <div className="overflow-hidden rounded-xl border border-concrete bg-white">
+      {/* overflow-x-auto (ekki hidden): breið tafla skrunast í stað þess að klippast. */}
+      <div className="overflow-x-auto rounded-xl border border-concrete bg-surface">
         <table className="w-full text-left text-sm">
+          <caption className="sr-only">{t.title}</caption>
           <thead>
             <tr className="border-b border-concrete bg-paper-alt">
-              <th className="px-4 py-3 font-medium text-fog">{t.address}</th>
-              <th className="px-4 py-3 font-medium text-fog hidden sm:table-cell">
+              <th scope="col" className="px-4 py-3 font-medium text-fog">{t.address}</th>
+              <th scope="col" className="hidden px-4 py-3 font-medium text-fog sm:table-cell">
                 {t.customer}
               </th>
-              <th className="px-4 py-3 font-medium text-fog hidden md:table-cell">
+              <th scope="col" className="hidden px-4 py-3 font-medium text-fog md:table-cell">
                 {t.date}
               </th>
-              <th className="px-4 py-3 font-medium text-fog text-center">
+              <th scope="col" className="hidden px-4 py-3 text-center font-medium text-fog sm:table-cell">
                 {t.rooms}
               </th>
-              <th className="px-4 py-3 font-medium text-fog text-center hidden sm:table-cell">
+              <th scope="col" className="hidden px-4 py-3 text-center font-medium text-fog sm:table-cell">
                 {t.observations}
               </th>
-              <th className="px-4 py-3 font-medium text-fog">{t.status}</th>
+              <th scope="col" className="px-4 py-3 font-medium text-fog">{t.status}</th>
             </tr>
           </thead>
           <tbody>
             {inspections.map((inspection) => (
               <tr
                 key={inspection.id}
-                className="border-b border-concrete/50 last:border-0 hover:bg-paper-alt/50 transition-colors"
+                className="relative border-b border-concrete transition-colors last:border-0 hover:bg-paper-alt active:bg-paper-alt"
               >
                 <td className="px-4 py-3">
+                  {/* Allur raðarinn er smellanlegur: tengillinn teygist yfir hann (::after),
+                      einn fókusstaður á hverja röð. */}
                   <Link
                     href={`/dashboard/${inspection.id}`}
-                    className="font-medium text-ink hover:text-navy transition-colors"
+                    className="font-medium text-ink wrap-break-word transition-colors hover:text-navy focus-visible:outline-none after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-navy"
                   >
                     {inspection.address}
                   </Link>
-                  <div className="text-xs text-fog mt-0.5">
+                  <div className="mt-0.5 text-xs text-fog">
                     {inspection.postal_code}
+                    {/* Á símum kemur dagsetningin hér undir heimilisfangið (dálkurinn er falinn). */}
+                    {inspection.inspection_date ? (
+                      <span className="md:hidden">
+                        {inspection.postal_code ? " · " : ""}
+                        {inspection.inspection_date}
+                      </span>
+                    ) : null}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-fog hidden sm:table-cell">
+                <td className="hidden px-4 py-3 text-fog sm:table-cell">
                   {inspection.customer_name}
                 </td>
-                <td className="px-4 py-3 text-fog font-mono text-xs hidden md:table-cell">
+                <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-xs text-fog md:table-cell">
                   {inspection.inspection_date}
                 </td>
-                <td className="px-4 py-3 text-center text-fog">
+                <td className="hidden px-4 py-3 text-center text-fog sm:table-cell">
                   {(inspection.rooms as unknown[])?.length ?? 0}
                 </td>
-                <td className="px-4 py-3 text-center text-fog hidden sm:table-cell">
+                <td className="hidden px-4 py-3 text-center text-fog sm:table-cell">
                   {(inspection.observations as unknown[])?.length ?? 0}
                 </td>
-                <td className="px-4 py-3">
+                <td className="whitespace-nowrap px-4 py-3">
                   <StatusBadge
                     status={inspection.status as InspectionStatus}
                     locale={locale}

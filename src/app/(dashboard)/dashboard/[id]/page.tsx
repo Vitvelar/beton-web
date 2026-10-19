@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +9,7 @@ import { ReportActions } from "./report-actions";
 import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
 import { getDashboardLocale, getDashboardRatingScheme } from "@/lib/request-brand";
 import { dashboardCopy, fill, plural } from "@/lib/i18n/dashboard";
+import { tapLink } from "@/lib/ui";
 import type {
   Severity,
   InspectionStatus,
@@ -23,6 +25,26 @@ interface PropertyData {
   byggingarafangi?: string;
   inspectorName?: string;
   [key: string]: unknown;
+}
+
+// Flipatitill = heimilisfang skoðunarinnar (sniðmát skipulagsins bætir viðskeytinu við).
+// Léttur lestur; RLS tryggir að notandinn sér aðeins eigin skoðanir. Bregðist hann
+// fær síðan almennan titil.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const { data } = await supabase.from("inspections").select("address").eq("id", id).maybeSingle();
+    const address = data?.address?.trim();
+    if (address) return { title: address };
+  } catch {
+    // fellur til baka á almennan titil
+  }
+  return { title: dashboardCopy(await getDashboardLocale()).list.title };
 }
 
 export default async function InspectionDetailPage({
@@ -98,15 +120,15 @@ export default async function InspectionDetailPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-fog hover:text-ink transition-colors"
-          >
-            {copy.common.backLink}
-          </Link>
-          <h1 className="text-xl font-semibold text-ink mt-1">
+      <Link
+        href="/dashboard"
+        className={`${tapLink} -ml-1 px-1 text-sm text-fog transition-colors hover:text-ink`}
+      >
+        {copy.settings.backToList}
+      </Link>
+      <div className="mb-6 mt-1 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold text-ink hyphens-auto wrap-break-word">
             {inspection.address}
           </h1>
           <p className="text-sm text-fog">
@@ -114,11 +136,13 @@ export default async function InspectionDetailPage({
             {inspection.municipality ? ` — ${inspection.municipality}` : ""}
           </p>
         </div>
-        <StatusBadge status={inspection.status as InspectionStatus} locale={locale} />
+        <div className="shrink-0 pt-1">
+          <StatusBadge status={inspection.status as InspectionStatus} locale={locale} />
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(min(100%,6.5rem),1fr))] gap-3">
         <StatCard value={rooms.length} label={t.statRooms} />
         <StatCard value={totalObservations} label={t.statObservations} />
         <StatCard value={totalPhotos} label={t.statPhotos} />
@@ -167,15 +191,18 @@ export default async function InspectionDetailPage({
         hasAiReport={!!inspection.ai_report_data}
         canSendToDrive={canSendToDrive}
         locale={locale}
+        // Fjöldi athugasemda (W3a bætir propinu við ReportActions; dreift svo tsc standist
+        // meðan það er ekki komið — óþekkt prop er hunsað).
+        {...{ observationCount: totalObservations }}
       />
 
       {/* Rooms */}
-      <h2 className="text-lg font-semibold text-ink mt-8 mb-4">
+      <h2 className="mb-4 mt-8 text-lg font-semibold text-ink">
         {fill(t.roomsHeading, { count: rooms.length })}
       </h2>
 
       {rooms.length === 0 ? (
-        <p className="text-fog text-sm">
+        <p className="text-sm text-fog">
           {t.noRooms}
         </p>
       ) : (
@@ -191,10 +218,11 @@ export default async function InspectionDetailPage({
             return (
               <div
                 key={room.id}
-                className="rounded-xl border border-concrete bg-white"
+                id={`room-${room.id}`}
+                className="scroll-mt-24 rounded-xl border border-concrete bg-surface"
               >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-concrete/50">
-                  <h3 className="font-semibold text-ink">{room.name}</h3>
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-concrete px-4 py-3">
+                  <h3 className="min-w-0 font-semibold text-ink wrap-break-word">{room.name}</h3>
                   <div className="flex items-center gap-3 text-xs text-fog">
                     <span>{fill(t.roomObservations, { count: obs.length })}</span>
                     <span>{fill(plural(locale, photoCount, t.roomPhotos), { count: photoCount })}</span>
@@ -202,29 +230,29 @@ export default async function InspectionDetailPage({
                 </div>
 
                 {room.notes && (
-                  <div className="px-4 py-2 text-sm text-fog border-b border-concrete/30 bg-paper-alt/50">
+                  <div className="border-b border-concrete bg-paper-alt px-4 py-2 text-sm text-fog">
                     {room.notes}
                   </div>
                 )}
 
                 {obs.length > 0 && (
-                  <ul className="divide-y divide-concrete/30">
+                  <ul className="divide-y divide-concrete">
                     {obs.map((o) => {
                       const obsPhotos = (o.photos ?? []).filter((p) => p.storage_path);
                       return (
                       <li key={o.id}>
                         <Link
                           href={`/dashboard/${id}/observation/${o.id}`}
-                          className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-paper-alt/50 transition-colors"
+                          className="flex items-start justify-between gap-3 px-4 py-3 transition-colors hover:bg-paper-alt active:bg-paper-alt"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-0.5">
+                            <div className="mb-0.5 flex items-start gap-2">
                               {o.observation_number && (
-                                <span className="text-xs font-mono text-fog">
+                                <span className="shrink-0 font-mono text-xs text-fog">
                                   #{o.observation_number}
                                 </span>
                               )}
-                              <span className="text-sm font-medium text-ink truncate">
+                              <span className="line-clamp-2 text-sm font-medium text-ink wrap-break-word">
                                 {o.title}
                               </span>
                             </div>
@@ -234,7 +262,9 @@ export default async function InspectionDetailPage({
                               </p>
                             )}
                           </div>
-                          <SeverityBadge severity={o.severity as Severity} locale={locale} scheme={scheme} />
+                          <span className="shrink-0">
+                            <SeverityBadge severity={o.severity as Severity} locale={locale} scheme={scheme} />
+                          </span>
                         </Link>
                         {obsPhotos.length > 0 && (
                           <div className="px-4 pb-3">
@@ -254,7 +284,7 @@ export default async function InspectionDetailPage({
                 )}
 
                 {photoCount > 0 && (
-                  <div className="px-4 py-3 border-t border-concrete/30">
+                  <div className="border-t border-concrete px-4 py-3">
                     <p className="text-xs font-semibold text-fog mb-2">
                       {fill(t.photosHeading, { count: photoCount })}
                     </p>
@@ -272,9 +302,9 @@ export default async function InspectionDetailPage({
 
 function StatCard({ value, label }: { value: number; label: string }) {
   return (
-    <div className="rounded-xl border border-concrete bg-white p-4 text-center">
+    <div className="min-w-0 rounded-xl border border-concrete bg-surface p-3 text-center sm:p-4">
       <div className="text-2xl font-bold text-navy">{value}</div>
-      <div className="text-xs text-fog mt-0.5">{label}</div>
+      <div className="mt-0.5 text-xs text-fog wrap-break-word hyphens-auto">{label}</div>
     </div>
   );
 }
@@ -287,10 +317,10 @@ function InfoCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-concrete bg-white p-4">
-      <h3 className="text-sm font-semibold text-ink mb-3">{title}</h3>
+    <section className="rounded-xl border border-concrete bg-surface p-4">
+      <h2 className="mb-3 text-base font-semibold text-ink">{title}</h2>
       <dl className="space-y-1.5">{children}</dl>
-    </div>
+    </section>
   );
 }
 
@@ -302,9 +332,9 @@ function InfoRow({
   value: string | null | undefined;
 }) {
   return (
-    <div className="flex justify-between text-sm">
-      <dt className="text-fog">{label}</dt>
-      <dd className="text-ink font-medium">{value ?? "—"}</dd>
+    <div className="flex justify-between gap-4 text-sm">
+      <dt className="shrink-0 text-fog">{label}</dt>
+      <dd className="min-w-0 text-right font-medium text-ink wrap-break-word">{value ?? "—"}</dd>
     </div>
   );
 }
