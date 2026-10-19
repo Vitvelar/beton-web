@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS verify script, same as the other scripts/verify-*.cjs */
 // Verð Rondva (src/lib/rondva-pricing.ts) og textinn á rondva.com eftir útgáfudags-PR: Solo US$49.99/8,
-// Pro US$99.99/30 (mælt með), Report pack US$29.99/10 sem renna ekki út, stofnmannatilboð 20 ókeypis
-// skýrslur á mánuði til 31. janúar 2027, ein tilboðslína (RONDVA_OFFER_LINE) og ein prufa
-// (RONDVA_TRIAL). Athugar líka að síðurnar noti tölurnar úr einni heimild, að appið sé kynnt sem
+// Pro US$99.99/30 (mælt með), Report pack US$29.99/10 sem renna ekki út, fyrsti mánuður frír: 20 ókeypis
+// AI-skýrslur í 30 daga frá FYRSTU AI-skýrslu fyrirtækisins (kom 2026-10-08 í stað stofnmannatilboðsins
+// 20 á mánuði til 31. janúar 2027), ein tilboðslína (RONDVA_OFFER_LINE, smíðuð úr RONDVA_TRIAL) og ein
+// prufa (RONDVA_TRIAL). Athugar líka að síðurnar noti tölurnar úr einni heimild, að appið sé kynnt sem
 // „on the App Store“ (engin biðlista- eða þróunarorð), að /nz, llms.txt, robots.txt, sitemap og JSON-LD
 // séu rétt, og að textinn haldi áfram að segja satt (ekkert er selt á vefnum).
 // Keyrt með `node scripts/verify-rondva-pricing.cjs` — engin bygging, engin netköll.
@@ -52,7 +53,6 @@ const { usd } = pricing;
 const RONDVA_PLANS = plain(pricing.RONDVA_PLANS);
 const RONDVA_PACK = plain(pricing.RONDVA_PACK);
 const RONDVA_INCLUDED = plain(pricing.RONDVA_INCLUDED);
-const RONDVA_OFFER = plain(pricing.RONDVA_OFFER);
 const RONDVA_TRIAL = plain(pricing.RONDVA_TRIAL);
 const RONDVA_PRICE_NOTE = pricing.RONDVA_PRICE_NOTE;
 const RONDVA_OFFER_LINE = pricing.RONDVA_OFFER_LINE;
@@ -86,21 +86,25 @@ assert.deepEqual(RONDVA_INCLUDED, [
 ]);
 pass('every plan includes 2 AI revisions, unlimited editing and re-exports, company branding');
 
-// 4. Tilboðið: stofnmannatilboð 20/mán til 31.1.2027 (lifandi), prufa 20/30 daga (fasti tilbúinn),
-//    ein tilboðslína, og athugasemdin um verð í mynt kaupandans.
-assert.equal(RONDVA_OFFER.freeReportsPerMonth, 20);
-assert.equal(RONDVA_OFFER.endsOn, '31 January 2027');
+// 4. Fyrsti mánuður frír: 20 skýrslur / 30 dagar, ekkert kort, ekkert Ísland; stofnmannatilboðið horfið;
+//    ein tilboðslína smíðuð úr RONDVA_TRIAL, og athugasemdin um verð í mynt kaupandans.
 assert.deepEqual(RONDVA_TRIAL, { freeReports: 20, days: 30 });
-assert.equal(RONDVA_OFFER_LINE, 'Your first reports are free. No card.');
-for (const text of [RONDVA_OFFER.endsOn, RONDVA_OFFER_LINE, RONDVA_PRICE_NOTE, RONDVA_PACK.blurb, ...RONDVA_PLANS.map((p) => p.blurb), ...RONDVA_INCLUDED]) {
+assert.equal(pricing.RONDVA_OFFER, undefined, 'RONDVA_OFFER (20 a month until 31 January 2027) is gone');
+assert.equal(RONDVA_OFFER_LINE, 'First month free — 20 AI-drafted reports in your first month. No card.');
+assert.match(
+  read('src/lib/rondva-pricing.ts'),
+  /RONDVA_OFFER_LINE = `First month free — \$\{RONDVA_TRIAL\.freeReports\} AI-drafted reports in your first month\. No card\.`/,
+  'the offer line is built from RONDVA_TRIAL, not typed twice',
+);
+for (const text of [RONDVA_OFFER_LINE, RONDVA_PRICE_NOTE, RONDVA_PACK.blurb, ...RONDVA_PLANS.map((p) => p.blurb), ...RONDVA_INCLUDED]) {
   assert.ok(!/iceland|icelandic/i.test(text), `no mention of Iceland in: ${text}`);
 }
+assert.ok(!/founding|31 January|every month|unlimited|only|compliant|certified|accurate/i.test(RONDVA_OFFER_LINE), 'offer line has no founding-offer or forbidden claim words');
 assert.equal(
   RONDVA_PRICE_NOTE,
   'Charged by Apple in your currency incl. GST/VAT. Solo is NZ$99.99 in New Zealand, A$79.99 in Australia and EUR 59.99 in Ireland.',
 );
-assert.match(read('src/lib/rondva-pricing.ts'), /First 30 days free, up to 20 reports\. No card\. Nothing renews on its own\.[\s\S]{0,300}export const RONDVA_OFFER_LINE/, 'the swap-in wording is documented above RONDVA_OFFER_LINE');
-pass('founding offer 20/month to 31 January 2027; trial {20 reports, 30 days}; one offer line; GST/VAT price note is exact');
+pass('first month free is 20 AI reports for 30 days; founding offer gone; one offer line built from RONDVA_TRIAL; no mention of Iceland; GST/VAT price note is exact');
 
 // 5. Síðurnar nota heimildina og sýna tilboðið og athugasemdina.
 const landing = read('src/app/(rondva)/rondva/page.tsx');
@@ -118,8 +122,13 @@ for (const [name, src] of [['landing', landing], ['support', support], ['nz', nz
   for (const price of ['49.99', '99.99', '29.99']) {
     assert.ok(!code.includes(price), `${name} must read ${price} from rondva-pricing.ts, not hardcode it`);
   }
+  assert.ok(!/\bRONDVA_OFFER\b|Founding offer|founding offer|every month\.|free every month|31 January 2027/.test(code), `${name}: founding-offer copy removed`);
 }
-for (const [name, src] of [['landing', landing], ['support', support]]) assert.match(stripComments(src), /RONDVA_OFFER/, `${name} shows the founding offer`);
+for (const [name, src] of [['landing', landing], ['support', support]]) {
+  const code = stripComments(src);
+  assert.match(code, /RONDVA_TRIAL\.freeReports/, `${name} shows the free first month`);
+  assert.match(code, /RONDVA_TRIAL\.days/, `${name} shows the 30 days`);
+}
 assert.match(landing, /RONDVA_PRICE_NOTE/);
 assert.match(landing, /RONDVA_PLANS\.map/);
 assert.match(landing, /RONDVA_PACK/);
@@ -130,10 +139,14 @@ assert.match(support, /RONDVA_PRICE_NOTE/);
 // Hero og stjórnborð lesa tilboðslínuna úr einni fasta; engin harðkóðuð útgáfa.
 assert.match(landing, /\{RONDVA_OFFER_LINE\}/);
 assert.match(emptyState, /RONDVA_OFFER_LINE/);
+assert.match(stripComments(nz), /RONDVA_OFFER_LINE/);
 for (const [name, src] of [['landing', landing], ['empty state', emptyState], ['nz', nz]]) {
-  assert.ok(!/Your first reports are free|First 30 days free/.test(stripComments(src)), `${name} must not hardcode the offer line`);
+  assert.ok(!/Your first reports are free|First 30 days free|First month free — /.test(stripComments(src)), `${name} must not hardcode the offer line`);
 }
-pass('landing, support and /nz read prices and the offer line from one module and show offer, plans, pack and the price note');
+// Skilmálar: prufureglan kemur úr RONDVA_TRIAL, stofnmannatilboðið er horfið.
+assert.match(stripComments(terms), /RONDVA_TRIAL\.freeReports/);
+assert.ok(!/\bRONDVA_OFFER\b|Founding offer|31 January 2027/.test(stripComments(terms)), 'terms: founding-offer copy removed');
+pass('landing, support, terms and /nz read prices, the free first month and the one offer line from one module; founding-offer copy removed');
 
 // 6. Gömul verð, „2 free reports“ og biðlista-/þróunarorð eru farin úr öllu Rondva-svæðinu.
 const rondvaFiles = [
@@ -320,7 +333,7 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
   const llms = await body('src/app/(rondva)/rondva/llms.txt/route.ts');
   const llmsLines = llms.split('\n').filter((l) => l.trim());
   assert.ok(llmsLines.length >= 20 && llmsLines.length <= 30, `llms.txt has 20-30 non-empty lines (${llmsLines.length})`);
-  for (const s of ['# Rondva', 'iPhone app', 'NZS 4306:2005', 'Vitvélar ehf.', 'https://apps.apple.com/app/id6817769506', 'Your first reports are free. No card.', 'US$49.99', 'US$99.99', 'US$29.99', 'NZ$99.99', 'https://rondva.com/nz', 'https://rondva.com/support', 'https://rondva.com/privacy', 'https://rondva.com/terms', 'EU (Ireland)']) assert.ok(llms.includes(s), `llms.txt has ${s}`);
+  for (const s of ['# Rondva', 'iPhone app', 'NZS 4306:2005', 'Vitvélar ehf.', 'https://apps.apple.com/app/id6817769506', pricing.RONDVA_OFFER_LINE, 'US$49.99', 'US$99.99', 'US$29.99', 'NZ$99.99', 'https://rondva.com/nz', 'https://rondva.com/support', 'https://rondva.com/privacy', 'https://rondva.com/terms', 'EU (Ireland)']) assert.ok(llms.includes(s), `llms.txt has ${s}`);
   assert.ok(!sweep.test(llms) && !/aggregateRating|best |the only|certified|compliant/i.test(llms), 'llms.txt: no banned claims');
   const robots = await body('src/app/(rondva)/rondva/robots.txt/route.ts');
   assert.match(robots, /User-agent: \*\nAllow: \//);

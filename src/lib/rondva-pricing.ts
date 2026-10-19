@@ -4,7 +4,7 @@
 // staðbundinni mynt með sköttum). Appið er á App Store; ekkert af þessu er til sölu á vefnum. `node scripts/verify-rondva-pricing.cjs` ber þetta
 // saman við textann á síðunum.
 //
-// Ekki nefna Ísland í texta tilboðsins: íslensk fyrirtæki eru aðeins í boði eftir
+// Ekki nefna Ísland í texta prufumánaðarins: íslensk fyrirtæki eru aðeins í boði eftir
 // boði, og tilboðið er sett fram almennt (sjá verify-skriftuna).
 
 export type RondvaPlan = {
@@ -53,17 +53,11 @@ export const RONDVA_INCLUDED = [
 ] as const;
 
 /**
- * Stofnmannatilboðið (í gildi): ókeypis AI-drög á mánuði, án korts, til og með
- * `endsOn`. Þegar dagsetningin líður þarf að fjarlægja tilboðið af síðunum (sjá PR-lýsingu).
- */
-export const RONDVA_OFFER = {
-  freeReportsPerMonth: 20,
-  endsOn: "31 January 2027",
-} as const;
-
-/**
- * Prufan sem tekur við af stofnmannatilboðinu (beton-app #46/#48 + beton-web #37). Ekki lifandi
- * fyrr en flutningurinn er keyrður; fastinn er hér svo allt sem vísar í hana lesi eina tölu.
+ * Fyrsti mánuður frír (ákvörðun eiganda 2026-10-08; kom í stað stofnmannatilboðsins „20 á
+ * mánuði til 31. janúar 2027“): hvert nýtt fyrirtæki fær EINU SINNI `freeReports` AI-drög sem
+ * gilda í `days` daga frá FYRSTU AI-skýrslu fyrirtækisins (ekki frá skráningu eða virkjun; PRUFUTIMI-HONNUN §2a, `starts_on = 'first_ai_report'`), hvort sem fyrr kemur. Ekkert
+ * kort, engin sjálfvirk greiðsla á eftir. Sama regla í gagnagrunni: beton-app
+ * supabase/migrations/20261008150000_report_trial_month.sql (report_trial_policy 20 / 30).
  */
 export const RONDVA_TRIAL = {
   freeReports: 20,
@@ -71,13 +65,10 @@ export const RONDVA_TRIAL = {
 } as const;
 
 /**
- * EIN tilboðslína fyrir hero, stjórnborð og aðra fleti.
- * Þar til prufan er lifandi: „Your first reports are free. No card.“
- * VIÐ MERGE EFTIR FLUTNING skal skipta í:
- *   „First 30 days free, up to 20 reports. No card. Nothing renews on its own.“
- * (smíðað úr RONDVA_TRIAL) og samræma /support, /terms og stofnmannaspjaldið á forsíðunni.
+ * EIN tilboðslína fyrir hero, stjórnborð, /nz, llms.txt og skema; smíðuð úr RONDVA_TRIAL svo
+ * talan sé aðeins á einum stað. /support, /terms og prufuspjald forsíðunnar nota sömu fasta.
  */
-export const RONDVA_OFFER_LINE = "Your first reports are free. No card.";
+export const RONDVA_OFFER_LINE = `First month free — ${RONDVA_TRIAL.freeReports} AI-drafted reports in your first month. No card.`;
 
 export const RONDVA_PRICE_NOTE =
   "Charged by Apple in your currency incl. GST/VAT. Solo is NZ$99.99 in New Zealand, A$79.99 in Australia and EUR 59.99 in Ireland.";

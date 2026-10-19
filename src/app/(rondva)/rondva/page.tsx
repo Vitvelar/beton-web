@@ -6,8 +6,8 @@ import { BRANDS } from "@/lib/brand";
 import { HAS_SAMPLE, SAMPLE_REPORT_URL } from "@/lib/rondva-links";
 import {
   RONDVA_INCLUDED,
-  RONDVA_OFFER,
   RONDVA_OFFER_LINE,
+  RONDVA_TRIAL,
   RONDVA_PACK,
   RONDVA_PLANS,
   RONDVA_PRICE_NOTE,
@@ -366,7 +366,7 @@ export default function RondvaLandingPage() {
               extra. Plans and report packs are bought in the iPhone app, through the App Store.
             </p>
 
-            {/* Stofnmannatilboðið — í gildi núna */}
+            {/* Fyrsti mánuður frír (prufutími) — í gildi núna */}
             <div
               className="rv-reveal rv-blueprint-light mt-12 rounded-card border border-line-strong p-7 sm:p-10"
               style={{ "--i": 1 } as React.CSSProperties}
@@ -378,14 +378,16 @@ export default function RondvaLandingPage() {
                       <span className="h-1.5 w-1.5 rounded-full bg-paper" aria-hidden="true" />
                       Live now
                     </span>
-                    <p className="rv-eyebrow">Founding offer</p>
+                    <p className="rv-eyebrow">First month free</p>
                   </div>
                   <h3 className="rv-display rv-balance mt-5 text-[30px] text-ink sm:text-[40px]">
-                    {RONDVA_OFFER.freeReportsPerMonth} free <span className="whitespace-nowrap">AI-drafted</span> reports <em>every month.</em>
+                    {RONDVA_TRIAL.freeReports} free <span className="whitespace-nowrap">AI-drafted</span> reports <em>in your first month.</em>
                   </h3>
                   <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">
-                    Until {RONDVA_OFFER.endsOn}. No card needed. Manual edits and re-exports stay
-                    free, as always.
+                    The {RONDVA_TRIAL.days} days start when you draft your first report, not when you sign up,
+                    and the free reports end after {RONDVA_TRIAL.days} days or when they run out, whichever comes
+                    first. No card needed and nothing renews on its own; after that, choose a plan or a report
+                    pack. Manual edits and re-exports stay free, as always.
                   </p>
                 </div>
                 <div>
