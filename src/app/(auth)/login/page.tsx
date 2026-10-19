@@ -82,11 +82,6 @@ export default function LoginPage() {
               height={40}
               className="h-10 w-auto mx-auto mb-4"
             />
-            <p className="text-sm text-slate">
-              Þessi síða er í vinnslu, sjá{" "}
-              <a href="https://www.betonehf.is" className="font-semibold text-charcoal underline underline-offset-4 hover:text-slate transition-colors">betonehf.is</a>{" "}
-              á meðan
-            </p>
           </div>
           <Suspense>
             <LoginForm />
