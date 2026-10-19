@@ -26,8 +26,11 @@ async function main() {
   const server = await serveReports({ sample: html }, { photos: samplePhotos(record) });
   try {
     const { reportCopy, reportLocaleOf } = load('src/lib/report/i18n.ts');
+    const copy = reportCopy(reportLocaleOf(record.ai_report_data));
     const pdf = await loadRenderer().renderReportPdf(server.url('sample'), {
-      pageLabel: reportCopy(reportLocaleOf(record.ai_report_data)).pageLabel,
+      pageLabel: copy.pageLabel,
+      pageOfLabel: copy.pageOfLabel,
+      footerCompany: record.inspectors.company_name, // eins og worker tick: fyrirtækisnafn í fæti skýrslna sem eru ekki íslenskar
     });
     const file = path.join(out, 'nz-sample-report-draft.pdf');
     fs.writeFileSync(file, pdf);

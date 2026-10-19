@@ -9,8 +9,10 @@
 // areas not inspected → AI disclosure → Company terms.
 //
 // Aðeins texti AI er úr ai_summary og nzs4306.*_summary. Tafla verulegra galla,
-// viðhaldstafla, vottorð, rakatafla, takmarkanir (orðrétt frá skoðunarmanni) og AI-
-// yfirlýsingin eru byggð úr gögnum og föstum texta, aldrei af AI.
+// gallatafla (Defects), viðhaldstafla, vottorð, rakatafla, takmarkanir (orðrétt frá
+// skoðunarmanni) og AI-yfirlýsingin eru byggð úr gögnum og föstum texta, aldrei af AI.
+// Skýrslan er DRÖG þar til „Sign & issue“ (report-2 PR 2) kemur: dagsetningin er merkt
+// „Draft generated“ og yfirlýsingin segir „Not yet reviewed or issued“.
 //
 // LÖGFRÆÐILEG YFIRFERÐ: fastur texti vottorðsins og „Scope of this inspection“ hér að
 // neðan er drög — lögfræðingur og NZ-skoðunarmaður (stofnskoðunarmenn) lesi yfir.
@@ -103,6 +105,10 @@ const SECTION = "px-8 py-8 border-t border-concrete print:border-0 print:break-b
 const SECTION_FLOW = "px-8 py-8 border-t border-concrete print:border-0";
 const SEV_KEYS: SeverityKey[] = ["mjog_alvarleg", "alvarleg", "athugasemd"];
 const NO_SIGNIFICANT_DEFECTS = "No significant defects were recorded.";
+const NO_DEFECTS = "None recorded.";
+/** Föst setning undir gallatöflunum (ekki AI, ekki leitarorðalisti): sjá plan/rondva/SOLU-URBAETUR-2026-10-09.md §4.6. */
+const SPECIALIST_NOTE =
+  "Minor items and maintenance observations are listed in the element sections (§4 onward). Items above may require evaluation by a suitably qualified specialist before purchase.";
 
 export function Nzs4306Report({
   report,
@@ -147,6 +153,7 @@ export function Nzs4306Report({
   });
   const allObs = grouped.flatMap((g) => g.rooms.flatMap((r) => r.observations ?? []));
   const significant = allObs.filter((o) => o.severity === "mjog_alvarleg");
+  const defects = allObs.filter((o) => o.severity === "alvarleg");
   const maintenance = allObs.filter((o) => o.severity === "athugasemd");
   const counts = Object.fromEntries(SEV_KEYS.map((k) => [k, allObs.filter((o) => sevKey(o.severity) === k).length]));
 
@@ -164,6 +171,8 @@ export function Nzs4306Report({
   });
   const disclosureInspector = nzs.disclosure?.inspector?.trim() || inspectorName;
   const disclosureCompany = nzs.disclosure?.company?.trim() || brand.name;
+  const draftedOnRaw = nzs.disclosure?.generated_at || reportGeneratedAt;
+  const draftedOn = draftedOnRaw ? formatReportDateNz(draftedOnRaw) : "";
   const ratingLabel = (key: string) => NZ_RATING_LABELS[key] ?? ratingCategoryLabel(T, key);
 
   return (
@@ -182,6 +191,7 @@ export function Nzs4306Report({
           ) : null}
           <p className="text-xs font-semibold tracking-[0.2em] text-navy mb-2">{brand.nameUpper}</p>
           <h1 className="text-3xl font-bold text-navy mb-2">Property inspection report</h1>
+          {/* LÖGFRÆÐILEG YFIRFERÐ: fer með Sign & issue (report-2 PR 2) */}
           <p className="text-sm text-fog mb-3">Prepared in accordance with NZS 4306:2005</p>
           {/* Fullt heimilisfang (gata, bær/borg, póstnúmer) — sama og „Site address“ í vottorðinu. */}
           <p className="text-xl text-ink mb-6">{siteAddress(insp)}</p>
@@ -226,6 +236,22 @@ export function Nzs4306Report({
           </>
         )}
 
+        <h3 className="text-sm font-semibold text-navy mb-2 mt-6">Defects</h3>
+        {defects.length === 0 ? (
+          <Para>{NO_DEFECTS}</Para>
+        ) : (
+          <ItemTable
+            rows={defects.map((o) => ({
+              ref: obsRef.get(o.id) ?? "",
+              location: obsLocation.get(o.id) ?? "",
+              item: o.title,
+              action: o.suggestion,
+            }))}
+            actionHeading="Recommended action"
+          />
+        )}
+        <Para>{SPECIALIST_NOTE}</Para>
+
         <h3 className="text-sm font-semibold text-navy mb-2 mt-6">Summary of findings</h3>
         <div className="grid grid-cols-3 gap-3 mb-6">
           {SEV_KEYS.map((sev) => (
@@ -263,7 +289,7 @@ export function Nzs4306Report({
             <Row label="Site address" value={siteAddress(insp)} />
             {legalDescription ? <Row label="Legal description" value={legalDescription} /> : null}
             <Row label="Inspector" value={inspectorName} />
-            <Row label="Qualifications" value={qualifications?.trim() || "Not recorded"} />
+            {qualifications?.trim() ? <Row label="Qualifications" value={qualifications.trim()} /> : null}
             <Row label="Company" value={brand.name} />
             <Row label="Date of inspection" value={inspectionDate} />
           </tbody>
@@ -286,6 +312,7 @@ export function Nzs4306Report({
         <Para>
           {`Any limitations to the coverage of this inspection are set out in section ${nLimitations} (Limitations and areas not inspected).`}
         </Para>
+        {/* LÖGFRÆÐILEG YFIRFERÐ: fer með Sign & issue (report-2 PR 2) */}
         <Para>
           I certify that I carried out the inspection of the property at the site address above on the date stated, and
           that this report has been prepared in accordance with NZS 4306:2005.
@@ -297,12 +324,19 @@ export function Nzs4306Report({
             <p className="text-ink">{inspectorName}</p>
           </div>
           <div>
+            {/* Dagsetningin er hvenær drögin voru búin til, ekki útgáfudagur (report-2). */}
             <div className="border-b border-ink/60 h-10 flex items-end pb-1 text-ink">
               {reportGeneratedAt ? formatReportDateNz(reportGeneratedAt) : ""}
             </div>
-            <p className="mt-1 text-xs text-fog">Date</p>
+            <p className="mt-1 text-xs text-fog">Draft generated</p>
           </div>
         </div>
+        {/* Úr gögnum (nafn og réttindi skoðunarmanns), aldrei úr AI. Undirskriftarlínan helst auð. */}
+        <p className="mt-4 text-xs text-fog">
+          {qualifications?.trim()
+            ? `Prepared and issued by ${inspectorName}, ${qualifications.trim()}`
+            : `Prepared and issued by ${inspectorName}`}
+        </p>
       </section>
 
       {/* ═══ 3. PROPERTY AND INSPECTION CONDITIONS ═══ */}
@@ -558,13 +592,11 @@ export function Nzs4306Report({
         <Heading n={nDisclosure}>Use of AI in this report</Heading>
         <div className="border-l-4 border-navy bg-stone-50 rounded-sm px-5 py-4 rpt-keep rpt-disclosure">
           <p className="text-sm text-ink/90 leading-relaxed">
-            {`Report text drafted with AI assistance from the inspector's notes and photos. All observations, ratings and conclusions were made and reviewed by ${disclosureInspector}, ${disclosureCompany}.`}
+            {`Observations and ratings by ${disclosureInspector}, ${disclosureCompany}. Text drafted with AI assistance${draftedOn ? ` (${draftedOn})` : ""}. Not yet reviewed or issued.`}
           </p>
           <p className="text-xs text-fog leading-relaxed mt-2">
             Moisture readings and the inspector&apos;s limitations are reproduced from the inspector&apos;s own notes, and
             readings are checked against those notes before they are included.
-            {nzs.disclosure?.model ? ` Drafting model: ${nzs.disclosure.model}.` : ""}
-            {nzs.disclosure?.generated_at ? ` Drafted ${formatReportDateNz(nzs.disclosure.generated_at)}.` : ""}
           </p>
         </div>
         {!hasTerms && brand.logoUrl ? (

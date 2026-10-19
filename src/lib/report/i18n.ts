@@ -196,6 +196,8 @@ const is = {
   reportCreated: "Skýrsla gerð",
   /** Fótur PDF-síðu (render-pdf.ts): „Bls. 3 / 12“. */
   pageLabel: "Bls.",
+  /** „Page 3 of 12“ í fæti skýrslna með fyrirtækisnafni (ekki-íslenskar); íslenski fóturinn er áfram „Bls. 3 / 12“. */
+  pageOfLabel: "af",
 };
 
 export type ReportCopy = typeof is;
@@ -372,6 +374,7 @@ const en: ReportCopy = {
 
   reportCreated: "Report created",
   pageLabel: "Page",
+  pageOfLabel: "of",
 };
 
 export const REPORT_COPY: Readonly<Record<ReportLocale, ReportCopy>> = { is, en };

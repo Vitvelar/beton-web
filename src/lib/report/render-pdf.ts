@@ -100,9 +100,32 @@ export interface RenderReportPdfOptions {
   /** Orðið á undan blaðsíðutalinu í fæti: "Bls." (íslenska, sjálfgefið) eða "Page"
    *  (öll önnur skýrslumál) — sjá reportCopy(locale).pageLabel. */
   pageLabel?: string;
+  /** „of“ í „Page 3 of 12“; aðeins notað með footerCompany. */
+  pageOfLabel?: string;
+  /** Fyrirtækisnafn í fæti: „{Company} · Page n of N“ (7pt grátt). Aðeins sett fyrir skýrslur sem eru
+   *  ekki íslenskar; ósett = óbreyttur fótur („Bls. n / N“ / „Page n / N“). */
+  footerCompany?: string | null;
   cookies?: PuppeteerCookie[];
   navigationTimeoutMs?: number;
   imageSettleTimeoutMs?: number;
+}
+
+/** Fótur hverrar PDF-síðu. Án footerCompany nákvæmlega sami strengur og áður (Beton óbreytt). */
+export function buildFooterTemplate(opts: Pick<RenderReportPdfOptions, "pageLabel" | "pageOfLabel" | "footerCompany">): string {
+  const company = opts.footerCompany?.trim();
+  if (company) {
+    return (
+      '<div style="width:100%;text-align:center;font-size:7pt;color:#8a8278;font-family:Helvetica,Arial,sans-serif;">' +
+      `${escapeHtml(company)} · ${escapeHtml(opts.pageLabel ?? "Page")} <span class="pageNumber"></span> ` +
+      `${escapeHtml(opts.pageOfLabel ?? "of")} <span class="totalPages"></span>` +
+      "</div>"
+    );
+  }
+  return (
+    '<div style="width:100%;text-align:center;font-size:8px;color:#8a8278;font-family:Helvetica,Arial,sans-serif;">' +
+    `${escapeHtml(opts.pageLabel ?? "Bls.")} <span class="pageNumber"></span> / <span class="totalPages"></span>` +
+    "</div>"
+  );
 }
 
 export async function renderReportPdf(
@@ -180,10 +203,7 @@ export async function renderReportPdf(
       displayHeaderFooter: true,
       margin: { top: "18mm", bottom: "16mm", left: "25.4mm", right: "25.4mm" },
       headerTemplate: "<div></div>",
-      footerTemplate:
-        '<div style="width:100%;text-align:center;font-size:8px;color:#8a8278;font-family:Helvetica,Arial,sans-serif;">' +
-        `${escapeHtml(opts.pageLabel ?? "Bls.")} <span class="pageNumber"></span> / <span class="totalPages"></span>` +
-        "</div>",
+      footerTemplate: buildFooterTemplate(opts),
     });
 
     rawPdf = new Uint8Array(pdfBytes);
