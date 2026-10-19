@@ -17,6 +17,7 @@ import { SeverityBadge } from "./SeverityBadge";
 import type { Severity } from "@/lib/supabase/types";
 import { dashboardCopy, fill, plural, type DashboardLocale } from "@/lib/i18n/dashboard";
 import type { RatingScheme } from "@/lib/report/settings";
+import { formatReportDateNz } from "@/lib/report/date";
 import type { Nzs4306Conditions, Nzs4306ReportData } from "@/lib/report/nzs4306";
 
 export interface EditorReport {
@@ -56,6 +57,7 @@ export function ReportTextEditor({
   initialToken,
   locale,
   scheme = "standard",
+  issuedOn = null,
 }: {
   inspectionId: string;
   address: string;
@@ -64,6 +66,8 @@ export function ReportTextEditor({
   locale: DashboardLocale;
   /** Matskerfið sem stimplað var í skýrsluna (sama og PDF-ið sýnir). */
   scheme?: RatingScheme;
+  /** yyyy-mm-dd ef skýrslan er útgefin („Sign & issue“); vistun skilar henni þá í drög. */
+  issuedOn?: string | null;
 }) {
   const copy = dashboardCopy(locale);
   const t = copy.reportEditor;
@@ -73,6 +77,8 @@ export function ReportTextEditor({
   // Árekstravörn: token fylgir hverri vistun; server hafnar ef snapshot-ið
   // breyttist annars staðar. Uppfærist eftir hverja vistun.
   const [token, setToken] = useState(initialToken);
+  // Útgefin skýrsla fer í drög við fyrstu vistun; borðinn hverfur þá.
+  const [issuedDate, setIssuedDate] = useState(issuedOn);
   const [message, setMessage] = useState<{
     type: "success" | "warning" | "error";
     text: string;
@@ -178,10 +184,12 @@ export function ReportTextEditor({
           return;
         }
         const queued = "queued" in result && result.queued;
+        const draftNote = "returnedToDraft" in result && result.returnedToDraft ? ` ${t.returnedToDraft}` : "";
+        if ("returnedToDraft" in result && result.returnedToDraft) setIssuedDate(null);
         if (!regeneratePdf) {
           setMessage({
             type: "success",
-            text: t.savedNoPdf,
+            text: `${t.savedNoPdf}${draftNote}`,
           });
         } else if (queued) {
           setReportRequest(Date.now());
@@ -221,6 +229,11 @@ export function ReportTextEditor({
         <p className="mt-2 text-sm text-fog max-w-2xl">
           {t.intro}
         </p>
+        {issuedDate ? (
+          <p className="mt-3 max-w-2xl rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {fill(t.issuedNotice, { date: formatReportDateNz(issuedDate) })}
+          </p>
+        ) : null}
       </div>
 
       {/* Samantekt */}

@@ -4,9 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { canUseBetonDrive } from "@/lib/beton-drive";
 import { SeverityBadge } from "@/components/dashboard/SeverityBadge";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
-import { ReportActions } from "./report-actions";
+import { ReportActions, type IssueUi } from "./report-actions";
+import { isIssuable, issueOf, issuerNameOf } from "@/lib/report/issue";
+import { snapshotToken } from "@/lib/report/snapshot-token";
 import { PhotoGrid } from "@/components/dashboard/PhotoGrid";
-import { getDashboardLocale, getDashboardRatingScheme } from "@/lib/request-brand";
+import { getDashboardLocale, getDashboardRatingScheme, getRequestBrand } from "@/lib/request-brand";
 import { dashboardCopy, fill, plural } from "@/lib/i18n/dashboard";
 import type {
   Severity,
@@ -72,6 +74,10 @@ export default async function InspectionDetailPage({
       .createSignedUrl(inspection.report_url, 3600);
     reportSignedUrl = urlData?.signedUrl ?? null;
   }
+
+  // „Sign & issue“: aðeins NZS 4306-skýrslur á app.rondva.com. Annars er issueUi null og
+  // skýrsluspjaldið óbreytt (Beton og venjulega sniðið sjá ekkert nýtt).
+  const issueUi = await issueUiFor(supabase, user?.id ?? null, inspection, await getRequestBrand());
 
   const propertyData = (inspection.property_data ?? {}) as PropertyData;
   const rooms = (inspection.rooms as (Room & {
@@ -167,6 +173,7 @@ export default async function InspectionDetailPage({
         hasAiReport={!!inspection.ai_report_data}
         canSendToDrive={canSendToDrive}
         locale={locale}
+        issue={issueUi}
       />
 
       {/* Rooms */}
@@ -307,4 +314,43 @@ function InfoRow({
       <dd className="text-ink font-medium">{value ?? "—"}</dd>
     </div>
   );
+}
+
+async function issueUiFor(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string | null,
+  inspection: { ai_report_data?: unknown; status?: string | null },
+  brand: string
+): Promise<IssueUi | null> {
+  if (brand !== "rondva" || !userId || !inspection.ai_report_data) return null;
+  const report = inspection.ai_report_data as Record<string, unknown>;
+  if (!isIssuable(report)) return null;
+
+  const issue = issueOf(report);
+  let name: string | null = issue?.inspectorName ?? null;
+  let qualifications: string | null = issue?.qualifications ?? null;
+  if (!issue) {
+    const { data: inspector } = await supabase
+      .from("inspectors")
+      .select("full_name")
+      .eq("user_id", userId)
+      .maybeSingle();
+    name = issuerNameOf(report as { inspection?: { property_data?: Record<string, unknown> } }, inspector?.full_name);
+    // Réttindi: sér fyrirspurn, bregst mjúklega ef dálkurinn er ekki til.
+    const { data: q, error: qErr } = await supabase
+      .from("inspectors")
+      .select("qualifications")
+      .eq("user_id", userId)
+      .maybeSingle();
+    qualifications = !qErr && typeof q?.qualifications === "string" && q.qualifications.trim() ? q.qualifications.trim() : null;
+  }
+  return {
+    token: snapshotToken(inspection.ai_report_data),
+    issuedOn: issue?.issuedOn ?? null,
+    issuedBy: issue?.inspectorName ?? null,
+    name,
+    qualifications,
+    ready: inspection.status === "report_ready",
+    rendering: inspection.status === "generating" || inspection.status === "rendering_pdf",
+  };
 }

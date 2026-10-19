@@ -25,6 +25,7 @@ import {
 } from "@/lib/report/i18n";
 import { ratingSchemeOf, reportStandardOf, type RatingScheme } from "@/lib/report/settings";
 import { Nzs4306Report, type NzReportData, type NzReportPhoto } from "@/components/report/Nzs4306Report";
+import { issueOf } from "@/lib/report/issue";
 import { fill, format } from "@/lib/i18n/format";
 import { dashboardCopy } from "@/lib/i18n/dashboard";
 import { getDashboardLocale } from "@/lib/request-brand";
@@ -360,6 +361,9 @@ export default async function ReportPage({
     } catch {
       qualifications = null;
     }
+    // „Sign & issue“: gild útgáfa (hash passar við efnið) → útgefin skýrsla undir nafni og réttindum
+    // sem voru skráð við útgáfu; annars drög (vatnsmerki, engin vottun). Sjá src/lib/report/issue.ts.
+    const issue = issueOf(report as unknown as Record<string, unknown>);
     const toPhoto = (p: PhotoWithUrl): NzReportPhoto => ({ id: p.id, url: p.url, caption: p.caption });
     const nzRoomPhotos: Record<string, NzReportPhoto[]> = {};
     const nzObsPhotos: Record<string, NzReportPhoto[]> = {};
@@ -375,8 +379,9 @@ export default async function ReportPage({
         <Nzs4306Report
           report={report}
           brand={brand}
-          inspectorName={inspectorName}
-          qualifications={qualifications}
+          inspectorName={issue ? issue.inspectorName : inspectorName}
+          qualifications={issue ? issue.qualifications : qualifications}
+          issue={issue}
           sevText={nzSevText}
           sevColors={sevColors}
           roomRating={nzRoomRating}

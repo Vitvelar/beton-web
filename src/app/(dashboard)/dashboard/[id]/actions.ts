@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { canUseBetonDrive } from "@/lib/beton-drive";
 import { snapshotToken } from "@/lib/report/snapshot-token";
+import { buildIssue, isIssuable, issueOf, withoutIssue } from "@/lib/report/issue";
+import { resolveBranding } from "@/lib/report/branding";
 import { applyNzs4306Edit, type Nzs4306Conditions, type Nzs4306Edit, type Nzs4306ReportData } from "@/lib/report/nzs4306";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { dashboardCopy, localeForBrand, USER_LOCALE_KEY, type DashboardCopy } from "@/lib/i18n/dashboard";
@@ -168,6 +170,8 @@ export async function updateReportText(
   let committedToken: string | null = null;
 
   const snapshot = inspection.ai_report_data as AiReportSnapshot;
+  // Var skýrslan útgefin áður en þessi vistun? Þá skilar hún henni í drög (ritillinn segir notanda það).
+  const wasIssued = issueOf(snapshot) !== null;
   const editById = new Map(edit.observations.map((o) => [o.id, o] as const));
 
   try {
@@ -211,8 +215,11 @@ export async function updateReportText(
               ?.nzs4306 ?? null) as Nzs4306Conditions | null,
           )
         : null;
+    // „Sign & issue“: öll textabreyting skilar skýrslunni í drög — útgáfan (`issue`) fylgir EKKI með
+    // yfir í breytta snapshot-ið (og hash-ið passaði hvort sem er ekki lengur). Skýrslur án útgáfu
+    // (Beton o.fl.) hafa engan `issue`-lykil, svo patched er óbreytt hjá þeim.
     const patched: AiReportSnapshot = {
-      ...snapshot,
+      ...withoutIssue(snapshot),
       ai_summary: {
         introduction: edit.introduction,
         property_description: edit.property_description,
@@ -262,40 +269,7 @@ export async function updateReportText(
     //    reynum aftur ef starf er í keyrslu; takist það ekki skilum við
     //    queued:false svo ritillinn segi satt í stað þess að lofa fersku PDF-i.
     if (regeneratePdf) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      for (let attempt = 0; attempt < 4 && !queuedFresh; attempt++) {
-        const { error: jobErr } = await supabase
-          .from("report_jobs")
-          .insert({ inspection_id: inspectionId, requested_by: user?.id ?? null });
-        if (!jobErr) {
-          queuedFresh = true;
-          break;
-        }
-        if (jobErr.code !== "23505")
-          throw new Error(t.queueFailed(jobErr.message));
-        const { data: active, error: activeErr } = await supabase
-          .from("report_jobs")
-          .select("status")
-          .eq("inspection_id", inspectionId)
-          .in("status", ["queued", "running"])
-          .limit(1)
-          .maybeSingle();
-        if (!activeErr && active?.status === "queued") {
-          // Óhafið starf í biðröð rendrar nýja snapshot-ið þegar það er tekið.
-          queuedFresh = true;
-          break;
-        }
-        // 'running' (eða óviss staða vegna select-villu): bíða aðeins, starfið
-        // gæti klárað; þá kemst nýtt starf að í næstu tilraun. (!active án villu
-        // = kláraðist rétt í þessu → reynum insert strax aftur.) Stutt bið og
-        // sleppt í síðustu umferð: server-aðgerðin má ekki nálgast tímamörk
-        // Vercel-falla.
-        if ((activeErr || active?.status === "running") && attempt < 3) {
-          await new Promise((r) => setTimeout(r, 2000));
-        }
-      }
+      queuedFresh = await enqueuePdfRender(supabase, inspectionId, t);
     }
   } catch (e: unknown) {
     console.error("updateReportText error:", e);
@@ -325,7 +299,135 @@ export async function updateReportText(
     success: true as const,
     queued: queuedFresh,
     token: committedToken ?? expectedToken,
+    returnedToDraft: wasIssued,
   };
+}
+
+// ── Sign & issue (report-2 PR 2) ──
+//
+// Skoðunarmaður gefur NZS 4306-skýrslu út undir eigin nafni eftir yfirlestur. Útgáfan er skráð í
+// ai_report_data.issue (nafn + réttindi úr prófíl, almanaksdagur, hash af efninu — sjá
+// src/lib/report/issue.ts) og PDF-ið er endurrendrað án AI: skýrslusíðan sér gilda útgáfu og sleppir
+// DRAFT-vatnsmerkinu og setur vottorðið og „Reviewed and issued by …“.
+//
+// Aðeins á app.rondva.com, aðeins NZS 4306, aldrei Beton-fyrirtækið. Textabreyting eftir útgáfu
+// (updateReportText) og ný AI-keyrsla (generate-report) skila skýrslunni í drög.
+
+export async function issueReport(
+  inspectionId: string,
+  expectedToken: string,
+  confirmed: boolean,
+  timeZone?: string
+): Promise<
+  | { error: string }
+  | { success: true; issuedOn: string; token: string }
+> {
+  const t = (await actionCopy()).actions;
+  if (confirmed !== true) return { error: t.issueNotConfirmed };
+  // Beton (admin.beton.is) fær hvorki útgáfuflæði né vatnsmerki.
+  if ((await getRequestBrand()) !== "rondva") return { error: t.issueNotAvailable };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: t.signInAgain };
+
+  const { data: inspection, error: fetchError } = await supabase
+    .from("inspections")
+    .select("id, status, report_error, ai_report_data, inspector_id, updated_at")
+    .eq("id", inspectionId)
+    .maybeSingle();
+  if (fetchError || !inspection) return { error: fetchError?.message ?? t.inspectionNotFound };
+  if (!inspection.ai_report_data) return { error: t.noAiReport };
+  const report = inspection.ai_report_data as Record<string, unknown>;
+  if (!isIssuable(report)) return { error: t.issueNotAvailable };
+
+  // Skoðunarmaðurinn sem á skoðunina (RLS: aðeins eigin prófíll sést) — enginn annar gefur út hans nafn.
+  const { data: inspector } = await supabase
+    .from("inspectors")
+    .select("id, full_name, company_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!inspector || inspector.id !== inspection.inspector_id) return { error: t.issueNotAvailable };
+  // Skýrsla án fyrirtækisnafns félli á Beton-sjálfgildin; Beton-fyrirtækið gefur aldrei út hér.
+  if (resolveBranding(inspector).isBeton) return { error: t.issueNeedsCompany };
+
+  if (snapshotToken(report) !== expectedToken) return { error: t.textChangedElsewhere };
+  if (inspection.status !== "report_ready") return { error: t.issueNotReady };
+
+  // Réttindi (inspectors.qualifications): sér fyrirspurn, bregst mjúklega ef dálkurinn er ekki til.
+  let qualifications: string | null = null;
+  const { data: q, error: qErr } = await supabase
+    .from("inspectors")
+    .select("qualifications")
+    .eq("id", inspector.id)
+    .maybeSingle();
+  if (!qErr && typeof q?.qualifications === "string") qualifications = q.qualifications;
+
+  const built = buildIssue({
+    report,
+    profileName: inspector.full_name,
+    qualifications,
+    userId: user.id,
+    now: new Date(),
+    timeZone,
+  });
+  if ("refusal" in built) {
+    return {
+      error:
+        built.refusal === "no_name"
+          ? t.issueNeedsName
+          : built.refusal === "already_issued"
+            ? t.issueAlready
+            : t.issueNotAvailable,
+    };
+  }
+
+  // Skrifa útgáfuna og fara í rendering_pdf. Skilyrt á óbreyttri skoðun (status + updated_at): ef
+  // ritill/AI skrifaði í millitíðinni má þessi útgáfa EKKI yfirskrifa nýrri textann.
+  const original = { status: inspection.status, report_error: inspection.report_error };
+  let write = supabase
+    .from("inspections")
+    .update({
+      ai_report_data: { ...report, issue: built.issue },
+      status: "rendering_pdf",
+      report_error: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", inspectionId)
+    .eq("status", "report_ready");
+  if (typeof inspection.updated_at === "string") write = write.eq("updated_at", inspection.updated_at);
+  const { data: saved, error: writeError } = await write.select("ai_report_data").maybeSingle();
+  if (writeError) return { error: t.reportUpdateFailed(writeError.message) };
+  if (!saved?.ai_report_data) return { error: t.textChangedElsewhere };
+
+  // Bakka útgáfunni út (drög aftur, fyrri staða) ef ekki tókst að tryggja ferskt render — annars
+  // segði skoðunin „útgefin“ á meðan PDF-ið sem hægt er að sækja er enn drögin.
+  const revert = async () => {
+    const { error } = await supabase
+      .from("inspections")
+      .update({ ai_report_data: report, ...original, updated_at: new Date().toISOString() })
+      .eq("id", inspectionId);
+    if (error) console.error("issueReport revert failed:", error.message);
+  };
+  let queuedFresh = false;
+  try {
+    queuedFresh = await enqueuePdfRender(supabase, inspectionId, t);
+  } catch (e: unknown) {
+    console.error("issueReport enqueue error:", e);
+    await revert();
+    return { error: e instanceof Error ? e.message : t.unknownError };
+  }
+  if (!queuedFresh) {
+    await revert();
+    return { error: t.issueRenderBusy };
+  }
+
+  revalidatePath(`/dashboard/${inspectionId}`);
+  revalidatePath(`/dashboard/${inspectionId}/report`);
+  revalidatePath(`/dashboard/${inspectionId}/report/edit`);
+  return { success: true as const, issuedOn: built.issue.issued_on, token: snapshotToken(saved.ai_report_data) };
 }
 
 // Cookie-auth and owner RLS apply to this status read, just like the editor.
@@ -408,6 +510,54 @@ export async function sendToDrive(inspectionId: string) {
 }
 
 // ── Helpers ──
+
+// Setur PDF-render í biðröð (report_jobs). Sama röð og áður var inni í updateReportText (flutt
+// óbreytt hingað svo „Sign & issue“ noti sömu leið): 23505 = virkt starf þegar til. Það er AÐEINS í
+// lagi ef starfið er enn 'queued' (worker les snapshot-ið þegar hann byrjar) — 'running' starf gæti
+// þegar hafa sótt skýrslusíðuna með GAMLA textanum. Skilar true þegar tryggt er að FERSKT (eða
+// óhafið) starf rendrar núverandi snapshot; kastar villu ef biðraðarinnsetning bregst.
+async function enqueuePdfRender(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  inspectionId: string,
+  t: DashboardCopy["actions"]
+): Promise<boolean> {
+  let queuedFresh = false;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  for (let attempt = 0; attempt < 4 && !queuedFresh; attempt++) {
+    const { error: jobErr } = await supabase
+      .from("report_jobs")
+      .insert({ inspection_id: inspectionId, requested_by: user?.id ?? null });
+    if (!jobErr) {
+      queuedFresh = true;
+      break;
+    }
+    if (jobErr.code !== "23505")
+      throw new Error(t.queueFailed(jobErr.message));
+    const { data: active, error: activeErr } = await supabase
+      .from("report_jobs")
+      .select("status")
+      .eq("inspection_id", inspectionId)
+      .in("status", ["queued", "running"])
+      .limit(1)
+      .maybeSingle();
+    if (!activeErr && active?.status === "queued") {
+      // Óhafið starf í biðröð rendrar nýja snapshot-ið þegar það er tekið.
+      queuedFresh = true;
+      break;
+    }
+    // 'running' (eða óviss staða vegna select-villu): bíða aðeins, starfið
+    // gæti klárað; þá kemst nýtt starf að í næstu tilraun. (!active án villu
+    // = kláraðist rétt í þessu → reynum insert strax aftur.) Stutt bið og
+    // sleppt í síðustu umferð: server-aðgerðin má ekki nálgast tímamörk
+    // Vercel-falla.
+    if ((activeErr || active?.status === "running") && attempt < 3) {
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+  return queuedFresh;
+}
 
 function firstSentence(text: string): string {
   const trimmed = (text ?? "").trim();

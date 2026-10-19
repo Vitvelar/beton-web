@@ -11,8 +11,13 @@
 // Aðeins texti AI er úr ai_summary og nzs4306.*_summary. Tafla verulegra galla,
 // gallatafla (Defects), viðhaldstafla, vottorð, rakatafla, takmarkanir (orðrétt frá
 // skoðunarmanni) og AI-yfirlýsingin eru byggð úr gögnum og föstum texta, aldrei af AI.
-// Skýrslan er DRÖG þar til „Sign & issue“ (report-2 PR 2) kemur: dagsetningin er merkt
-// „Draft generated“ og yfirlýsingin segir „Not yet reviewed or issued“.
+// Skýrslan er DRÖG þar til skoðunarmaður smellir „Sign & issue“ (report-2 PR 2, src/lib/report/issue.ts):
+//   - drög: DRAFT-vatnsmerki á hverri síðu, forsíðan segir „Draft — not yet issued“, vottorðið
+//     staðhæfir EKKERT („Certificate: to be signed when the inspector issues this report.“) og
+//     yfirlýsingin segir „Not yet reviewed or issued“;
+//   - útgefin: ekkert vatnsmerki, vottorðið („I certify …“) með nafni og útgáfudegi, og
+//     „Prepared and issued by {name}, {qualifications} · {date}“.
+// Útgáfa er aðeins til ef `issue` er gefið (ai_report_data.issue með hash sem passar við efnið).
 //
 // LÖGFRÆÐILEG YFIRFERÐ: fastur texti vottorðsins og „Scope of this inspection“ hér að
 // neðan er drög — lögfræðingur og NZ-skoðunarmaður (stofnskoðunarmenn) lesi yfir.
@@ -21,6 +26,7 @@ import type { ReactNode } from "react";
 import { formatReportDateNz } from "@/lib/report/date";
 import { REPORT_COPY, ratingCategoryLabel, reportCategoryLabel } from "@/lib/report/i18n";
 import type { ReportBranding } from "@/lib/report/branding";
+import type { ReportIssue } from "@/lib/report/issue";
 import {
   NZ_ROOMS,
   NZ_SECTION_KEYS,
@@ -97,9 +103,13 @@ export interface Nzs4306ReportProps {
   roomPhotos: Record<string, NzReportPhoto[]>;
   obsPhotos: Record<string, NzReportPhoto[]>;
   reportGeneratedAt: string | null;
+  /** Gild útgáfa (src/lib/report/issue.ts issueOf); null/ósett = drög. */
+  issue?: ReportIssue | null;
 }
 
 const T = REPORT_COPY.en;
+/** Vatnsmerkið á hverri síðu óútgefinnar skýrslu (verify-report-issue.cjs ber þetta saman við PDF-ið). */
+export const DRAFT_WATERMARK = "DRAFT — not issued";
 const SECTION = "px-8 py-8 border-t border-concrete print:border-0 print:break-before-page";
 /** Stuttir kaflar halda áfram á sömu síðu (rakamælingar á eftir viðhaldi, AI og skilmálar á eftir takmörkunum). */
 const SECTION_FLOW = "px-8 py-8 border-t border-concrete print:border-0";
@@ -123,6 +133,7 @@ export function Nzs4306Report({
   roomPhotos,
   obsPhotos,
   reportGeneratedAt,
+  issue = null,
 }: Nzs4306ReportProps) {
   const insp = report.inspection;
   const propData = insp.property_data ?? {};
@@ -173,6 +184,8 @@ export function Nzs4306Report({
   const disclosureCompany = nzs.disclosure?.company?.trim() || brand.name;
   const draftedOnRaw = nzs.disclosure?.generated_at || reportGeneratedAt;
   const draftedOn = draftedOnRaw ? formatReportDateNz(draftedOnRaw) : "";
+  const issuedOn = issue ? formatReportDateNz(issue.issuedOn) : "";
+  const issuedQualifications = issue?.qualifications?.trim() || null;
   const ratingLabel = (key: string) => NZ_RATING_LABELS[key] ?? ratingCategoryLabel(T, key);
 
   return (
@@ -180,6 +193,19 @@ export function Nzs4306Report({
       lang="en-NZ"
       className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article"
     >
+      {/* DRAFT-vatnsmerki: position:fixed endurtekst á hverri prentaðri síðu í Chromium. Aðeins óútgefnar
+          skýrslur; útgefin skýrsla (og öll önnur snið, þ.m.t. Beton) fá það ekki. */}
+      {!issue ? (
+        <div
+          aria-hidden="true"
+          className="rpt-draft-mark pointer-events-none select-none fixed inset-0 z-40 flex items-center justify-center"
+        >
+          <span className="-rotate-[32deg] whitespace-nowrap text-[44pt] font-bold tracking-widest text-ink/[0.09]">
+            {DRAFT_WATERMARK}
+          </span>
+        </div>
+      ) : null}
+
       {/* ═══ COVER ═══ */}
       <section className="rpt-cover">
         <div className="flex flex-col items-center text-center px-8 py-12 print:py-0">
@@ -191,8 +217,10 @@ export function Nzs4306Report({
           ) : null}
           <p className="text-xs font-semibold tracking-[0.2em] text-navy mb-2">{brand.nameUpper}</p>
           <h1 className="text-3xl font-bold text-navy mb-2">Property inspection report</h1>
-          {/* LÖGFRÆÐILEG YFIRFERÐ: fer með Sign & issue (report-2 PR 2) */}
-          <p className="text-sm text-fog mb-3">Prepared in accordance with NZS 4306:2005</p>
+          {/* LÖGFRÆÐILEG YFIRFERÐ: „Prepared in accordance with NZS 4306:2005“ birtist aðeins á útgefinni skýrslu. */}
+          <p className="text-sm text-fog mb-3">
+            {issue ? "Prepared in accordance with NZS 4306:2005" : "Draft — not yet issued"}
+          </p>
           {/* Fullt heimilisfang (gata, bær/borg, póstnúmer) — sama og „Site address“ í vottorðinu. */}
           <p className="text-xl text-ink mb-6">{siteAddress(insp)}</p>
           {coverPhotoUrl ? (
@@ -312,31 +340,37 @@ export function Nzs4306Report({
         <Para>
           {`Any limitations to the coverage of this inspection are set out in section ${nLimitations} (Limitations and areas not inspected).`}
         </Para>
-        {/* LÖGFRÆÐILEG YFIRFERÐ: fer með Sign & issue (report-2 PR 2) */}
-        <Para>
-          I certify that I carried out the inspection of the property at the site address above on the date stated, and
-          that this report has been prepared in accordance with NZS 4306:2005.
-        </Para>
-        <div className="mt-10 grid grid-cols-2 gap-8 text-sm rpt-keep">
-          <div>
-            <div className="border-b border-ink/60 h-10" />
-            <p className="mt-1 text-xs text-fog">Signature</p>
-            <p className="text-ink">{inspectorName}</p>
-          </div>
-          <div>
-            {/* Dagsetningin er hvenær drögin voru búin til, ekki útgáfudagur (report-2). */}
-            <div className="border-b border-ink/60 h-10 flex items-end pb-1 text-ink">
-              {reportGeneratedAt ? formatReportDateNz(reportGeneratedAt) : ""}
+        {issue ? (
+          <>
+            {/* LÖGFRÆÐILEG YFIRFERÐ: vottunartextinn birtist aðeins eftir að skoðunarmaður gefur skýrsluna út. */}
+            <Para>
+              I certify that I carried out the inspection of the property at the site address above on the date stated, and
+              that this report has been prepared in accordance with NZS 4306:2005.
+            </Para>
+            <div className="mt-10 grid grid-cols-2 gap-8 text-sm rpt-keep">
+              <div>
+                <div className="border-b border-ink/60 h-10 flex items-end pb-1 text-ink">{issue.inspectorName}</div>
+                <p className="mt-1 text-xs text-fog">Issued by</p>
+              </div>
+              <div>
+                <div className="border-b border-ink/60 h-10 flex items-end pb-1 text-ink">{issuedOn}</div>
+                <p className="mt-1 text-xs text-fog">Date issued</p>
+              </div>
             </div>
-            <p className="mt-1 text-xs text-fog">Draft generated</p>
+            {/* Úr gögnum (nafn og réttindi skoðunarmanns sem útgáfan geymir), aldrei úr AI. */}
+            <p className="mt-4 text-xs text-fog">
+              {`Prepared and issued by ${issue.inspectorName}${issuedQualifications ? `, ${issuedQualifications}` : ""} · ${issuedOn}`}
+            </p>
+          </>
+        ) : (
+          // LÖGFRÆÐILEG YFIRFERÐ: í drögum er engin vottun, engin undirskriftarlína og enginn „issued“-texti.
+          <div className="mt-6 border-l-4 border-navy bg-stone-50 rounded-sm px-5 py-4 rpt-keep rpt-draft-certificate">
+            <p className="text-sm text-ink/90 leading-relaxed">
+              Certificate: to be signed when the inspector issues this report.
+            </p>
+            <p className="text-xs text-fog leading-relaxed mt-2">This draft has not been certified.</p>
           </div>
-        </div>
-        {/* Úr gögnum (nafn og réttindi skoðunarmanns), aldrei úr AI. Undirskriftarlínan helst auð. */}
-        <p className="mt-4 text-xs text-fog">
-          {qualifications?.trim()
-            ? `Prepared and issued by ${inspectorName}, ${qualifications.trim()}`
-            : `Prepared and issued by ${inspectorName}`}
-        </p>
+        )}
       </section>
 
       {/* ═══ 3. PROPERTY AND INSPECTION CONDITIONS ═══ */}
@@ -592,7 +626,9 @@ export function Nzs4306Report({
         <Heading n={nDisclosure}>Use of AI in this report</Heading>
         <div className="border-l-4 border-navy bg-stone-50 rounded-sm px-5 py-4 rpt-keep rpt-disclosure">
           <p className="text-sm text-ink/90 leading-relaxed">
-            {`Observations and ratings by ${disclosureInspector}, ${disclosureCompany}. Text drafted with AI assistance${draftedOn ? ` (${draftedOn})` : ""}. Not yet reviewed or issued.`}
+            {`Observations and ratings by ${disclosureInspector}, ${disclosureCompany}. Text drafted with AI assistance${draftedOn ? ` (${draftedOn})` : ""}. ${
+              issue ? `Reviewed and issued by ${issue.inspectorName} on ${issuedOn}.` : "Not yet reviewed or issued."
+            }`}
           </p>
           <p className="text-xs text-fog leading-relaxed mt-2">
             Moisture readings and the inspector&apos;s limitations are reproduced from the inspector&apos;s own notes, and
