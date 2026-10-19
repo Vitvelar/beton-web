@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BRANDS } from "@/lib/brand";
 import { APP_STORE_URL } from "@/lib/rondva-links";
+import { shellCopy } from "@/lib/i18n/dashboard-shell";
+import { btn, spinner } from "@/lib/ui";
 
 // Innskráning á app.rondva.com. Aðeins Google og Apple (þegar kveikt er á
 // Apple). Nýskráning er opin (2026-10-06): nýr notandi án fyrirtækis fer á
@@ -60,6 +62,8 @@ const ERRORS: Record<string, { title: string; body: React.ReactNode }> = {
 
 export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
   const searchParams = useSearchParams();
+  // Óinnskráður notandi á ekkert vistað tungumál: innskráningin er á ensku.
+  const t = shellCopy("en").rondvaLogin;
   const [loading, setLoading] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,17 +82,25 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
     setLoading(provider);
     setError(null);
 
-    const { error } = await createClient().auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/dashboard/auth/callback`,
-        // Leyfir að velja annan Google-reikning, t.d. eftir höfnun.
-        ...(provider === "google" ? { queryParams: { prompt: "select_account" } } : {}),
-      },
-    });
+    try {
+      const { error } = await createClient().auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/dashboard/auth/callback`,
+          // Leyfir að velja annan Google-reikning, t.d. eftir höfnun.
+          ...(provider === "google" ? { queryParams: { prompt: "select_account" } } : {}),
+        },
+      });
 
-    if (error) {
-      setError(error.message);
+      if (error) {
+        // Hrá villan fer í skrána, aldrei til notandans.
+        console.error("RondvaLogin: signInWithOAuth failed:", error.message);
+        setError(t.signInFailed);
+        setLoading(null);
+      }
+    } catch (caught) {
+      console.error("RondvaLogin: sign-in threw:", caught);
+      setError(t.signInFailed);
       setLoading(null);
     }
   }
@@ -96,12 +108,11 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
   const busy = loading !== null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-paper lg:flex-row">
+    <div className="flex min-h-dvh flex-col bg-paper lg:flex-row">
       {/* Vinstri: dökkt teikniblað með fyrirsögn kynningarsíðunnar (aðeins á stórum skjám). */}
       <aside
-        className="relative hidden overflow-hidden text-white lg:flex lg:w-[46%] lg:flex-col lg:justify-between lg:p-14 xl:p-16"
+        className="relative hidden overflow-hidden bg-ink text-paper lg:flex lg:w-[46%] lg:flex-col lg:justify-between lg:p-14 xl:p-16"
         style={{
-          backgroundColor: "#101418",
           backgroundImage:
             "linear-gradient(to right, rgba(250,251,252,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(250,251,252,0.05) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
@@ -112,41 +123,41 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
           style={{ backgroundColor: "rgba(27,79,216,0.28)" }}
           aria-hidden="true"
         />
-        <a href={R.marketingUrl} className="relative inline-flex w-fit" aria-label="Rondva home">
+        <a href={R.marketingUrl} className="relative inline-flex w-fit" aria-label={t.homeLabel}>
           {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
           <img src="/rondva/logo-white.svg" alt="Rondva" width={137} height={39} className="h-auto w-[137px]" />
         </a>
 
         <div className="relative max-w-[34rem]">
-          <p className="rv-serif text-[38px] leading-[1.06] xl:text-[46px]">
+          <p className="rv-serif text-4xl leading-[1.06] xl:text-5xl">
             Walk the property.
             <br />
             {/* Ljósari blár en Rondva Blue: #1b4fd8 nær ekki 3:1 á #101418. */}
-            <em className="font-normal italic" style={{ color: "#8fb0ff" }}>
+            <em className="font-normal italic text-accent-on-inverse">
               Rondva drafts the report.
             </em>
           </p>
-          <p className="mt-6 text-base leading-relaxed text-white/65">
+          <p className="mt-6 text-base leading-relaxed text-on-inverse-muted">
             Your inspections, photos and report drafts, synced from the field app.
           </p>
         </div>
 
-        <p className="relative text-xs text-white/60">
+        <p className="relative text-xs text-on-inverse-muted">
           &copy; 2026 {R.company}
         </p>
       </aside>
 
       {/* Hægri: innskráning */}
-      <main className="flex flex-1 flex-col px-6 py-10 sm:px-10">
+      <main id="content" className="flex flex-1 flex-col px-6 py-10 sm:px-10">
         <div className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center">
-          <a href={R.marketingUrl} className="mb-12 inline-flex w-fit lg:hidden" aria-label="Rondva home">
+          <a href={R.marketingUrl} className="mb-12 inline-flex w-fit lg:hidden" aria-label={t.homeLabel}>
             {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
             <img src="/rondva/logo.svg" alt="Rondva" width={137} height={39} className="h-auto w-[120px]" />
           </a>
 
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy">Dashboard</p>
-          <h1 className="rv-serif mt-3 text-[34px] leading-tight text-ink">Sign in to Rondva</h1>
-          <p className="mt-3 text-[15px] leading-relaxed text-fog">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-navy">Dashboard</p>
+          <h1 className="rv-serif mt-3 text-4xl leading-tight text-ink">Sign in to Rondva</h1>
+          <p className="mt-3 text-base leading-relaxed text-fog">
             Sign in with {appleEnabled ? "Google or Apple" : "Google"}. New here? You&apos;ll set up your
             company in under a minute.
           </p>
@@ -154,7 +165,7 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
           {queryError && !error && (
             <div
               role="alert"
-              className="mt-8 rounded-xl border border-concrete bg-white px-4 py-3.5 text-sm leading-relaxed text-fog"
+              className="mt-8 rounded-xl border border-concrete bg-surface px-4 py-3.5 text-sm leading-relaxed text-fog"
             >
               <p className="font-semibold text-ink">{queryError.title}</p>
               <p className="mt-1">{queryError.body}</p>
@@ -162,7 +173,7 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
           )}
 
           {error && (
-            <p role="alert" className="mt-8 rounded-xl border border-sev-danger/30 bg-white px-4 py-3.5 text-sm text-sev-danger">
+            <p role="alert" className="mt-8 rounded-xl border border-danger bg-danger-tint px-4 py-3.5 text-sm text-danger">
               {error}
             </p>
           )}
@@ -173,10 +184,10 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
               onClick={() => signIn("google")}
               disabled={busy}
               aria-busy={loading === "google"}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-concrete-dk bg-white px-6 text-[15px] font-semibold text-ink shadow-[0_1px_2px_rgba(16,20,24,0.06)] transition-colors hover:border-ink/40 hover:bg-paper-alt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy disabled:cursor-not-allowed disabled:opacity-60"
+              className={btn("secondary", "lg", "w-full gap-3 bg-surface")}
             >
-              <GoogleMark />
-              {loading === "google" ? "Opening Google…" : "Continue with Google"}
+              {loading === "google" ? <span className={spinner} aria-hidden="true" /> : <GoogleMark />}
+              {loading === "google" ? t.googleOpening : "Continue with Google"}
             </button>
 
             {appleEnabled && (
@@ -186,10 +197,10 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
                   onClick={() => signIn("apple")}
                   disabled={busy}
                   aria-busy={loading === "apple"}
-                  className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-black px-6 text-[15px] font-semibold text-white transition-colors hover:bg-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy disabled:cursor-not-allowed disabled:opacity-60"
+                  className={btn("primary", "lg", "w-full gap-3 border-ink bg-ink! text-paper! hover:bg-ink/85!")}
                 >
-                  <AppleMark />
-                  {loading === "apple" ? "Opening Apple…" : "Continue with Apple"}
+                  {loading === "apple" ? <span className={spinner} aria-hidden="true" /> : <AppleMark />}
+                  {loading === "apple" ? t.appleOpening : "Continue with Apple"}
                 </button>
                 {/* D7 (plan/rondva/INNSKRANINGARLEIDIR-HONNUN.md): hlutlaus ábending —
                     „Hide My Email" má alltaf velja (leiðbeining 4.8), þá er Apple tengt í Stillingum. */}
