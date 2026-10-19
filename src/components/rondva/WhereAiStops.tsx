@@ -9,8 +9,8 @@ const whereAiStops = [
     body: "The AI cannot change the severity you set on any finding.",
   },
   {
-    title: "A Rondva report is not a certified engineering conclusion",
-    body: "and doesn’t present itself as one. It’s your professional inspection, written up.",
+    title: "A Rondva report is not a certified engineering conclusion.",
+    body: "It doesn’t present itself as one. It’s your professional inspection, written up.",
   },
   {
     title: "Nothing is claimed to be complete.",
@@ -31,9 +31,9 @@ export function WhereAiStops() {
     <section className="rv-blueprint rv-grain relative px-6 py-24 text-paper md:py-32">
       <div className="relative mx-auto max-w-[1180px]">
         <div className="flex items-start gap-5">
-          <IconShield className="mt-1 hidden h-9 w-9 shrink-0 text-blue sm:block" />
+          <IconShield className="mt-1 hidden h-9 w-9 shrink-0 text-accent-on-inverse sm:block" />
           <SectionHeading eyebrow="Where the AI stops" light>
-            This matters more than any feature, <em className="text-paper/70">so we&apos;ll be direct about it.</em>
+            This matters more than any feature, <em>so we&apos;ll be direct about it.</em>
           </SectionHeading>
         </div>
         <ol className="mt-14 grid gap-x-12 gap-y-10 md:grid-cols-2">
@@ -43,13 +43,13 @@ export function WhereAiStops() {
               className={`rv-reveal border-t border-paper/15 pt-6 ${i === whereAiStops.length - 1 && whereAiStops.length % 2 === 1 ? "md:col-span-2" : ""}`}
               style={{ "--i": i } as React.CSSProperties}
             >
-              <span className="rv-tnum text-xs font-semibold tracking-[0.14em] text-blue">0{i + 1}</span>
+              <span className="rv-tnum text-xs font-semibold tracking-[0.14em] text-accent-on-inverse">0{i + 1}</span>
               <p className="mt-3 font-serif text-[24px] font-semibold leading-snug tracking-tight">{item.title}</p>
-              <p className="mt-2 text-lg leading-relaxed text-paper/70">{item.body}</p>
+              <p className="mt-2 text-lg leading-relaxed text-on-inverse-muted">{item.body}</p>
             </li>
           ))}
         </ol>
       </div>
-  </section>
+    </section>
   );
 }

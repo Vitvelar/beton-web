@@ -14,7 +14,6 @@ const AI_AND_SEARCH_CRAWLERS = ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-
 
 export function GET() {
   const body = [
-    "# Allt er leyft nema stjórnborð og API. Gervigreindarskriðlar eru vísvitandi velkomnir.",
     "User-agent: *",
     "Allow: /",
     "Disallow: /api/",

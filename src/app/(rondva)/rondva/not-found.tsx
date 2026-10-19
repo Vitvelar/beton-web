@@ -1,29 +1,10 @@
-import Link from "next/link";
-import { RondvaHeader } from "@/components/rondva/RondvaHeader";
-import { RondvaFooter } from "@/components/rondva/RondvaFooter";
+import { RondvaNotFoundView } from "@/components/rondva/NotFoundView";
+import { rondvaNotFoundMetadata } from "@/components/rondva/page-meta";
+
+// Notað ef einhver síða á rondva.com kallar á notFound() sjálf. Óþekktar slóðir fara í
+// [...rest]/page.tsx (sjá athugasemd þar).
+export const metadata = rondvaNotFoundMetadata;
 
 export default function RondvaNotFound() {
-  return (
-    <>
-      <RondvaHeader />
-      <main className="flex-1 flex items-center">
-        <div className="mx-auto max-w-2xl px-6 py-24 text-center">
-          <p className="rv-eyebrow">404</p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight">
-            There is nothing at this address.
-          </h1>
-          <p className="mt-4 text-muted">
-            The page you asked for does not exist.
-          </p>
-          <Link
-            href="/"
-            className="mt-8 inline-flex items-center rounded-full bg-ink px-6 py-3 text-sm font-semibold text-paper hover:bg-blue transition-colors"
-          >
-            Back to the front page
-          </Link>
-        </div>
-      </main>
-      <RondvaFooter />
-    </>
-  );
+  return <RondvaNotFoundView />;
 }
