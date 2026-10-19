@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
+import { APP_STORE_URL } from "@/lib/rondva-links";
 
 // Sticky top header for the Rondva landing page. Logo is the horizontal
 // lockup (min 96px wide per plan/rondva/brand/USAGE.md); keep at least half
@@ -22,13 +23,13 @@ export function RondvaHeader() {
           >
             Log in
           </a>
-          <Link
-            href="#waitlist"
+          <a
+            href={APP_STORE_URL}
             className="inline-flex items-center whitespace-nowrap rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-paper transition-colors hover:bg-blue max-[359px]:px-3 sm:px-5"
           >
-            <span className="sm:hidden">Join waitlist</span>
-            <span className="hidden sm:inline">Join the waitlist</span>
-          </Link>
+            <span className="sm:hidden">Get the app</span>
+            <span className="hidden sm:inline">Download on the App Store</span>
+          </a>
         </nav>
       </div>
     </header>
