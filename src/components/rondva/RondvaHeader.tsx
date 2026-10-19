@@ -27,10 +27,10 @@ export function RondvaHeader() {
               <img src="/rondva/logo.svg" alt="Rondva" width={137} height={39} className="h-auto w-[112px] min-w-24 max-[359px]:w-24 sm:w-[137px]" />
             </Link>
             <nav aria-label="Account" className="flex flex-wrap items-center justify-end gap-x-1 gap-y-1 sm:gap-x-2">
-              <a href={BRANDS.rondva.appUrl} className={rvBtn("quiet", "md", "max-[359px]:px-1")}>
+              <a href={BRANDS.rondva.appUrl} className={rvBtn("quiet", "md")}>
                 Log in
               </a>
-              <a href={APP_STORE_URL} className={rvBtn("primary", "md", "max-[359px]:px-4")}>
+              <a href={APP_STORE_URL} className={rvBtn("primary", "md", "max-sm:px-4")}>
                 Get the app
               </a>
             </nav>

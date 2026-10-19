@@ -258,7 +258,7 @@ export default function RondvaLandingPage() {
               A person you can write to.
             </SectionHeading>
             <div className="mt-12 grid gap-10 md:grid-cols-[auto_1fr] md:gap-14">
-              <div className="rv-reveal flex items-center gap-5 md:flex-col md:items-start" style={{ "--i": 0 } as React.CSSProperties}>
+              <div className="rv-reveal flex flex-wrap items-center gap-5 md:flex-col md:items-start" style={{ "--i": 0 } as React.CSSProperties}>
                 {HAS_FOUNDER_PHOTO ? (
                   <Image
                     src="/rondva/hjalti.jpg"
@@ -370,7 +370,7 @@ export default function RondvaLandingPage() {
                 <div>
                   <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center">
                     <AppStoreBadge />
-                    <a href={BRANDS.rondva.appUrl} className={rvBtn("secondary", "md")}>
+                    <a href={BRANDS.rondva.appUrl} className={rvBtn("secondary", "md", "whitespace-normal text-center")}>
                       Create your company account
                       <span aria-hidden="true">→</span>
                     </a>

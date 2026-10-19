@@ -39,3 +39,13 @@ export function rondvaPageMetadata({
     },
   };
 }
+
+/** 404 á rondva.com: eigin titill/lýsing, ekkert canonical og engin forsíðuspjöld; aðeins noindex. */
+export const rondvaNotFoundMetadata: Metadata = {
+  title: "Page not found",
+  description: "The page you asked for does not exist on rondva.com.",
+  alternates: {},
+  openGraph: { title: "Page not found — Rondva", siteName: "Rondva" },
+  twitter: { card: "summary", title: "Page not found — Rondva" },
+  robots: { index: false, follow: false },
+};

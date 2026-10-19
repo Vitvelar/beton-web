@@ -15,12 +15,15 @@ import { rondvaPageMetadata } from "@/components/rondva/page-meta";
 // reiknings segir ekki upp áskrift eru úr docs/release/IN_APP_PURCHASES.md og ACCOUNT_DELETION.md
 // í beton-app. Orðalagið „When paid plans are offered in the app“ er haldið (verify-rondva-pricing).
 
-export const metadata: Metadata = rondvaPageMetadata({
-  title: "Terms of use",
-  description:
-    "The terms of use for Rondva, the inspection app and dashboard from Vitvélar ehf.: accounts, AI-drafted reports you must review, your content, data processing, free reports, App Store subscriptions and auto-renewal, and liability.",
-  path: "/terms",
-});
+export const metadata: Metadata = {
+  ...rondvaPageMetadata({
+    title: "Terms of use",
+    description:
+      "The terms of use for Rondva, the inspection app and dashboard from Vitvélar ehf.: accounts, AI-drafted reports you must review, your content, data processing, free reports, App Store subscriptions and auto-renewal, and liability.",
+    path: "/terms",
+  }),
+  alternates: { canonical: `${BRANDS.rondva.marketingUrl}/terms` },
+};
 
 const R = BRANDS.rondva;
 const mail = `mailto:${R.contactEmail}`;

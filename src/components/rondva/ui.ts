@@ -13,10 +13,13 @@ const BTN_BASE =
   "aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:active:translate-y-0";
 
 const BTN_SIZE: Record<ButtonSize, string> = {
-  sm: "h-9 px-4 text-sm",
-  md: "min-h-11 px-6 text-sm",
-  lg: "min-h-13 px-7 text-base",
+  sm: "h-9 text-sm",
+  md: "min-h-11 text-sm",
+  lg: "min-h-13 text-base",
 };
+
+// Vinstra/hægri fylling; „quiet“ er textahnappur og fær minni fyllingu í öllum stærðum.
+const BTN_PAD: Record<ButtonSize, string> = { sm: "px-4", md: "px-6", lg: "px-7" };
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
   primary:
@@ -24,7 +27,7 @@ const BTN_VARIANT: Record<ButtonVariant, string> = {
   secondary:
     "border border-line-strong bg-surface text-ink hover:border-ink hover:bg-paper-alt active:bg-paper-alt " +
     "disabled:hover:border-line-strong disabled:hover:bg-surface",
-  quiet: "px-2 text-blue underline-offset-4 hover:underline active:text-blue-deep disabled:hover:no-underline",
+  quiet: "text-blue underline-offset-4 hover:underline active:text-blue-deep disabled:hover:no-underline",
   inverse:
     "border border-paper/40 bg-transparent text-paper hover:border-paper hover:bg-paper/10 active:bg-paper/15 " +
     "focus-visible:outline-accent-on-inverse",
@@ -32,7 +35,10 @@ const BTN_VARIANT: Record<ButtonVariant, string> = {
 
 /** Hnappur eða hnappslegur tengill á rondva.com. Einn `primary` á hvert svæði skjás. */
 export function rvBtn(variant: ButtonVariant = "primary", size: ButtonSize = "md", extra = ""): string {
-  return `${BTN_BASE} ${BTN_SIZE[size]} ${BTN_VARIANT[variant]} ${extra}`.trim();
+  const pad = variant === "quiet" ? "px-2" : BTN_PAD[size];
+  // Löng texti á mjóum skjá: `whitespace-normal` í extra tekur nowrap úr grunninum.
+  const base = extra.includes("whitespace-normal") ? BTN_BASE.replace(" whitespace-nowrap", "") : BTN_BASE;
+  return `${base} ${BTN_SIZE[size]} ${pad} ${BTN_VARIANT[variant]} ${extra}`.trim();
 }
 
 /** Texti-tengill með 44px snertiflöt á símum (fótur, efnisyfirlit, „til baka“). */

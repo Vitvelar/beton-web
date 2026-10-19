@@ -20,12 +20,15 @@ import { JsonLd } from "@/components/rondva/JsonLd";
 // docs/release/ACCOUNT_DELETION.md §8), og veðurútfylling er í Rondva-byggingunni. Engin
 // eyðublöð: samband er tölvupóstur (rondva@rondva.com). Heiti hnappa eru úr lib/i18n/catalog.ts.
 
-export const metadata: Metadata = rondvaPageMetadata({
-  title: "Support and FAQ",
-  description:
-    "Answers about Rondva: NZS 4306 reports, working with no signal, what the AI does, where your photos are stored, pricing and tax invoices, adding a colleague, subscriptions and refunds, what happens if Rondva shuts down, and deleting your account.",
-  path: "/support",
-});
+export const metadata: Metadata = {
+  ...rondvaPageMetadata({
+    title: "Support and FAQ",
+    description:
+      "Answers about Rondva: NZS 4306 reports, working with no signal, what the AI does, where your photos are stored, pricing and tax invoices, adding a colleague, subscriptions and refunds, what happens if Rondva shuts down, and deleting your account.",
+    path: "/support",
+  }),
+  alternates: { canonical: `${BRANDS.rondva.marketingUrl}/support` },
+};
 
 const R = BRANDS.rondva;
 const mail = `mailto:${R.contactEmail}`;

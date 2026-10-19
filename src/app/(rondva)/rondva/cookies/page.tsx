@@ -7,11 +7,14 @@ import { CookieChoicesButton } from "@/components/rondva/CookieChoicesButton";
 import { rondvaPageMetadata } from "@/components/rondva/page-meta";
 import { rvTapLink } from "@/components/rondva/ui";
 
-export const metadata: Metadata = rondvaPageMetadata({
-  title: "Cookies",
-  description: "Which cookies rondva.com sets, what each one is for, and how to change your choice.",
-  path: "/cookies",
-});
+export const metadata: Metadata = {
+  ...rondvaPageMetadata({
+    title: "Cookies",
+    description: "Which cookies rondva.com sets, what each one is for, and how to change your choice.",
+    path: "/cookies",
+  }),
+  alternates: { canonical: `${BRANDS.rondva.marketingUrl}/cookies` },
+};
 
 type Row = { name: string; provider: string; purpose: string; expiry: string };
 
