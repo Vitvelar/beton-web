@@ -8,6 +8,8 @@ import { SignInMethods } from "@/components/dashboard/SignInMethods";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { linkedIdentities } from "@/lib/sign-in-methods";
 import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
+import { shellCopy } from "@/lib/i18n/dashboard-shell";
+import { tapLink } from "@/lib/ui";
 import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,7 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SettingsPage() {
   const locale = await getDashboardLocale();
   const brand = await getRequestBrand();
-  const t = dashboardCopy(locale).settings;
+  const copy = dashboardCopy(locale);
+  const t = copy.settings;
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,38 +41,52 @@ export default async function SettingsPage() {
   const reportSettings = brand === "rondva" ? await ownerReportSettings(supabase) : null;
   const qualifications = brand === "rondva" && inspector ? await inspectorQualifications(supabase, user.id) : null;
 
+  const autoSaves = brand === "rondva";
+
   return (
     <div className="max-w-2xl">
-      <div className="mb-6 flex items-baseline justify-between">
-        <div>
-          <p className="text-xs font-mono uppercase tracking-wider text-fog">{t.eyebrow}</p>
-          <h1 className="text-2xl font-bold text-ink">{t.title}</h1>
-        </div>
-        <Link href="/dashboard" className="text-sm text-fog hover:text-ink">
-          {t.backToList}
-        </Link>
+      <Link href="/dashboard" className={`${tapLink} -ml-1 px-1 text-sm text-fog transition-colors hover:text-ink`}>
+        {t.backToList}
+      </Link>
+      <div className="mb-6 mt-1">
+        <h1 className="text-2xl font-semibold text-ink">{t.metaTitle}</h1>
+        {autoSaves ? <p className="mt-1 text-sm text-fog">{shellCopy(locale).settings.autoSave}</p> : null}
       </div>
 
-      {/* Beton er alltaf á íslensku — tungumálavalið er aðeins á app.rondva.com. */}
-      {brand === "rondva" ? <LanguageSetting locale={locale} /> : null}
+      {/* Beton er alltaf á íslensku — tungumálavalið er aðeins á app.rondva.com.
+          Reitirnir sjálfir eru í eigin einingum; fyrirsagnir hvers korts (H2) eru hér
+          þar sem einingin ber enga (Tungumál: falin, merkimiðinn í kortinu segir það sama). */}
+      {brand === "rondva" ? (
+        <section aria-labelledby="settings-language">
+          <h2 id="settings-language" className="sr-only">
+            {copy.language.title}
+          </h2>
+          <LanguageSetting locale={locale} />
+        </section>
+      ) : null}
       {reportSettings ? <ReportSettingsForm locale={locale} initial={reportSettings} /> : null}
 
       {inspector ? (
-        <CompanyBrandingForm
-          userId={user.id}
-          initial={{
-            company_name: inspector.company_name ?? "",
-            company_logo_url: inspector.company_logo_url ?? "",
-            company_terms_url: inspector.company_terms_url ?? "",
-            company_terms_text: inspector.company_terms_text ?? "",
-            qualifications: qualifications?.value ?? "",
-          }}
-          locale={locale}
-          showTermsText={brand === "rondva" && inspector.company_name?.trim() !== "Beton ehf."}
-          showQualifications={qualifications !== null}
-        />
+        <section aria-labelledby="settings-company">
+          <h2 id="settings-company" className="mb-3 text-lg font-semibold text-ink">
+            {t.title}
+          </h2>
+          <CompanyBrandingForm
+            userId={user.id}
+            initial={{
+              company_name: inspector.company_name ?? "",
+              company_logo_url: inspector.company_logo_url ?? "",
+              company_terms_url: inspector.company_terms_url ?? "",
+              company_terms_text: inspector.company_terms_text ?? "",
+              qualifications: qualifications?.value ?? "",
+            }}
+            locale={locale}
+            showTermsText={brand === "rondva" && inspector.company_name?.trim() !== "Beton ehf."}
+            showQualifications={qualifications !== null}
+          />
+        </section>
       ) : (
-        <p className="rounded-xl border border-concrete bg-white p-6 text-sm text-fog">
+        <p className="rounded-xl border border-concrete bg-surface p-6 text-sm text-fog">
           {t.noInspector}
         </p>
       )}
@@ -77,7 +94,7 @@ export default async function SettingsPage() {
       <p className="mt-6 text-xs text-fog">
         {fill(t.inspectorNote, { name: inspector?.full_name ?? user.email })}
       </p>
-      {(await getRequestBrand()) === "rondva" && <SignInMethods locale={locale} identities={linkedIdentities(user.identities)} appleEnabled={process.env.RONDVA_APPLE_SIGNIN === "1"} />}
+      {brand === "rondva" && <SignInMethods locale={locale} identities={linkedIdentities(user.identities)} appleEnabled={process.env.RONDVA_APPLE_SIGNIN === "1"} />}
     </div>
   );
 }

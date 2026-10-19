@@ -383,13 +383,17 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
 
   // 13. Stjórnborð: Rondva-tómt ástand í 3 skrefum; Beton-textinn óbreyttur.
   const dash = read('src/app/(dashboard)/dashboard/page.tsx');
-  assert.match(dash, /locale === "en" && \(await getRequestBrand\(\)\) === "rondva"/);
+  // Tómt ástand Rondva birtist á máli notandans (is/en, textar í katalógnum dashboard-shell.ts).
+  assert.match(dash, /\(await getRequestBrand\(\)\) === "rondva"/);
+  assert.match(dash, /<RondvaDashboardEmpty locale=\{locale\} \/>/);
   assert.match(dash, /\{t\.emptyTitle\}/);
   assert.match(dash, /\{t\.emptyBody\}/);
-  for (const s of ['Get Rondva on your iPhone', 'Sign in with the same account you used here.', 'Add your logo and report terms', 'href="/dashboard/settings"', 'Start your first inspection']) assert.ok(emptyState.includes(s), `empty state: ${s}`);
+  const shellCatalog = read('src/lib/i18n/dashboard-shell.ts');
+  for (const s of ['Get Rondva on your iPhone', 'Sign in with the same account you used here.', 'Add your logo and report terms', 'Start your first inspection']) assert.ok(shellCatalog.includes(s), `empty state (en catalog): ${s}`);
+  assert.ok(emptyState.includes('href="/dashboard/settings"'), 'empty state links to settings');
   assert.match(emptyState, /<AppStoreBadge \/>/);
   assert.match(emptyState, /<AppStoreQr tone="light" \/>/);
-  pass('dashboard empty state: three steps for Rondva (English); Beton keeps its Icelandic empty text');
+  pass('dashboard empty state: three steps for Rondva (is/en catalog); Beton keeps its Icelandic empty text');
 
   console.log(`${n} Rondva pricing checks passed; no network calls made.`);
 })().catch((e) => { console.error(e); process.exit(1); });
