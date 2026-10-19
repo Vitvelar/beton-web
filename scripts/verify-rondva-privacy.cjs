@@ -99,6 +99,24 @@ pass('company registration: name, country and optional website described; websit
 
 // 6. Dagsetning uppfærð og ekkert úr gamla orðalaginu horfið óvart.
 assert.match(code, /revised="8 October 2026"/);
+// Prufumánuðurinn (trial_claims): hvað, hvers vegna, lagagrunnur, varðveisla og að það lifi eyðingu.
+for (const [id, needles] of [
+  ['account', ['Free first month.', 'fingerprint (a keyed, salted SHA-256 hash)', 'stable account identifier from your Apple or Google sign-in', 'email address',
+               "isn't stored in readable form", 'pseudonymised personal data, not anonymous data',
+               'kept for 24 months, also after the account is deleted', 'preventing abuse of the free month', 'art. 6(1)(f)']],
+  ['deletion', ['fingerprints used for the free first month', "doesn't give a new free month", 'deleted 24 months after the free month was given']],
+  ['retention', ['Free-month fingerprints', 'pseudonymised hashes', '24 months from when the free month was given', 'deleted automatically', 'Weather lookups']],
+  ['legal-bases', ['free-month fingerprints']],
+]) {
+  const sec = section(id);
+  for (const s of needles) assert.ok(sec.includes(s), `privacy #${id} says: ${s}`);
+}
+// Ekki ofsögð óafturkræfni: við höfum saltið og getum staðfest ágiskað netfang (dulnefni, ekki nafnleysi).
+for (const id of ['account', 'deletion', 'retention']) {
+  assert.ok(!/can't be turned back|one-way fingerprint|one-way hashes/i.test(section(id)), `#${id}: fingerprints not described as irreversible`);
+}
+assert.ok(!/Looked-up locations for the weather/.test(plain), 'stale weather retention bullet removed');
+pass('free first month: pseudonymised salted fingerprint of the sign-in identifier and email, purpose, art. 6(1)(f), kept 24 months also after deletion');
 for (const s of ['Anthropic', 'Supabase', 'Vercel', 'Expo (650 Industries)', 'Resend', 'Google Analytics and Meta']) assert.ok(plain.includes(s), `${s} still listed`);
 pass('revision date updated; existing providers still listed');
 

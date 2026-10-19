@@ -184,7 +184,75 @@ async function main() {
   assert.ok(!nz.includes('>Very serious<') && !nz.includes('>Minor<'), 'nz_terms replaces the standard words');
   console.log('PASS nz_terms stamp: Satisfactory / Maintenance / Defect / Significant defect replace the standard words');
 
+  await englishVariants(all, output);
+
   if (process.env.REPORT_PIXELS === '1') await pixels(all, output);
+}
+
+// Enskt afbrigði (Phase 1, plan/rondva/ENSK-AFBRIGDI-HONNUN.md). Enginn, ógildur eða 'en' stimpill,
+// og stimpill á íslenskri skýrslu → markup BÆTI FYRIR BÆTI eins og golden. Þekkt afbrigði → markup
+// er golden-markup með AÐEINS þessum skiptum: dagsetning á forsíðu og í eignatöflu, „Report created“,
+// og fyrir en-US stærð „m² (ft²)“ + „mould“ → „mold“. AI-texti (inngangur o.fl.) er aldrei snertur.
+const VARIANT_DATES = {
+  'en-NZ': ['21/9/2026', '22/9/2026'], 'en-AU': ['21/9/2026', '22/9/2026'], 'en-GB': ['21/9/2026', '22/9/2026'],
+  'en-IE': ['21/9/2026', '22/9/2026'], 'en-US': ['9/21/2026', '9/22/2026'], 'en-CA': ['2026-09-21', '2026-09-22'],
+};
+function withStamp(name, stamp) {
+  const record = JSON.parse(JSON.stringify(FIXTURES[name]));
+  record.ai_report_data.english_variant = stamp;
+  return record;
+}
+function expectedVariantMarkup(golden, variant) {
+  const [inspected, created] = VARIANT_DATES[variant];
+  const swap = (text, from, to, count) => {
+    const parts = text.split(from);
+    assert.equal(parts.length - 1, count, `${variant}: expected ${count}× ${from}`);
+    return parts.join(to);
+  };
+  let out = swap(golden, '>21.09.2026</p>', `>${inspected}</p>`, 1);          // forsíða
+  out = swap(out, '>21.09.2026</td>', `>${inspected}</td>`, 1);              // eignatafla
+  out = swap(out, 'Report created 22.09.2026<', `Report created ${created}<`, 1);
+  if (variant === 'en-US') {
+    out = swap(out, '>140 m²</td>', '>140 m² (1,507 ft²)</td>', 1);
+    out = swap(out, 'mould', 'mold', 1);
+  }
+  return out;
+}
+async function englishVariants(all, output) {
+  let checks = 0;
+  for (const stamp of [undefined, null, 'en', 'en-us', 'EN-US', 'en-ZA', 'en_GB', 42]) {
+    for (const name of ['en-standard', 'en-condition_1_3']) for (const pdf of [true, false]) {
+      const html = await renderReportMarkup(withStamp(name, stamp), { pdf });
+      assert.equal(sha(html), GOLDEN[`${name}:${pdf ? 'pdf' : 'web'}`], `${name} with english_variant=${JSON.stringify(stamp)} must equal golden`);
+      checks++;
+    }
+  }
+  for (const stamp of ['en-US', 'en-GB', 'en-NZ']) for (const name of ['beton-is-standard', 'vitvelar-is']) for (const pdf of [true, false]) {
+    const html = await renderReportMarkup(withStamp(name, stamp), { pdf });
+    assert.equal(sha(html), GOLDEN[`${name}:${pdf ? 'pdf' : 'web'}`], `${name} (is) ignores english_variant=${stamp}`);
+    checks++;
+  }
+  // NZS 4306-sniðið (edge stimplar en-NZ á NZ-skýrslur): stimpillinn breytir engu þar (NZ-snið óbreytt).
+  {
+    const { buildNzSampleRecord } = require('./nz-sample/sample-inspection.cjs');
+    const opts = { pdf: true, dashboardLocale: 'en', brand: 'rondva' };
+    const plainNz = await renderReportMarkup(buildNzSampleRecord(), opts);
+    for (const stamp of ['en-NZ', 'en-US', 'en-CA']) {
+      const rec = buildNzSampleRecord(); rec.ai_report_data.english_variant = stamp;
+      assert.equal(await renderReportMarkup(rec, opts), plainNz, `NZS 4306 ignores english_variant=${stamp}`);
+      checks++;
+    }
+  }
+  const dir = path.join(output, 'variants'); fs.mkdirSync(dir, { recursive: true });
+  for (const variant of Object.keys(VARIANT_DATES)) for (const name of ['en-standard', 'en-condition_1_3']) for (const pdf of [true, false]) {
+    const key = `${name}:${pdf ? 'pdf' : 'web'}`;
+    const html = await renderReportMarkup(withStamp(name, variant), { pdf });
+    fs.writeFileSync(path.join(dir, `${name}.${variant}.${pdf ? 'pdf' : 'web'}.html`), html);
+    assert.equal(html, expectedVariantMarkup(all[key], variant), `${key} ${variant}: only dates/size/spelling may differ`);
+    assert.ok(html.includes('The inspection took place on 21.09.2026.'), 'AI text untouched');
+    checks++;
+  }
+  console.log(`PASS English variant: no/invalid/'en' stamp and stamped Icelandic reports == golden; NZS 4306 unchanged by the stamp; en-NZ/AU/GB/IE/US/CA differ only in dates, en-US size (ft²) and spelling (${checks} renders)`);
 }
 
 async function pixels(all, output) {

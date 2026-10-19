@@ -96,7 +96,7 @@ export function ConsentBanner() {
               />
               <span>
                 <span className="font-medium text-ink">Marketing</span>
-                <span className="block text-muted">Meta and Google ad measurement — tells us which ads led to a waitlist signup.</span>
+                <span className="block text-muted">Meta and Google ad measurement — tells us which ads led to a sign-up.</span>
               </span>
             </label>
           </div>

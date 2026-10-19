@@ -1,11 +1,10 @@
 // Verð og tilboð Rondva — ein heimild fyrir kynningarsíðuna og /support, svo tölurnar
 // geta aldrei rekist á. Eigandinn samþykkti áætlanirnar 2026-10-07. Verðin eru í
 // USD; kaup fara fram í iPhone-appinu í gegnum App Store (Apple sýnir verð í
-// staðbundinni mynt með sköttum). Appið er „coming to the App Store“ — ekkert af
-// þessu er til sölu á vefnum. `node scripts/verify-rondva-pricing.cjs` ber þetta
+// staðbundinni mynt með sköttum). Appið er á App Store; ekkert af þessu er til sölu á vefnum. `node scripts/verify-rondva-pricing.cjs` ber þetta
 // saman við textann á síðunum.
 //
-// Ekki nefna Ísland í texta tilboðsins: íslensk fyrirtæki eru aðeins í boði eftir
+// Ekki nefna Ísland í texta prufumánaðarins: íslensk fyrirtæki eru aðeins í boði eftir
 // boði, og tilboðið er sett fram almennt (sjá verify-skriftuna).
 
 export type RondvaPlan = {
@@ -33,7 +32,7 @@ export const RONDVA_PLANS: readonly RondvaPlan[] = [
     name: "Pro",
     price: "99.99",
     reports: 30,
-    blurb: "For a busy practice or a small team.",
+    blurb: "For a busy inspector — 30 AI reports a month.",
     recommended: true,
   },
 ];
@@ -54,17 +53,38 @@ export const RONDVA_INCLUDED = [
 ] as const;
 
 /**
- * Stofnmannatilboðið (í gildi): ókeypis AI-drög á mánuði, án korts, til og með
- * `endsOn`. Þegar dagsetningin líður þarf að fjarlægja tilboðið af síðunum (sjá PR-lýsingu).
+ * Fyrsti mánuður frír (ákvörðun eiganda 2026-10-08; kom í stað stofnmannatilboðsins „20 á
+ * mánuði til 31. janúar 2027“): hvert nýtt fyrirtæki fær EINU SINNI `freeReports` AI-drög sem
+ * gilda í `days` daga frá FYRSTU AI-skýrslu fyrirtækisins (ekki frá skráningu eða virkjun; PRUFUTIMI-HONNUN §2a, `starts_on = 'first_ai_report'`), hvort sem fyrr kemur. Ekkert
+ * kort, engin sjálfvirk greiðsla á eftir. Sama regla í gagnagrunni: beton-app
+ * supabase/migrations/20261008150000_report_trial_month.sql (report_trial_policy 20 / 30).
  */
-export const RONDVA_OFFER = {
-  freeReportsPerMonth: 20,
-  endsOn: "31 January 2027",
+export const RONDVA_TRIAL = {
+  freeReports: 20,
+  days: 30,
 } as const;
 
-export const RONDVA_PRICE_NOTE =
-  "Prices in USD; your App Store shows your local price incl. tax.";
+/**
+ * EIN tilboðslína fyrir hero, stjórnborð, /nz, llms.txt og skema; smíðuð úr RONDVA_TRIAL svo
+ * talan sé aðeins á einum stað. /support, /terms og prufuspjald forsíðunnar nota sömu fasta.
+ */
+export const RONDVA_OFFER_LINE = `First month free — ${RONDVA_TRIAL.freeReports} AI-drafted reports in your first month. No card.`;
 
+export const RONDVA_PRICE_NOTE =
+  "Charged by Apple in your currency incl. GST/VAT. Solo is NZ$99.99 in New Zealand, A$79.99 in Australia and EUR 59.99 in Ireland.";
+
+/**
+ * NZ-verð á /nz. Aðeins Solo er staðfest í App Store Connect (NZ$99.99); Pro og Report pack eru
+ * EKKI gefin upp í NZ$ fyrr en þau eru lesin úr ASC — ekki giska. Verð á skýrslu er reiknað.
+ */
+export const RONDVA_NZ_SOLO = { price: "99.99", currency: "NZ$" } as const;
+
+export function nzSoloPerReport(): string {
+  const solo = RONDVA_PLANS.find((p) => p.id === "solo");
+  return solo ? (Number(RONDVA_NZ_SOLO.price) / solo.reports).toFixed(2) : "";
+}
+
+/** Verð á vefnum eru í USD og merkt „US$“ svo NZ/AU-gestur lesi þau ekki sem eigin dollara. */
 export function usd(price: string): string {
-  return `$${price}`;
+  return `US$${price}`;
 }
