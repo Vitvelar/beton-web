@@ -50,7 +50,7 @@ const ANSWERS: Record<string, string> = {
     "Yes. If the weather field is empty on the day of the inspection, Rondva fills it in with a short forecast for the property, which you can check and change.",
   reports:
     "The AI drafts the report text and a summary from your notes, ratings and photos. The severities stay the ones you set, and Rondva asks you each time before anything is sent to the AI service.",
-  pricing: `Solo is ${usd(solo.price)} a month for ${solo.reports} AI-drafted reports and Pro is ${usd(pro.price)} a month for ${pro.reports}; a report pack adds ${RONDVA_PACK.reports} reports for ${usd(RONDVA_PACK.price)}. You buy in the app, through the App Store.`,
+  pricing: `Solo is ${usd(solo.price)} a month for ${solo.reports} AI-drafted reports and Pro is ${usd(pro.price)} a month for ${pro.reports}; a report pack adds ${RONDVA_PACK.reports} reports for ${usd(RONDVA_PACK.price)}. Plans are cheaper per report. You buy in the app, through the App Store.`,
   "tax-invoice":
     "Apple is the seller of record, so your receipt comes from Apple: you find it in your Apple purchase history and in the receipt email Apple sends after each charge. Need a GST/VAT invoice addressed to your company? Email rondva@rondva.com.",
   subscriptions:
@@ -272,7 +272,7 @@ const sections: LegalSection[] = [
           ))}
           <li>
             <strong>{RONDVA_PACK.name}</strong>: {usd(RONDVA_PACK.price)} for {RONDVA_PACK.reports}{" "}
-            extra reports that never expire
+            extra reports that never expire. Plans are cheaper per report.
           </li>
         </ul>
         <p>

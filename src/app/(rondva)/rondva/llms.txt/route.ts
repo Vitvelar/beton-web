@@ -33,7 +33,7 @@ export function GET() {
     "## Availability and price",
     `- iPhone app on the App Store: ${APP_STORE_URL}`,
     `- ${RONDVA_OFFER_LINE}`,
-    `- ${solo.name}: ${usd(solo.price)} a month, ${solo.reports} AI-drafted reports a month. ${pro.name}: ${usd(pro.price)} a month, ${pro.reports} reports. ${RONDVA_PACK.name}: ${usd(RONDVA_PACK.price)} one-time, ${RONDVA_PACK.reports} reports that never expire.`,
+    `- ${solo.name}: ${usd(solo.price)} a month, ${solo.reports} AI-drafted reports a month. ${pro.name}: ${usd(pro.price)} a month, ${pro.reports} reports. ${RONDVA_PACK.name}: ${usd(RONDVA_PACK.price)} one-time, ${RONDVA_PACK.reports} reports that never expire. Plans are cheaper per report.`,
     `- Prices are in USD; Apple charges in your currency incl. GST/VAT. In New Zealand, Solo is ${RONDVA_NZ_SOLO.currency}${RONDVA_NZ_SOLO.price} a month.`,
     "",
     "## Links",

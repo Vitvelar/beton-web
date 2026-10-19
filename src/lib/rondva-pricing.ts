@@ -23,7 +23,8 @@ export const RONDVA_PLANS: readonly RondvaPlan[] = [
     id: "solo",
     name: "Solo",
     price: "49.99",
-    reports: 8,
+    // 8 → 15 (B5, ákvörðun eiganda 2026-10-19; beton-app 20261019230214_solo_fifteen_reports.sql). Verð óbreytt.
+    reports: 15,
     blurb: "For a steady flow of jobs.",
     recommended: false,
   },
@@ -39,10 +40,10 @@ export const RONDVA_PLANS: readonly RondvaPlan[] = [
 
 export const RONDVA_PACK = {
   name: "Report pack",
-  /** Einskiptiskaup í USD. */
-  price: "29.99",
+  /** Einskiptiskaup í USD. 29.99 → 69.99 (B5, 2026-10-19): pakkinn er dýrari á skýrslu en Solo og Pro. */
+  price: "69.99",
   reports: 10,
-  blurb: "Additional reports when a month runs over.",
+  blurb: "For a busy month: top up 10 reports. Plans are cheaper per report.",
 } as const;
 
 /** Innifalið í öllum áætlunum. */
@@ -82,6 +83,11 @@ export const RONDVA_NZ_SOLO = { price: "99.99", currency: "NZ$" } as const;
 export function nzSoloPerReport(): string {
   const solo = RONDVA_PLANS.find((p) => p.id === "solo");
   return solo ? (Number(RONDVA_NZ_SOLO.price) / solo.reports).toFixed(2) : "";
+}
+
+/** Verð á skýrslu í USD (2 aukastafir), t.d. 49.99 / 15 → "3.33". */
+export function perReport(price: string, reports: number): string {
+  return reports > 0 ? (Number(price) / reports).toFixed(2) : "";
 }
 
 /** Verð á vefnum eru í USD og merkt „US$“ svo NZ/AU-gestur lesi þau ekki sem eigin dollara. */

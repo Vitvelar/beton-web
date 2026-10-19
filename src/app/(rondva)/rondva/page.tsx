@@ -11,6 +11,7 @@ import {
   RONDVA_PACK,
   RONDVA_PLANS,
   RONDVA_PRICE_NOTE,
+  perReport,
   usd,
 } from "@/lib/rondva-pricing";
 import { organizationLd, softwareApplicationLd } from "@/lib/rondva-seo";
@@ -443,6 +444,9 @@ export default function RondvaLandingPage() {
                         <span className="rv-tnum font-serif text-[36px] font-semibold leading-none">{plan.reports}</span>
                         <span className="text-[15px] leading-snug">AI-drafted reports per month</span>
                       </p>
+                      <p className={`rv-tnum mt-3 text-[15px] ${dark ? "text-paper/70" : "text-muted"}`}>
+                        {usd(perReport(plan.price, plan.reports))} per report
+                      </p>
                     </div>
                   </li>
                 );
@@ -462,7 +466,9 @@ export default function RondvaLandingPage() {
                     <span className="rv-tnum font-serif text-[36px] font-semibold leading-none">{RONDVA_PACK.reports}</span>
                     <span className="text-[15px] leading-snug">extra AI-drafted reports</span>
                   </p>
-                  <p className="mt-3 text-[15px] text-muted">They never expire.</p>
+                  <p className="rv-tnum mt-3 text-[15px] text-muted">
+                    {usd(perReport(RONDVA_PACK.price, RONDVA_PACK.reports))} per report. They never expire.
+                  </p>
                 </div>
               </li>
             </ul>
