@@ -103,7 +103,8 @@ async function processJob(
       const { data: inspector } = insp.inspector_id
         ? await svc.from("inspectors").select("company_name").eq("id", insp.inspector_id).maybeSingle()
         : { data: null };
-      footerCompany = resolveBranding(inspector ?? null).name;
+      // Ekkert fyrirtækisnafn skráð (eða uppflettingin brást) → venjulegur fótur, aldrei „Beton ehf.“ á skýrslu annars fyrirtækis.
+      footerCompany = inspector?.company_name?.trim() ? resolveBranding(inspector).name : null;
     }
     const pdf = await renderReportPdf(reportUrl, {
       extraHeaders: { [WORKER_TOKEN_HEADER]: process.env.REPORT_WORKER_TOKEN! },
