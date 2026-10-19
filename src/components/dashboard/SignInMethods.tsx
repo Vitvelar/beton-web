@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BRANDS } from "@/lib/brand";
 import { dashboardCopy, fill, type DashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
+import { btn, spinner } from "@/lib/ui";
 import {
   isAppleRelayEmail,
   toLinkErrorCode,
@@ -42,16 +43,33 @@ function errorText(t: DashboardCopy["signInMethods"], code: LinkErrorCode): stri
 export function SignInMethods({ locale, identities, appleEnabled }: Props) {
   const t = dashboardCopy(locale).signInMethods;
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState<LinkProvider | null>(null);
   // Villa úr linkIdentity sjálfu (t.d. manual_linking_disabled) gengur fyrir
   // skilaboðum úr slóðinni.
   const [clientError, setClientError] = useState<LinkErrorCode | null>(null);
 
-  const queryError = searchParams.get("link_error");
-  const errorCode = clientError ?? (queryError !== null ? toLinkErrorCode(queryError) : null);
+  // Niðurstaða tengingar kemur í slóðinni (?linked=1 / ?link_error=…). Hún er lesin EINU sinni
+  // í state og slóðin svo hreinsuð, svo skilaboðin birtist ekki aftur við endurhleðslu.
+  const [flash] = useState<{ kind: "ok" } | { kind: "error"; code: LinkErrorCode } | null>(() => {
+    const queryError = searchParams.get("link_error");
+    if (queryError !== null) return { kind: "error", code: toLinkErrorCode(queryError) };
+    return searchParams.get("linked") === "1" ? { kind: "ok" } : null;
+  });
+  useEffect(() => {
+    if (searchParams.get("linked") === null && searchParams.get("link_error") === null) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("linked");
+    next.delete("link_error");
+    const query = next.toString();
+    router.replace(`${pathname}${query ? `?${query}` : ""}#sign-in-methods`, { scroll: false });
+  }, [searchParams, pathname, router]);
+
+  const errorCode = clientError ?? (flash?.kind === "error" ? flash.code : null);
   const message = errorCode
     ? { kind: "error" as const, text: errorText(t, errorCode) }
-    : searchParams.get("linked") === "1"
+    : flash?.kind === "ok"
       ? { kind: "ok" as const, text: t.linked }
       : null;
 
@@ -82,21 +100,20 @@ export function SignInMethods({ locale, identities, appleEnabled }: Props) {
   }
 
   const busy = loading !== null;
-  const buttonClass =
-    "rounded-full border border-concrete-dk bg-white px-5 py-2 text-sm font-semibold text-ink hover:border-ink/40 disabled:cursor-not-allowed disabled:opacity-50";
+  const buttonClass = btn("secondary");
 
   return (
     <section
       id="sign-in-methods"
-      className="mt-6 scroll-mt-6 space-y-4 rounded-xl border border-concrete bg-white p-6"
+      className="mt-6 scroll-mt-6 space-y-4 rounded-xl border border-concrete bg-surface p-6"
     >
       <div>
-        <h2 className="text-xs font-mono uppercase tracking-wider text-fog">{t.title}</h2>
+        <h2 className="text-lg font-semibold text-ink">{t.title}</h2>
         <p className="mt-1.5 text-sm text-fog">{t.intro}</p>
       </div>
 
       {identities.length > 0 ? (
-        <ul className="divide-y divide-concrete rounded-md border border-concrete">
+        <ul className="divide-y divide-concrete rounded-lg border border-concrete">
           {identities.map((identity) => (
             <li
               key={identity.identity_id}
@@ -116,7 +133,7 @@ export function SignInMethods({ locale, identities, appleEnabled }: Props) {
       {message ? (
         <p
           role={message.kind === "error" ? "alert" : "status"}
-          className={`text-sm ${message.kind === "ok" ? "text-emerald-700" : "text-sev-danger"}`}
+          className={`text-sm ${message.kind === "ok" ? "text-success" : "text-danger"}`}
         >
           {message.text}
         </p>
@@ -130,6 +147,7 @@ export function SignInMethods({ locale, identities, appleEnabled }: Props) {
           aria-busy={loading === "google"}
           className={buttonClass}
         >
+          {loading === "google" ? <span aria-hidden="true" className={spinner} /> : null}
           {loading === "google"
             ? fill(t.opening, { provider: t.providers.google })
             : hasGoogle
@@ -144,6 +162,7 @@ export function SignInMethods({ locale, identities, appleEnabled }: Props) {
             aria-busy={loading === "apple"}
             className={buttonClass}
           >
+            {loading === "apple" ? <span aria-hidden="true" className={spinner} /> : null}
             {loading === "apple"
               ? fill(t.opening, { provider: t.providers.apple })
               : hasApple
