@@ -91,6 +91,16 @@ function applicationCss() {
       const key = Object.keys(m.entryCSSFiles || {}).find(k => k.endsWith('src/app/(dashboard)/dashboard/[id]/report/page'));
       if (key) cssFiles = m.entryCSSFiles[key].map(f => path.join(root, '.next', f.path));
     }
+    // `next build --webpack` skráir CSS rótarskipulagsins (globals.css, Tailwind) undir layout-lyklinum, ekki
+    // síðulyklinum (Turbopack setur það í síðulykilinn). Vantar forritsstílana → bæta CSS dashboard-layoutsins
+    // fremst, í sömu röð. Turbopack-bygging breytist ekki (þar eru stílarnir þegar í síðulyklinum).
+    const read = files => files.map(f => fs.readFileSync(f, 'utf8')).join('\n');
+    if (cssFiles.length && !read(cssFiles).includes('.text-navy')) {
+      for (const m of Object.values(g.__RSC_MANIFEST || {})) {
+        const layoutKey = Object.keys(m.entryCSSFiles || {}).find(k => k.endsWith('src/app/(dashboard)/layout'));
+        if (layoutKey) cssFiles = [...new Set([...m.entryCSSFiles[layoutKey].map(f => path.join(root, '.next', f.path)), ...cssFiles])];
+      }
+    }
   }
   if (!cssFiles.length) {
     function walk(dir) { return fs.readdirSync(dir, { withFileTypes: true }).flatMap(x => x.isDirectory() ? walk(path.join(dir, x.name)) : [path.join(dir, x.name)]); }

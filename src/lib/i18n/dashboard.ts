@@ -164,6 +164,27 @@ const is = {
       "Ekki tókst að staðfesta skýrslugerðina. Athugaðu tenginguna og stöðu skoðunarinnar.",
     sentToDrive: "Skýrsla send í Google Drive.",
     sentToDriveShort: "Sent í Drive.",
+    // „Sign & issue“ (aðeins NZS 4306-skýrslur á app.rondva.com).
+    issueButton: "Sign & issue",
+    issueDraftStatus: "Drög — ekki útgefin",
+    issuedStatus: "Útgefin af {name} {date}",
+    issuePreparing: "Útgefna PDF-ið er í vinnslu…",
+    issueDialogTitle: "Gefa skýrsluna út",
+    issueDialogIntro:
+      "Útgáfa setur nafn þitt á skýrsluna. Lestu hana yfir áður en þú gefur hana út.",
+    issuedByLabel: "Útgefandi",
+    qualificationsLabel: "Réttindi",
+    issueNoQualifications:
+      "Engin réttindi skráð í stillingum — engin birtast í skýrslunni.",
+    issueEffects:
+      "PDF-ið er endurgert án DRAFT-merkisins, með vottorði, nafni þínu og deginum í dag. AI er ekki keyrt aftur. Ef þú breytir textanum eftir á fer skýrslan aftur í drög.",
+    issueConfirmLabel: "Ég hef yfirfarið þessa skýrslu og gef hana út undir mínu nafni.",
+    issueConfirm: "Gefa út",
+    issueCancel: "Hætta við",
+    issuing: "Gef út…",
+    issueFailed: "Ekki tókst að staðfesta útgáfuna. Athugaðu tenginguna og stöðu skýrslunnar.",
+    regenerateIssuedConfirm:
+      "Skýrslan er útgefin. Ný skýrslugerð býr til ný AI-drög og skýrslan þarf að vera gefin út aftur. Halda áfram?",
   },
   reportProgress: {
     ready: "Skýrslan er tilbúin.",
@@ -229,6 +250,9 @@ const is = {
     nzRemoveRow: "Fjarlægja",
     nzRestoreRow: "Setja aftur",
     nzNoMoisture: "Engar rakamælingar.",
+    issuedNotice:
+      "Þessi skýrsla var gefin út {date}. Ef þú vistar breytingar fer hún aftur í drög og þú þarft að gefa hana út aftur.",
+    returnedToDraft: "Skýrslan er aftur í drögum — gefðu hana út á skoðunarsíðunni þegar þú ert búin(n).",
   },
   settings: {
     metaTitle: "Stillingar",
@@ -317,6 +341,13 @@ const is = {
     driveBetonOnly: "Google Drive er aðeins í boði fyrir Beton.",
     noReportForDrive: "Engin skýrsla til. Búðu til skýrslu fyrst.",
     reportDownloadFailed: (message: string | undefined) => `Gat ekki sótt skýrslu: ${message}`,
+    issueNotConfirmed: "Staðfestu fyrst að þú hafir yfirfarið skýrsluna.",
+    issueNotAvailable: "Ekki er hægt að gefa þessa skýrslu út hér.",
+    issueNeedsCompany: "Skráðu fyrirtækisnafn í stillingum áður en þú gefur skýrsluna út.",
+    issueNeedsName: "Skráðu nafn þitt í stillingum áður en þú gefur skýrsluna út.",
+    issueAlready: "Skýrslan er þegar útgefin.",
+    issueNotReady: "Skýrslan er ekki tilbúin. Bíddu eftir að PDF-ið klárist og reyndu aftur.",
+    issueRenderBusy: "PDF-gerð er í gangi. Reyndu aftur að mínútu liðinni.",
   },
   // Höfnun skýrsluinneignar (error_code frá edge-fallinu generate-report).
   credits: {
@@ -495,6 +526,27 @@ const en: DashboardCopy = {
       "Could not confirm the report request. Check your connection and the inspection's status.",
     sentToDrive: "Report sent to Google Drive.",
     sentToDriveShort: "Sent to Drive.",
+    // Sign & issue (NZS 4306 reports on app.rondva.com only).
+    issueButton: "Sign & issue",
+    issueDraftStatus: "Draft — not issued",
+    issuedStatus: "Issued by {name} on {date}",
+    issuePreparing: "The issued PDF is being created…",
+    issueDialogTitle: "Sign & issue this report",
+    issueDialogIntro:
+      "Issuing puts your name on this report. Review the report before you issue it.",
+    issuedByLabel: "Issued by",
+    qualificationsLabel: "Qualifications",
+    issueNoQualifications:
+      "No qualifications recorded in Settings, so none will be printed in the report.",
+    issueEffects:
+      "The PDF is re-created without the DRAFT mark, with the certificate, your name and today's date. The AI is not run again. If you change the text afterwards, the report goes back to draft.",
+    issueConfirmLabel: "I have reviewed this report and issue it under my name.",
+    issueConfirm: "Issue report",
+    issueCancel: "Cancel",
+    issuing: "Issuing…",
+    issueFailed: "Could not confirm the issue. Check your connection and the report's status.",
+    regenerateIssuedConfirm:
+      "This report has been issued. Regenerating creates a new AI draft and the report must be issued again. Continue?",
   },
   reportProgress: {
     ready: "The report is ready.",
@@ -559,6 +611,9 @@ const en: DashboardCopy = {
     nzRemoveRow: "Remove",
     nzRestoreRow: "Restore",
     nzNoMoisture: "No moisture readings.",
+    issuedNotice:
+      "This report was issued on {date}. If you save changes it goes back to draft and you will need to issue it again.",
+    returnedToDraft: "The report is a draft again — use Sign & issue on the inspection page when you are done.",
   },
   settings: {
     metaTitle: "Settings",
@@ -640,6 +695,13 @@ const en: DashboardCopy = {
     driveBetonOnly: "Google Drive is only available for Beton.",
     noReportForDrive: "There's no report yet. Create a report first.",
     reportDownloadFailed: (message) => `Could not fetch the report: ${message}`,
+    issueNotConfirmed: "Confirm that you have reviewed the report first.",
+    issueNotAvailable: "This report can't be issued here.",
+    issueNeedsCompany: "Add your company name in Settings before you issue the report.",
+    issueNeedsName: "Add your name in Settings before you issue the report.",
+    issueAlready: "The report has already been issued.",
+    issueNotReady: "The report isn't ready yet. Wait for the PDF to finish and try again.",
+    issueRenderBusy: "A PDF is being created right now. Try again in a minute.",
   },
   credits: {
     ledger_unavailable: "We couldn't check your report credits. Please try again in a moment.",
