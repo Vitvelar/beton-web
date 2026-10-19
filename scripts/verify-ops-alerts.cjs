@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS Node script, like the other verify-*.cjs */
 // P6 viðvaranir (beton-app …_ops_alerts). Keyrt: node scripts/verify-ops-alerts.cjs
 // 1) Tick: uppgjöf (giveUp) skráir viðvörun með starfs-id; endurröðun gerir það ekki; bilun í
 //    skráningu breytir hvorki failed/error-merkingu né svarinu.
