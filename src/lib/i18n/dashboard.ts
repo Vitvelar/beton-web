@@ -322,13 +322,13 @@ const is = {
   credits: {
     ledger_unavailable: "Ekki tókst að staðfesta skýrsluinneign. Reyndu aftur eftir smástund.",
     no_credits:
-      "Ókeypis AI-skýrslurnar eru búnar. Handvirkar breytingar og endurútflutningur eru áfram ókeypis.",
+      "AI-skýrslurnar eru búnar. Áskriftir og skýrslupakkar eru keyptir í Rondva-appinu fyrir iPhone. Handvirkar breytingar og endurútflutningur eru áfram ókeypis.",
     additional_credit_confirmation_required:
       "Innifaldar AI-endurgerðir fyrir þessa skýrslu eru búnar. Þú getur áfram breytt textanum og flutt skýrsluna út.",
     in_progress: "Verið er að búa til skýrslu fyrir þessa skoðun.",
     not_active: "Fyrirtækjaaðgangurinn er ekki virkur.",
-    // Kynningartilboð (D3): dagsöryggi allra fyrirtækja náð — ekkert gjaldfært.
-    offer_daily_limit: "Ókeypis skýrslur eru mjög vinsælar í dag — reyndu aftur á morgun.",
+    // Prufutími (áður kynningartilboð D3): dagsöryggi allra fyrirtækja náð — ekkert gjaldfært.
+    offer_daily_limit: "Ókeypis prufuskýrslur eru takmarkaðar í dag — reyndu aftur á morgun.",
   },
   // Nýskráning fyrirtækis (/dashboard/onboarding, AÐEINS app.rondva.com — Beton
   // birtir þetta aldrei). Íslenskan er fyrir Rondva-notendur sem velja íslensku.
@@ -644,12 +644,12 @@ const en: DashboardCopy = {
   credits: {
     ledger_unavailable: "We couldn't check your report credits. Please try again in a moment.",
     no_credits:
-      "You've used your free AI-drafted reports. Manual edits and re-exports stay free.",
+      "You're out of AI reports. Plans and report packs are bought in the Rondva iPhone app. Manual edits and re-exports stay free.",
     additional_credit_confirmation_required:
       "The included AI revisions for this report are used up. You can still edit the text and export the report.",
     in_progress: "An AI report is already being generated for this inspection.",
     not_active: "Your company account isn't active, so AI drafting isn't available.",
-    offer_daily_limit: "Free reports are very popular today — please try again tomorrow.",
+    offer_daily_limit: "Free trial reports are limited today — please try again tomorrow.",
   },
   onboarding: {
     metaTitle: "Register your company",

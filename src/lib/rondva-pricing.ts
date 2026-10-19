@@ -5,7 +5,7 @@
 // þessu er til sölu á vefnum. `node scripts/verify-rondva-pricing.cjs` ber þetta
 // saman við textann á síðunum.
 //
-// Ekki nefna Ísland í texta tilboðsins: íslensk fyrirtæki eru aðeins í boði eftir
+// Ekki nefna Ísland í texta prufumánaðarins: íslensk fyrirtæki eru aðeins í boði eftir
 // boði, og tilboðið er sett fram almennt (sjá verify-skriftuna).
 
 export type RondvaPlan = {
@@ -54,12 +54,15 @@ export const RONDVA_INCLUDED = [
 ] as const;
 
 /**
- * Stofnmannatilboðið (í gildi): ókeypis AI-drög á mánuði, án korts, til og með
- * `endsOn`. Þegar dagsetningin líður þarf að fjarlægja tilboðið af síðunum (sjá PR-lýsingu).
+ * Fyrsti mánuður frír (ákvörðun eiganda 2026-10-08; kom í stað stofnmannatilboðsins „20 á
+ * mánuði til 31. janúar 2027“): hvert nýtt fyrirtæki fær EINU SINNI `freeReports` AI-drög sem
+ * gilda í `days` daga frá FYRSTU AI-skýrslu fyrirtækisins (ekki frá skráningu eða virkjun; PRUFUTIMI-HONNUN §2a, `starts_on = 'first_ai_report'`), hvort sem fyrr kemur. Ekkert
+ * kort, engin sjálfvirk greiðsla á eftir. Sama regla í gagnagrunni: beton-app
+ * supabase/migrations/20261008150000_report_trial_month.sql (report_trial_policy 20 / 30).
  */
-export const RONDVA_OFFER = {
-  freeReportsPerMonth: 20,
-  endsOn: "31 January 2027",
+export const RONDVA_TRIAL = {
+  freeReports: 20,
+  days: 30,
 } as const;
 
 export const RONDVA_PRICE_NOTE =

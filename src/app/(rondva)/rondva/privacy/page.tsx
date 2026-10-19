@@ -19,6 +19,9 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // (docs/release/ACCOUNT_DELETION.md, IN_APP_PURCHASES.md, PRIVACY_DATA_INVENTORY.md;
 // supabase/functions/delete-account, apple-purchase, weather-lookup). Appið notar enga
 // staðsetningarheimild (app.json/app.config.ts: aðeins myndavél og myndasafn).
+// 2026-10-08 (prufutími, beton-app 20261008150000_report_trial_month.sql): trial_claims — saltað
+// SHA-256 hakk af föstu auðkenni Apple/Google-innskráningar og netfangi, lifir eyðingu reiknings
+// (misnotkunarvörn, art. 6(1)(f)), eytt 24 mánuðum eftir veitingu (pg_cron report-trial-claims-purge).
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -163,6 +166,17 @@ const sections: LegalSection[] = [
           name on its reports. The legal basis is the agreement with you or your company (GDPR
           art. 6(1)(b)) and, for sign-in security records, our legitimate interest in keeping
           accounts safe (art. 6(1)(f)).
+        </p>
+        <p>
+          <strong>Free first month.</strong> A new company gets its free first month only once.
+          So that the same person can&apos;t get it again by deleting the account and signing up
+          again, when a company account is activated we store a fingerprint (a keyed, salted
+          SHA-256 hash) of the stable account identifier from your Apple or Google sign-in and
+          of your email address. It isn&apos;t stored in readable form; we can only use it to
+          check whether a given sign-in has had a free month before. Because we hold the key,
+          this is pseudonymised personal data, not anonymous data. It is kept for 24 months,
+          also after the account is deleted. The legal basis is our legitimate interest in
+          preventing abuse of the free month (GDPR art. 6(1)(f)).
         </p>
       </>
     ),
@@ -436,8 +450,9 @@ const sections: LegalSection[] = [
             (art. 6(1)(f)), as described in those sections.
           </li>
           <li>
-            <strong>Hosting logs and abuse prevention:</strong> our legitimate interest in
-            running and protecting the service (art. 6(1)(f)).
+            <strong>Hosting logs and abuse prevention</strong> (including the free-month
+            fingerprints): our legitimate interest in running and protecting the service
+            (art. 6(1)(f)).
           </li>
           <li>
             <strong>Analytics and marketing cookies on rondva.com:</strong> your consent
@@ -527,6 +542,12 @@ const sections: LegalSection[] = [
             content and, after deletion, no longer points to your account or company.
           </li>
           <li>
+            The fingerprints used for the free first month (see Your account), so that deleting
+            the account and signing up again doesn&apos;t give a new free month. They no longer
+            point to your account or company and are deleted 24 months after the free month was
+            given.
+          </li>
+          <li>
             If your company has other members, the company and its data stay; only your own
             membership is removed.
           </li>
@@ -571,6 +592,11 @@ const sections: LegalSection[] = [
           <li>
             <strong>AI usage records</strong> (date, model, cost, whether a credit was used):
             kept as a usage history without inspection content.
+          </li>
+          <li>
+            <strong>Free-month fingerprints</strong> (pseudonymised hashes of your sign-in
+            identifier and email address): 24 months from when the free month was given, also
+            after the account is deleted, then deleted automatically.
           </li>
           <li>
             <strong>Weather lookups:</strong> the address and the coordinates are not stored.
