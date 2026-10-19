@@ -56,7 +56,7 @@ export function Header() {
                 width={264}
                 height={96}
                 priority
-                className="h-11 w-auto md:h-22"
+                className="-ml-2 h-11 w-auto md:-ml-4 md:h-22"
               />
             </Link>
 

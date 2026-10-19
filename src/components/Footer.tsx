@@ -56,7 +56,7 @@ export function Footer() {
                 alt=""
                 width={120}
                 height={120}
-                className="h-12 w-auto brightness-0 invert"
+                className="-ml-2 h-12 w-auto brightness-0 invert"
               />
             </Link>
             <div className="-ml-3 flex items-center">

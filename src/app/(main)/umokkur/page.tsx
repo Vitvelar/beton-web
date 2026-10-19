@@ -60,6 +60,14 @@ export default function UmOkkur() {
                 byggingaverkefna, byggingaeftirliti, þakviðgerðum og smíðum.
               </p>
             </div>
+            <div className="mb-16 flex flex-wrap items-center gap-4">
+              <Link href="/samband" className={btn("primary", "lg")}>
+                Hafa samband <span aria-hidden="true">→</span>
+              </Link>
+              <Link href="/verdskra" className={btn("secondary", "lg")}>
+                Sjá verðskrá
+              </Link>
+            </div>
 
             {/* Menntun */}
             <div className="mb-16">

@@ -160,7 +160,7 @@ export function ContactForm() {
 
       <fieldset
         aria-describedby={errors.samskipti ? "samskipti-error" : undefined}
-        className="m-0 min-w-0 border-0 p-0"
+        className="min-w-0 border-0 p-0"
       >
         <legend className={`${labelClass} p-0`}>Samskipti</legend>
         <div className="flex flex-wrap gap-x-6">
