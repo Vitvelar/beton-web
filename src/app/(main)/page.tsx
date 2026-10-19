@@ -211,7 +211,7 @@ export default function Home() {
                   þú getir tekið upplýsta ákvörðun og byggt hana á góðum grunni.
                 </p>
               </div>
-              <Link href="/umokkur" className={btn("quiet", "md", "mt-6 -ml-2")}>
+              <Link href="/umokkur" className={btn("quiet", "md", "mt-6 -ml-2 px-2!")}>
                 Lesa meira um Beton <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -236,7 +236,7 @@ export default function Home() {
                 Verð miðast við stærð íbúðarhúsnæðis. VSK innifalin og akstur innan
                 höfuðborgarsvæðisins. Atvinnuhúsnæði og húsfélög samkvæmt tilboði.
               </p>
-              <Link href="/verdskra" className={btn("quiet", "md", "mt-4 -ml-2")}>
+              <Link href="/verdskra" className={btn("quiet", "md", "mt-4 -ml-2 px-2!")}>
                 Sjá fulla verðskrá <span aria-hidden="true">→</span>
               </Link>
             </div>
