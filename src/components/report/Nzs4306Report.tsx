@@ -368,7 +368,7 @@ export function Nzs4306Report({
             <p className="text-sm text-ink/90 leading-relaxed">
               Certificate: to be signed when the inspector issues this report.
             </p>
-            <p className="text-xs text-fog leading-relaxed mt-2">This draft has not been certified.</p>
+            <p className="text-xs text-fog leading-relaxed mt-2">Until then this draft carries no signature.</p>
           </div>
         )}
       </section>

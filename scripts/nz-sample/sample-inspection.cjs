@@ -5,7 +5,7 @@
 // samningnum (plan/rondva/NZ-SKYRSLUSNID-HONNUN.md) — engin AI-keyrsla (layout-sýni).
 // Myndir eru merktir staðgenglar (SVG), aldrei raunmyndir. Legal description (appið geymir
 // hana í inspections.fastanumer) er tilbúin: „Lot 1 DP 000000“ er ekki til.
-const { placeholderSvg } = require('../report-fixture.cjs');
+const { placeholderSvg, load } = require('../report-fixture.cjs');
 
 const INSPECTION_ID = 'nz-sample-0001';
 
@@ -176,4 +176,17 @@ function samplePhotos(record) {
   return out;
 }
 
-module.exports = { buildNzSampleRecord, samplePhotos, INSPECTION_ID };
+// Útgefin útgáfa sýnisskýrslunnar („Sign & issue“): sama færsla með ai_report_data.issue sem
+// src/lib/report/issue.ts býr til (hash af efninu, nafn og réttindi úr prófíl). Hrein útgáfa — ekkert
+// gagnagrunns- eða netkall. `mutate` má breyta færslunni áður en hún er gefin út.
+function issueNzSampleRecord(record, { now = new Date('2026-10-20T20:15:00Z'), timeZone = 'Pacific/Auckland' } = {}) {
+  const { buildIssue } = load('src/lib/report/issue.ts');
+  const built = buildIssue({
+    report: record.ai_report_data, profileName: record.inspectors.full_name,
+    qualifications: record.inspectors.qualifications, userId: null, now, timeZone,
+  });
+  if (!built.issue) throw new Error(`sample could not be issued: ${built.refusal}`);
+  return { ...record, ai_report_data: { ...record.ai_report_data, issue: built.issue } };
+}
+
+module.exports = { buildNzSampleRecord, issueNzSampleRecord, samplePhotos, INSPECTION_ID };

@@ -209,7 +209,7 @@ export function ReportActions({
         </p>
       )}
 
-      {issue && (
+      {issue && !issue.issuedOn && (
         <dialog
           ref={dialogRef}
           aria-labelledby="issue-dialog-title"

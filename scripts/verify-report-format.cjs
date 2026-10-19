@@ -139,8 +139,8 @@ async function nzs4306Checks(output) {
   assert.ok(text.includes(nz.significant_defects_summary));
   for (const ref of ['8.1Subfloor', '9.2Bathroom']) assert.ok(text.includes(ref), `significant defects table has ${ref}`);
   assert.ok(!text.includes('No significant defects were recorded.'));
-  // Vottorð: 8 svæði, réttindi, fyrirtæki, undirskrift.
-  for (const s of ['Accessory units, ancillary spaces and buildingsN/A', 'SubfloorLimited', 'QualificationsNZIBI member, LBP 000000 (sample)', 'CompanyExample Inspections Ltd', 'Signature']) assert.ok(text.includes(s), s);
+  // Vottorð: 8 svæði, réttindi, fyrirtæki. (Undirskrift/vottun kemur aðeins eftir „Sign & issue“ — verify-report-issue.cjs.)
+  for (const s of ['Accessory units, ancillary spaces and buildingsN/A', 'SubfloorLimited', 'QualificationsNZIBI member, LBP 000000 (sample)', 'CompanyExample Inspections Ltd']) assert.ok(text.includes(s), s);
   // Rakatafla: 4 línur úr nzs4306.moisture_readings; athugasemd án tölu kemur ekki fram.
   const moisture = /<table class="[^"]*rpt-moisture[^"]*">([\s\S]*?)<\/table>/.exec(markup);
   assert.ok(moisture, 'moisture table');
@@ -153,7 +153,9 @@ async function nzs4306Checks(output) {
   assert.ok(text.includes('Observations and ratings by Jordan Sample, Example Inspections Ltd. Text drafted with AI assistance (5/10/2026). Not yet reviewed or issued.'));
   for (const s of ['Drafting model', 'none (hand-written', 'made and reviewed by']) assert.ok(!text.includes(s), `no "${s}" in the PDF text`);
   assert.ok(text.includes('5/10/2026') && !text.includes('05.10.2026') && !text.includes('2026-10-05'), 'd/m/yyyy dates');
-  assert.ok(text.includes('Prepared in accordance with NZS 4306:2005'));
+  // Óútgefin skýrsla (sýnisskoðunin hefur enga útgáfu): engin vottun, engin „issued“-fullyrðing, ekkert „Signature“.
+  for (const s of ['Prepared in accordance with NZS 4306:2005', 'I certify', 'Signature', 'Prepared and issued by', 'Reviewed and issued by']) assert.ok(!text.includes(s), `a draft never says "${s}"`);
+  for (const s of ['Draft — not yet issued', 'Certificate: to be signed when the inspector issues this report.', 'Until then this draft carries no signature.']) assert.ok(text.includes(s), `a draft says "${s}"`);
   // Legal description (inspections.fastanumer): í vottorðinu og í „Property and inspection conditions“,
   // aldrei merkt „Fastanúmer“/„Property ID“.
   const legal = record.ai_report_data.inspection.fastanumer;
@@ -167,23 +169,23 @@ async function nzs4306Checks(output) {
   assert.ok(plain(cover[1]).includes('12 Example Road, Mount Eden, Auckland 1024'), 'cover shows street, town/city and postcode');
   assert.ok(legalOrder > -1, 'legal description follows the site address');
   for (const s of ['Greitt er fyrir', 'Takmarkanir', 'Bls.', 'Beton']) assert.ok(!text.includes(s), `no ${s}`);
-  // Vottorð: aldrei „Qualifications … Not recorded“; „Prepared and issued by …“ úr gögnum; dagsetning merkt „Draft generated“.
-  assert.ok(text.includes('Prepared and issued by Jordan Sample, NZIBI member, LBP 000000 (sample)'), 'certificate prepared-by line with qualifications');
-  const certBlock = text.slice(text.indexOf('Certificate of Inspection'), text.indexOf('Property and inspection conditions'));
-  assert.ok(certBlock.includes('5/10/2026Draft generated') && !certBlock.includes('Date of inspection5/10/2026Date'), 'certificate signature date is labelled "Draft generated"');
-  assert.ok(!certBlock.includes('5/10/2026Date') , 'signature date box is no longer labelled just "Date"');
+  // Útgefin skýrsla (sama skoðun eftir „Sign & issue“): vottorð, „Prepared and issued by …“ úr gögnum, enginn „Not recorded“.
+  const { issueNzSampleRecord } = require('./nz-sample/sample-inspection.cjs');
   const certificateOf = async mutate => {
     const r = buildNzSampleRecord(); mutate(r);
-    const t = plain(await renderReportMarkup(r, { pdf: true, dashboardLocale: 'en', brand: 'rondva' }));
+    const t = plain(await renderReportMarkup(issueNzSampleRecord(r), { pdf: true, dashboardLocale: 'en', brand: 'rondva' }));
     return t.slice(t.indexOf('Certificate of Inspection'), t.indexOf('Property and inspection conditions'));
   };
+  const issuedCert = await certificateOf(() => {});
+  assert.ok(issuedCert.includes('Prepared and issued by Jordan Sample, NZIBI member, LBP 000000 (sample) · 21/10/2026'), 'certificate prepared-by line with qualifications and issue date');
+  assert.ok(issuedCert.includes('I certify that I carried out the inspection'), 'an issued report carries the certificate');
   for (const value of [null, '', '   ']) {
     const cert = await certificateOf(r => { r.inspectors.qualifications = value; });
     assert.ok(!/Qualifications/.test(cert), `no Qualifications row for ${JSON.stringify(value)}`);
     assert.ok(!/Qualifications[^]{0,12}Not recorded/.test(cert), 'never "Qualifications: Not recorded"');
-    assert.ok(cert.includes('Prepared and issued by Jordan Sample') && !cert.includes('Prepared and issued by Jordan Sample,'), `name only for ${JSON.stringify(value)}`);
+    assert.ok(cert.includes('Prepared and issued by Jordan Sample · 21/10/2026') && !cert.includes('Prepared and issued by Jordan Sample,'), `name only for ${JSON.stringify(value)}`);
   }
-  console.log('PASS NZS 4306 certificate: no "Not recorded" for qualifications, "Prepared and issued by" from data, date labelled "Draft generated", disclosure without model and without review claim');
+  console.log('PASS NZS 4306 certificate: draft = no certification/signature/"issued"; issued = certificate + "Prepared and issued by" from data; no "Not recorded" for qualifications; disclosure without model');
 
   // Defects-tafla (report-3): `alvarleg` undir Significant defects, „None recorded.“ ef engin, ein föst sérfræðingssetning.
   const defectsHeading = text.indexOf('DefectsRef');
