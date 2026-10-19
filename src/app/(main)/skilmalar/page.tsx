@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Eyebrow } from "@/components/Editorial";
+import { Eyebrow, metaLabel } from "@/components/Editorial";
+import { betonPageMetadata } from "@/lib/beton-metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = betonPageMetadata({
   title: "Skilmálar",
   description:
-    "Skilmálar og fyrirvarar ástandsskoðunar Beton ehf. Lestu um umfang skoðunar, takmarkanir ábyrgðar og greiðsluskilmála.",
-  alternates: { canonical: "https://beton.is/skilmalar" },
-};
+    "Skilmálar og fyrirvarar ástands&shy;skoðunar Beton ehf. Lestu um umfang skoðunar, takmarkanir ábyrgðar og greiðsluskilmála.",
+  path: "/skilmalar",
+});
 
 type Section = {
   n: string;
@@ -117,28 +118,29 @@ const sections: Section[] = [
 export default function Skilmalar() {
   return (
     <>
-      <section className="px-6 lg:px-14 pt-20 lg:pt-24 pb-16">
+      <section className="px-6 pt-20 pb-16 lg:px-14 lg:pt-24">
         <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24">
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-[1fr_2fr] md:gap-24">
             <div>
               <Eyebrow>Skilmálar</Eyebrow>
             </div>
             <div>
-              <h1 className="text-[40px] lg:text-[56px] leading-none font-medium tracking-[-0.03em] mb-6 text-balance">
-                Skilmálar og fyrirvarar ástandsskoðunar Beton ehf.
+              <h1 className="mb-6 text-h1 font-medium text-balance hyphens-auto wrap-break-word">
+                Skilmálar og fyrirvarar ástands&shy;skoðunar Beton ehf.
               </h1>
+              <p className={`${metaLabel} mt-6`}>Síðast uppfært: 21. maí 2026</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* TOC + sections */}
-      <section className="px-6 lg:px-14 pb-24 lg:pb-32">
+      <section className="px-6 pb-20 lg:px-14 lg:pb-28">
         <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24 items-start">
+          <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-[1fr_2fr] md:gap-24">
             {/* Sticky TOC */}
             <div className="md:sticky md:top-32">
-              <div className="font-mono text-[11px] tracking-[0.12em] text-fog uppercase mb-5 pb-4 border-b border-concrete-dk">
+              <div className={`${metaLabel} mb-5 border-b border-concrete-dk pb-4`}>
                 Efnisyfirlit
               </div>
               <div className="flex flex-col gap-3">
@@ -146,9 +148,9 @@ export default function Skilmalar() {
                   <a
                     key={s.n}
                     href={`#sect-${s.n}`}
-                    className="grid grid-cols-[32px_1fr] gap-3 text-sm text-ink hover:text-navy py-1"
+                    className="grid min-h-11 grid-cols-[32px_1fr] items-center gap-3 py-1 text-sm text-ink hover:text-navy md:min-h-0"
                   >
-                    <span className="font-mono text-[11px] text-navy tracking-[0.05em]">
+                    <span className="font-mono text-xs tracking-wide text-navy">
                       {s.n}
                     </span>
                     <span>{s.title}</span>
@@ -165,23 +167,23 @@ export default function Skilmalar() {
                   className={`py-10 ${i === sections.length - 1 ? "" : "border-b border-concrete"} ${i === 0 ? "pt-0" : ""}`}
                 >
                   <div className="flex items-baseline gap-5 mb-4">
-                    <span className="font-mono text-[13px] text-navy tracking-[0.05em] min-w-[32px]">
+                    <span className="min-w-8 font-mono text-sm tracking-wide text-navy">
                       {s.n}
                     </span>
-                    <h2 className="text-[26px] font-medium tracking-[-0.015em] m-0 text-ink">
+                    <h2 className="m-0 min-w-0 text-h3 font-medium text-ink hyphens-auto wrap-break-word">
                       {s.title}
                     </h2>
                   </div>
-                  <div className="pl-[52px] max-w-[720px] flex flex-col gap-4">
+                  <div className="flex max-w-[720px] flex-col gap-4 md:pl-13">
                     {s.body.map((p, j) => (
-                      <p key={j} className="text-base leading-[1.7] text-ink/85 m-0">
+                      <p key={j} className="m-0 text-base leading-relaxed text-ink">
                         {p}
                       </p>
                     ))}
                     {s.bullets && (
                       <ul className="flex flex-col gap-2.5 list-disc pl-5 marker:text-navy">
                         {s.bullets.map((b, j) => (
-                          <li key={j} className="text-base leading-[1.7] text-ink/85">
+                          <li key={j} className="text-base leading-relaxed text-ink">
                             {b}
                           </li>
                         ))}

@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Eyebrow } from "@/components/Editorial";
+import { Eyebrow, metaLabel } from "@/components/Editorial";
 import { COMPANY } from "@/lib/constants";
+import { betonPageMetadata } from "@/lib/beton-metadata";
+import { btn } from "@/lib/ui";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = betonPageMetadata({
   title: "Skoðunarappið — aðstoð og upplýsingar",
   description:
     "Stuðningssíða Beton skoðunarappsins. Um appið, aðgang, verkflæði á vettvangi og algeng úrlausnarefni — samstilling, myndavélarheimild og PDF-skýrslur.",
-  alternates: { canonical: "https://beton.is/app" },
-};
+  path: "/app",
+});
+
+const sideLabel = `${metaLabel} border-b border-concrete-dk pb-4`;
 
 const workflow = [
   {
@@ -59,17 +63,17 @@ const faq = [
 export default function AppSupport() {
   return (
     <>
-      <section className="px-6 lg:px-14 pt-20 lg:pt-24 pb-16">
+      <section className="px-6 pt-20 pb-16 lg:px-14 lg:pt-24">
         <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24">
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-[1fr_2fr] md:gap-24">
             <div>
               <Eyebrow>Skoðunarappið</Eyebrow>
             </div>
             <div>
-              <h1 className="text-[40px] lg:text-[56px] leading-none font-medium tracking-[-0.03em] mb-6 text-balance">
+              <h1 className="mb-6 text-h1 font-medium text-balance hyphens-auto wrap-break-word">
                 Beton skoðunarappið — aðstoð og upplýsingar
               </h1>
-              <p className="text-base leading-[1.7] text-ink/70 max-w-[640px]">
+              <p className="max-w-[640px] text-base leading-relaxed text-fog">
                 Skoðunarappið er vinnutæki Beton ehf. fyrir ástandsskoðanir og
                 kostnaðarmöt á vettvangi. Aðgangur er bundinn við samþykkta
                 notendur á vegum Beton; ekki er hægt að stofna aðgang í appinu
@@ -82,13 +86,11 @@ export default function AppSupport() {
       </section>
 
       {/* Verkflæði */}
-      <section className="px-6 lg:px-14 pb-16 lg:pb-20">
+      <section className="px-6 pb-16 lg:px-14 lg:pb-20">
         <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24 items-start">
+          <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-[1fr_2fr] md:gap-24">
             <div className="md:sticky md:top-32">
-              <div className="font-mono text-[11px] tracking-[0.12em] text-fog uppercase pb-4 border-b border-concrete-dk">
-                Svona virkar appið
-              </div>
+              <h2 className={sideLabel}>Svona virkar appið</h2>
             </div>
             <div>
               {workflow.map((s, i) => (
@@ -97,14 +99,12 @@ export default function AppSupport() {
                   className={`py-8 ${i === workflow.length - 1 ? "" : "border-b border-concrete"} ${i === 0 ? "pt-0" : ""}`}
                 >
                   <div className="flex items-baseline gap-5 mb-3">
-                    <span className="font-mono text-[13px] text-navy tracking-[0.05em] min-w-[32px]">
+                    <span className="min-w-8 font-mono text-sm tracking-wide text-navy">
                       {s.n}
                     </span>
-                    <h2 className="text-[22px] font-medium tracking-[-0.015em] m-0 text-ink">
-                      {s.title}
-                    </h2>
+                    <h3 className="m-0 text-h4 font-medium text-ink">{s.title}</h3>
                   </div>
-                  <p className="pl-[52px] max-w-[720px] text-base leading-[1.7] text-ink/85 m-0">
+                  <p className="m-0 max-w-[720px] pl-13 text-base leading-relaxed text-ink">
                     {s.text}
                   </p>
                 </div>
@@ -115,13 +115,11 @@ export default function AppSupport() {
       </section>
 
       {/* Algeng úrlausnarefni */}
-      <section className="px-6 lg:px-14 pb-16 lg:pb-20">
+      <section className="px-6 pb-16 lg:px-14 lg:pb-20">
         <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24 items-start">
+          <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-[1fr_2fr] md:gap-24">
             <div className="md:sticky md:top-32">
-              <div className="font-mono text-[11px] tracking-[0.12em] text-fog uppercase pb-4 border-b border-concrete-dk">
-                Algeng úrlausnarefni
-              </div>
+              <h2 className={sideLabel}>Algeng úrlausnarefni</h2>
             </div>
             <div>
               {faq.map((f, i) => (
@@ -129,10 +127,8 @@ export default function AppSupport() {
                   key={f.q}
                   className={`py-8 ${i === faq.length - 1 ? "" : "border-b border-concrete"} ${i === 0 ? "pt-0" : ""}`}
                 >
-                  <h2 className="text-[19px] font-medium tracking-[-0.01em] text-ink mb-3">
-                    {f.q}
-                  </h2>
-                  <p className="max-w-[720px] text-base leading-[1.7] text-ink/85 m-0">
+                  <h3 className="mb-3 text-h4 font-medium text-ink">{f.q}</h3>
+                  <p className="m-0 max-w-[720px] text-base leading-relaxed text-ink">
                     {f.a}
                   </p>
                 </div>
@@ -143,28 +139,27 @@ export default function AppSupport() {
       </section>
 
       {/* Aðstoð + persónuvernd */}
-      <section className="px-6 lg:px-14 pb-24 lg:pb-32">
+      <section className="px-6 pb-20 lg:px-14 lg:pb-28">
         <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24 items-start">
+          <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-[1fr_2fr] md:gap-24">
             <div>
-              <div className="font-mono text-[11px] tracking-[0.12em] text-fog uppercase pb-4 border-b border-concrete-dk">
-                Aðstoð
-              </div>
+              <h2 className={sideLabel}>Aðstoð</h2>
             </div>
             <div className="max-w-[720px]">
-              <p className="text-base leading-[1.7] text-ink/85 m-0">
+              <p className="m-0 text-base leading-relaxed text-ink">
                 Þarftu aðstoð með appið, aðgang eða gögn? Sendu tölvupóst á{" "}
-                <a
-                  href={`mailto:${COMPANY.email}`}
-                  className="text-navy underline underline-offset-2"
-                >
-                  {COMPANY.email}
-                </a>{" "}
-                og lýstu vandanum — hvaða skref var í gangi og hvaða skilaboð
-                birtust. Ekki senda skjámyndir eða gögn með upplýsingum um
-                viðskiptavini nema sérstaklega sé óskað eftir því.
+                <span className="font-medium">{COMPANY.email}</span> og lýstu
+                vandanum — hvaða skref var í gangi og hvaða skilaboð birtust. Ekki
+                senda skjámyndir eða gögn með upplýsingum um viðskiptavini nema
+                sérstaklega sé óskað eftir því.
               </p>
-              <p className="text-base leading-[1.7] text-ink/85 mt-4">
+              <a
+                href={`mailto:${COMPANY.email}?subject=${encodeURIComponent("Fyrirspurn um skoðunarappið")}`}
+                className={btn("secondary", "md", "mt-6")}
+              >
+                Senda fyrirspurn um appið <span aria-hidden="true">→</span>
+              </a>
+              <p className="mt-6 text-base leading-relaxed text-ink">
                 Upplýsingar um vinnslu persónuupplýsinga í appinu eru í{" "}
                 <Link
                   href="/personuvernd"
@@ -174,7 +169,7 @@ export default function AppSupport() {
                 </Link>
                 .
               </p>
-              <p className="text-[13px] leading-[1.7] text-fog mt-8">
+              <p className="mt-8 text-sm leading-relaxed text-fog">
                 English: Beton Inspection is the internal field app of Beton
                 ehf. for property condition inspections. Access is limited to
                 approved Beton personnel. For support, email{" "}
