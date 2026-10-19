@@ -50,7 +50,7 @@ const ANSWERS: Record<string, string> = {
     "Yes. If the weather field is empty on the day of the inspection, Rondva fills it in with a short forecast for the property, which you can check and change.",
   reports:
     "The AI drafts the report text and a summary from your notes, ratings and photos. The severities stay the ones you set, and Rondva asks you each time before anything is sent to the AI service.",
-  pricing: `Solo is ${usd(solo.price)} a month for ${solo.reports} AI-drafted reports and Pro is ${usd(pro.price)} a month for ${pro.reports}; a report pack adds ${RONDVA_PACK.reports} reports for ${usd(RONDVA_PACK.price)}. You buy in the app, through the App Store.`,
+  pricing: `Solo is ${usd(solo.price)} a month for ${solo.reports} AI-drafted reports and Pro is ${usd(pro.price)} a month for ${pro.reports}; a report pack adds ${RONDVA_PACK.reports} reports for ${usd(RONDVA_PACK.price)}. Plans are cheaper per report. You buy in the app, through the App Store.`,
   "tax-invoice":
     "Apple is the seller of record, so your receipt comes from Apple: you find it in your Apple purchase history and in the receipt email Apple sends after each charge. Need a GST/VAT invoice addressed to your company? Email rondva@rondva.com.",
   subscriptions:
@@ -272,12 +272,12 @@ const sections: LegalSection[] = [
           ))}
           <li>
             <strong>{RONDVA_PACK.name}</strong>: {usd(RONDVA_PACK.price)} for {RONDVA_PACK.reports}{" "}
-            extra reports that never expire
+            extra reports that never expire. Plans are cheaper per report.
           </li>
         </ul>
         <p>
-          Every plan includes 2 AI revisions per report, unlimited manual editing and
-          re-exports, and your company branding. {RONDVA_PRICE_NOTE} Reports are used in this
+          Every plan includes 2 AI revisions per report and your company branding. Manual edits
+          and re-exports don&apos;t use a report. {RONDVA_PRICE_NOTE} Reports are used in this
           order: reports from your free first month first, then your plan&apos;s reports for the
           month (they don&apos;t carry over), then report packs. When the free month ends or you
           run out, the app offers plans and packs.
@@ -466,7 +466,7 @@ export default function RondvaSupportPage() {
         </p>
       }
       sections={sections}
-      revised="9 October 2026"
+      revised="20 October 2026"
     >
       <div className="mt-10 rounded-card border border-line bg-paper p-6 shadow-[0_24px_60px_-40px_rgba(16,20,24,0.25)]">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">Contact</p>

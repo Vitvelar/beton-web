@@ -76,7 +76,7 @@ export function softwareApplicationLd(): JsonLdNode {
         name: `Rondva ${RONDVA_PACK.name}`,
         price: RONDVA_PACK.price,
         priceCurrency: "USD",
-        description: `One-time purchase of ${RONDVA_PACK.reports} extra AI-drafted reports that never expire. ${priceNote}`,
+        description: `One-time purchase of ${RONDVA_PACK.reports} extra AI-drafted reports that never expire. Plans are cheaper per report. ${priceNote}`,
       },
     ],
     // ENGIN aggregateRating / review: ekki fyrr en raunverulegar einkunnir eru til.

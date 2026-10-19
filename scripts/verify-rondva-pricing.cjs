@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS verify script, same as the other scripts/verify-*.cjs */
-// Verð Rondva (src/lib/rondva-pricing.ts) og textinn á rondva.com eftir útgáfudags-PR: Solo US$49.99/8,
-// Pro US$99.99/30 (mælt með), Report pack US$29.99/10 sem renna ekki út, fyrsti mánuður frír: 20 ókeypis
+// Verð Rondva (src/lib/rondva-pricing.ts) og textinn á rondva.com eftir útgáfudags-PR og B5 (2026-10-19): Solo US$49.99/15,
+// Pro US$99.99/30 (mælt með), Report pack US$69.99/10 sem renna ekki út (dýrari á skýrslu en áætlanirnar), fyrsti mánuður frír: 20 ókeypis
 // AI-skýrslur í 30 daga frá FYRSTU AI-skýrslu fyrirtækisins (kom 2026-10-08 í stað stofnmannatilboðsins
 // 20 á mánuði til 31. janúar 2027), ein tilboðslína (RONDVA_OFFER_LINE, smíðuð úr RONDVA_TRIAL) og ein
 // prufa (RONDVA_TRIAL). Athugar líka að síðurnar noti tölurnar úr einni heimild, að appið sé kynnt sem
@@ -63,14 +63,38 @@ const pass = (name) => { n++; console.log(`PASS ${name}`); };
 // 1. Tölurnar sem eigandinn samþykkti (2026-10-07) og „US$“-merkingin [pricing-4].
 assert.deepEqual(
   RONDVA_PLANS.map((p) => [p.id, p.name, p.price, p.reports]),
-  [['solo', 'Solo', '49.99', 8], ['pro', 'Pro', '99.99', 30]],
+  [['solo', 'Solo', '49.99', 15], ['pro', 'Pro', '99.99', 30]],
 );
 assert.equal(RONDVA_PACK.name, 'Report pack');
-assert.equal(RONDVA_PACK.price, '29.99');
+assert.equal(RONDVA_PACK.price, '69.99');
 assert.equal(RONDVA_PACK.reports, 10);
 assert.equal(usd('49.99'), 'US$49.99');
 assert.equal(usd('99.99'), 'US$99.99');
-pass('Solo US$49.99 / 8, Pro US$99.99 / 30, Report pack US$29.99 / 10; usd() prints "US$"');
+pass('Solo US$49.99 / 15, Pro US$99.99 / 30, Report pack US$69.99 / 10; usd() prints "US$"');
+
+// 1b. B5 [pricing-1]: pakkinn er dýrari á skýrslu en Solo og Pro (vefur sýnir verð á skýrslu á öllum þremur
+//     spjöldum) og segir „Plans are cheaper per report.“ alls staðar þar sem hann er nefndur (forsíða, /support,
+//     llms.txt, JSON-LD). NZ: pakkinn verður að vera ≥ NZ$139.99 í ASC (Solo NZ$99.99 / 15 = 6.67 á skýrslu).
+{
+  const per = (price, reports) => Number(price) / reports;
+  assert.equal(pricing.perReport('49.99', 15), '3.33');
+  assert.equal(pricing.perReport('99.99', 30), '3.33');
+  assert.equal(pricing.perReport('69.99', 10), '7.00');
+  for (const plan of RONDVA_PLANS) {
+    assert.ok(per(RONDVA_PACK.price, RONDVA_PACK.reports) > per(plan.price, plan.reports), `pack costs more per report than ${plan.name}`);
+  }
+  assert.ok(139.99 / RONDVA_PACK.reports > Number(pricing.RONDVA_NZ_SOLO.price) / RONDVA_PLANS[0].reports, 'NZ$139.99 pack > NZ Solo per report');
+  assert.equal(RONDVA_PACK.blurb, `For a busy month: top up ${RONDVA_PACK.reports} reports. Plans are cheaper per report.`);
+  const landingSrc = stripComments(read('src/app/(rondva)/rondva/page.tsx'));
+  assert.match(landingSrc, /\{RONDVA_PACK\.blurb\}/);
+  assert.match(landingSrc, /\{usd\(perReport\(plan\.price, plan\.reports\)\)\} per report/);
+  assert.match(landingSrc, /\{usd\(perReport\(RONDVA_PACK\.price, RONDVA_PACK\.reports\)\)\} per report\. They never expire\./);
+  const supportSrc = stripComments(read('src/app/(rondva)/rondva/support/page.tsx'));
+  assert.equal((supportSrc.match(/Plans are cheaper per report\./g) || []).length, 2, '/support FAQ + price list');
+  assert.match(read('src/lib/rondva-seo.ts'), /never expire\. Plans are cheaper per report\. \$\{priceNote\}/);
+  assert.match(read('src/app/(rondva)/rondva/llms.txt/route.ts'), /never expire\. Plans are cheaper per report\.`/);
+}
+pass('B5: pack US$7.00/report > Solo and Pro US$3.33/report; per-report price on all three cards; "Plans are cheaper per report." on landing, /support, llms.txt and JSON-LD');
 
 // 2. Pro er eina áætlunin sem er merkt „mælt með“, og Pro-textinn er um einn skoðunarmann [trust-3].
 assert.deepEqual(RONDVA_PLANS.filter((p) => p.recommended).map((p) => p.id), ['pro']);
@@ -81,10 +105,10 @@ pass('Pro is the only recommended plan; Pro blurb: "For a busy inspector — 30 
 // 3. Innifalið í öllum áætlunum.
 assert.deepEqual(RONDVA_INCLUDED, [
   '2 AI revisions included with every report',
-  'Unlimited manual editing and re-exports',
+  "Manual edits and re-exports don't use a report",
   'Your company branding on every report',
 ]);
-pass('every plan includes 2 AI revisions, unlimited editing and re-exports, company branding');
+pass('every plan includes 2 AI revisions, company branding, and manual edits/re-exports that don\'t use a report (never "unlimited")');
 
 // 4. Fyrsti mánuður frír: 20 skýrslur / 30 dagar, ekkert kort, ekkert Ísland; stofnmannatilboðið horfið;
 //    ein tilboðslína smíðuð úr RONDVA_TRIAL, og athugasemdin um verð í mynt kaupandans.
@@ -119,7 +143,7 @@ for (const [name, src] of Object.entries(pages)) {
 }
 for (const [name, src] of [['landing', landing], ['support', support], ['nz', nz]]) {
   const code = stripComments(src);
-  for (const price of ['49.99', '99.99', '29.99']) {
+  for (const price of ['49.99', '99.99', '69.99', '29.99']) {
     assert.ok(!code.includes(price), `${name} must read ${price} from rondva-pricing.ts, not hardcode it`);
   }
   assert.ok(!/\bRONDVA_OFFER\b|Founding offer|founding offer|every month\.|free every month|31 January 2027/.test(code), `${name}: founding-offer copy removed`);
@@ -162,7 +186,7 @@ const rondvaFiles = [
   'src/components/rondva/RondvaDashboardEmpty.tsx',
   'src/components/rondva/ConsentBanner.tsx',
 ];
-const stale = [/39\.99/, /complimentary/i, /first 2 AI-drafted/i, /2 AI-drafted reports (are )?free/i, /first 2 .*free/i, /20 AI-drafted reports per month/, /Planned pricing/, /Nothing is for sale yet/];
+const stale = [/39\.99/, /29\.99/, /\b8 AI(-drafted)? reports/, /complimentary/i, /first 2 AI-drafted/i, /2 AI-drafted reports (are )?free/i, /first 2 .*free/i, /20 AI-drafted reports per month/, /Planned pricing/, /Nothing is for sale yet/];
 for (const rel of rondvaFiles) {
   const code = stripComments(read(rel));
   for (const re of stale) assert.ok(!re.test(code), `${rel} still contains ${re}`);
@@ -178,6 +202,16 @@ const walk = (dir) => fs.readdirSync(path.join(root, dir), { withFileTypes: true
 for (const rel of sweepRoots.flatMap(walk)) {
   if (skip.has(rel)) continue;
   assert.ok(!sweep.test(read(rel)), `${rel} still contains launch-blocking wording (${sweep})`);
+}
+// 6b. DON'T-SAY (2026-10-19, aðallota): „unlimited“ og markaðsverð á borð við „NZ$500+“ koma hvergi fyrir á Rondva-svæðinu
+//     (síður, íhlutir, rondva-*.ts í lib), heldur ekki í lagatextum.
+{
+  const libRondva = fs.readdirSync(path.join(root, 'src/lib')).filter((f) => /^rondva-.*\.ts$/.test(f)).map((f) => `src/lib/${f}`);
+  for (const rel of [...sweepRoots.flatMap(walk), ...libRondva]) {
+    const text = read(rel);
+    assert.ok(!/unlimited/i.test(text), `${rel} says "unlimited" (DON'T-SAY)`);
+    assert.ok(!/NZ\$\s?500|You charge NZ\$/i.test(text), `${rel} quotes a market rate (DON'T-SAY)`);
+  }
 }
 pass('no old prices, "first 2 reports free" or complimentary wording; no "in development / waitlist / coming to the App Store" outside privacy, cookies and the unused WaitlistForm');
 
@@ -240,7 +274,7 @@ pass('App Store badge, QR and NZ screenshots exist (<60 KB); header CTA links to
 const aiStops = read('src/components/rondva/WhereAiStops.tsx');
 assert.match(landingCode, /Who builds Rondva/);
 assert.ok(landingCode.indexOf('id="who"') > -1 && landingCode.indexOf('id="who"') < landingCode.indexOf('id="pricing"'), 'builder block sits above pricing');
-for (const s of ['Hjalti Sigmundsson', 'hjalti@rondva.com', 'Built in Reykjavík with a pre-purchase inspection firm that writes every one of its reports in', 'from about 3 hours 40 minutes to about 30 minutes', 'Your data is stored in the EU (Ireland)', 'Every report says it was AI-drafted and reviewed by you.', 'Billed by Apple in your currency. Cancel any time in Settings, no contract.']) {
+for (const s of ['Hjalti Sigmundsson', 'hjalti@rondva.com', 'Built in Reykjavík with a pre-purchase inspection firm that writes every one of its reports in', 'from about 3 hours 40 minutes to about 30 minutes', 'Your data is stored in the EU (Ireland)', 'Every report says which text was drafted with AI assistance; you review it and issue it under your name.', 'Billed by Apple in your currency. Cancel any time in Settings, no contract.']) {
   assert.ok(landing.replace(/\s+/g, ' ').includes(s), `landing says: ${s}`);
 }
 assert.ok(/\{BRANDS\.rondva\.company\} · reg\. no\. \{BRANDS\.rondva\.companyId\} · \{BRANDS\.rondva\.companyAddress\}/.test(landing), 'company line has the same fields as /support');
@@ -272,10 +306,11 @@ assert.ok(nzPlain.includes('Photos, notes, moisture readings and your own rating
 assert.ok(nzPlain.includes("Rondva is an iPhone app that drafts NZS 4306:2005 pre-purchase inspection reports from the inspector's photos, notes and ratings. The inspector reviews and issues the report."));
 assert.ok(nzPlain.includes('Captures with no signal: under the house, in the roof space.'));
 assert.ok(nzPlain.includes('Pro and the Report Pack are priced in NZ$ in the App Store.'));
-assert.ok(nzPlain.includes('<strong>Solo {soloPrice}/month:</strong> {soloReports} AI reports, about {soloPerReport} a report. You charge NZ$500+ for one.'));
+assert.ok(nzPlain.includes('<strong>Solo {soloPrice}/month:</strong> {soloReports} AI-drafted reports a month.'));
+assert.ok(!/per report|a report\.|soloPerReport|NZ\$\d+\+/.test(stripComments(nz).replace('never use up a report.', '')), '/nz shows no per-report or market-rate figures (DON\'T-SAY 2026-10-19)');
 const nzPricing = load('src/lib/rondva-pricing.ts');
 assert.equal(nzPricing.RONDVA_NZ_SOLO.price, '99.99');
-assert.equal(nzPricing.nzSoloPerReport(), '12.50');
+assert.equal(nzPricing.nzSoloPerReport, undefined, 'no NZ per-report figure is published');
 assert.ok(!/Pro[^.]{0,40}NZ\$\d|Report Pack[^.]{0,40}NZ\$\d/.test(nzPlain), 'no guessed NZ$ prices for Pro or the Report Pack');
 // „What's in the report“: hver liður verður að vera kafli í Nzs4306Report.tsx.
 const report = read('src/components/report/Nzs4306Report.tsx');
@@ -298,7 +333,7 @@ assert.equal(app.name, 'Rondva');
 assert.equal(app.operatingSystem, 'iOS');
 assert.equal(app.applicationCategory, 'BusinessApplication');
 assert.equal(app.installUrl, 'https://apps.apple.com/app/id6817769506');
-assert.deepEqual(app.offers.map((o) => [o.name, o.price, o.priceCurrency]), [['Free trial', '0', 'USD'], ['Rondva Solo', '49.99', 'USD'], ['Rondva Pro', '99.99', 'USD'], ['Rondva Report pack', '29.99', 'USD']]);
+assert.deepEqual(app.offers.map((o) => [o.name, o.price, o.priceCurrency]), [['Free trial', '0', 'USD'], ['Rondva Solo', '49.99', 'USD'], ['Rondva Pro', '99.99', 'USD'], ['Rondva Report pack', '69.99', 'USD']]);
 assert.ok(app.offers.slice(1).every((o) => /Price varies by storefront/.test(o.description)), '"price varies by storefront" on paid offers');
 const ldString = seo.jsonLdString([org, app, plain(seo.faqPageLd([{ q: 'A?', a: 'B <script>' }])), plain(seo.breadcrumbLd([{ name: 'Rondva', path: '/' }, { name: 'NZ', path: '/nz' }]))]);
 assert.ok(!/aggregateRating|"review"/.test(ldString), 'no aggregateRating or review');
@@ -333,7 +368,7 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
   const llms = await body('src/app/(rondva)/rondva/llms.txt/route.ts');
   const llmsLines = llms.split('\n').filter((l) => l.trim());
   assert.ok(llmsLines.length >= 20 && llmsLines.length <= 30, `llms.txt has 20-30 non-empty lines (${llmsLines.length})`);
-  for (const s of ['# Rondva', 'iPhone app', 'NZS 4306:2005', 'Vitvélar ehf.', 'https://apps.apple.com/app/id6817769506', pricing.RONDVA_OFFER_LINE, 'US$49.99', 'US$99.99', 'US$29.99', 'NZ$99.99', 'https://rondva.com/nz', 'https://rondva.com/support', 'https://rondva.com/privacy', 'https://rondva.com/terms', 'EU (Ireland)']) assert.ok(llms.includes(s), `llms.txt has ${s}`);
+  for (const s of ['# Rondva', 'iPhone app', 'NZS 4306:2005', 'Vitvélar ehf.', 'https://apps.apple.com/app/id6817769506', pricing.RONDVA_OFFER_LINE, 'US$49.99', 'US$99.99', 'US$69.99', 'NZ$99.99', 'Plans are cheaper per report.', 'https://rondva.com/nz', 'https://rondva.com/support', 'https://rondva.com/privacy', 'https://rondva.com/terms', 'EU (Ireland)']) assert.ok(llms.includes(s), `llms.txt has ${s}`);
   assert.ok(!sweep.test(llms) && !/aggregateRating|best |the only|certified|compliant/i.test(llms), 'llms.txt: no banned claims');
   const robots = await body('src/app/(rondva)/rondva/robots.txt/route.ts');
   assert.match(robots, /User-agent: \*\nAllow: \//);
