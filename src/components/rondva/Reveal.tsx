@@ -1,19 +1,28 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
-// Setur data-shown="true" á hvert .rv-reveal barn þegar það kemur í sýn.
-// Eitt observer fyrir alla síðuna; skilar sér sem hreinn CSS-transition.
+// Skrunbirting á efni neðan við brotið. Án JavaScript sést allt efni strax: fyrst hér er <html>
+// merkt data-rv-ready (þá fela CSS-reglurnar .rv-reveal þar til það kemur í sýn). Efni sem er
+// þegar í sýn er aldrei falið. Eitt observer fyrir alla síðuna.
 export function RevealObserver() {
-  const done = useRef(false);
   useEffect(() => {
-    if (done.current) return;
-    done.current = true;
     const nodes = Array.from(document.querySelectorAll<HTMLElement>(".rv-reveal"));
+    const root = document.documentElement;
+    const viewportBottom = window.innerHeight;
+
     if (!("IntersectionObserver" in window)) {
       nodes.forEach((n) => n.setAttribute("data-shown", "true"));
       return;
     }
+
+    // Það sem er þegar á skjánum blikkar ekki: merkt sýnt áður en falið er.
+    const below: HTMLElement[] = [];
+    for (const n of nodes) {
+      if (n.getBoundingClientRect().top < viewportBottom) n.setAttribute("data-shown", "true");
+      else below.push(n);
+    }
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -25,8 +34,12 @@ export function RevealObserver() {
       },
       { rootMargin: "0px 0px -10% 0px", threshold: 0.12 }
     );
-    nodes.forEach((n) => io.observe(n));
-    return () => io.disconnect();
+    below.forEach((n) => io.observe(n));
+    root.setAttribute("data-rv-ready", "");
+    return () => {
+      io.disconnect();
+      root.removeAttribute("data-rv-ready");
+    };
   }, []);
   return null;
 }

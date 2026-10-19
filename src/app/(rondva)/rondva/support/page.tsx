@@ -9,6 +9,7 @@ import {
 } from "@/lib/rondva-pricing";
 import { faqPageLd } from "@/lib/rondva-seo";
 import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/LegalPage";
+import { rondvaPageMetadata } from "@/components/rondva/page-meta";
 import { JsonLd } from "@/components/rondva/JsonLd";
 
 // rondva.com/support — support-slóð Rondva-appsins (App Store Connect og
@@ -19,12 +20,12 @@ import { JsonLd } from "@/components/rondva/JsonLd";
 // docs/release/ACCOUNT_DELETION.md §8), og veðurútfylling er í Rondva-byggingunni. Engin
 // eyðublöð: samband er tölvupóstur (rondva@rondva.com). Heiti hnappa eru úr lib/i18n/catalog.ts.
 
-export const metadata: Metadata = {
+export const metadata: Metadata = rondvaPageMetadata({
   title: "Support and FAQ",
   description:
     "Answers about Rondva: NZS 4306 reports, working with no signal, what the AI does, where your photos are stored, pricing and tax invoices, adding a colleague, subscriptions and refunds, what happens if Rondva shuts down, and deleting your account.",
-  alternates: { canonical: `${BRANDS.rondva.marketingUrl}/support` },
-};
+  path: "/support",
+});
 
 const R = BRANDS.rondva;
 const mail = `mailto:${R.contactEmail}`;

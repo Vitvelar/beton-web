@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BRANDS } from "@/lib/brand";
 import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/LegalPage";
+import { rondvaPageMetadata } from "@/components/rondva/page-meta";
 
 // rondva.com/privacy — persónuverndarstefna Rondva: vefur, biðlisti, stjórnborð og
 // iOS-appið. Byggð á beton-app docs/release/PRIVACY_DATA_INVENTORY.md (gagnaflæði
@@ -27,12 +28,12 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // SHA-256 hakk af föstu auðkenni Apple/Google-innskráningar og netfangi, lifir eyðingu reiknings
 // (misnotkunarvörn, art. 6(1)(f)), eytt 24 mánuðum eftir veitingu (pg_cron report-trial-claims-purge).
 
-export const metadata: Metadata = {
+export const metadata: Metadata = rondvaPageMetadata({
   title: "Privacy",
   description:
     "How Vitvélar ehf. handles personal data in the Rondva app, on the app.rondva.com dashboard, on the waitlist and on rondva.com.",
-  alternates: { canonical: `${BRANDS.rondva.marketingUrl}/privacy` },
-};
+  path: "/privacy",
+});
 
 const R = BRANDS.rondva;
 const mail = `mailto:${R.contactEmail}`;
