@@ -19,6 +19,12 @@ const BTN_SIZE: Record<ButtonSize, string> = {
   md: "min-h-11 px-6 text-sm",
   lg: "min-h-13 px-7 text-base",
 };
+// Textahnappur: sama hæð (snertiflötur) en lítið hliðarbil, svo hann standi við textabrúnina.
+const BTN_SIZE_QUIET: Record<ButtonSize, string> = {
+  sm: "h-9 px-2 text-sm",
+  md: "min-h-11 px-2 text-sm",
+  lg: "min-h-13 px-2 text-base",
+};
 
 const BTN_VARIANT: Record<ButtonVariant, string> = {
   primary:
@@ -28,7 +34,7 @@ const BTN_VARIANT: Record<ButtonVariant, string> = {
     "border border-line-strong bg-transparent text-ink hover:border-ink hover:bg-ink/5 active:bg-ink/10 " +
     "disabled:hover:border-line-strong disabled:hover:bg-transparent",
   quiet:
-    "px-2 text-navy underline-offset-4 hover:underline active:text-navy-deep disabled:hover:no-underline",
+    "text-navy underline-offset-4 hover:underline active:text-navy-deep disabled:hover:no-underline",
   danger:
     "border border-danger/40 bg-transparent text-danger hover:bg-danger-tint active:bg-danger-tint " +
     "disabled:hover:bg-transparent",
@@ -43,7 +49,8 @@ export function btn(
   size: ButtonSize = "md",
   extra = ""
 ): string {
-  return `${BTN_BASE} ${BTN_SIZE[size]} ${BTN_VARIANT[variant]} ${extra}`.trim();
+  const sizes = variant === "quiet" ? BTN_SIZE_QUIET : BTN_SIZE;
+  return `${BTN_BASE} ${sizes[size]} ${BTN_VARIANT[variant]} ${extra}`.trim();
 }
 
 /** Lítill snúningsvísir í hnapp meðan aðgerð er í gangi (aria-hidden; hnappurinn fær aria-busy). */

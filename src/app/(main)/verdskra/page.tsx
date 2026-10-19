@@ -92,7 +92,7 @@ export default function Verdskra() {
                   {r.price !== "Tilboð" && <span className="text-base text-fog">kr.</span>}
                 </div>
                 <div className="col-start-2 md:col-start-auto md:text-right">
-                  <Link href="/samband" className={btn("quiet", "md", "-ml-2 px-2! md:-mr-2 md:ml-0")}>
+                  <Link href="/samband" className={btn("quiet", "md", "-ml-2 md:-mr-2 md:ml-0")}>
                     Bóka <span aria-hidden="true">→</span>
                     <span className="sr-only"> {r.size}</span>
                   </Link>

@@ -174,7 +174,7 @@ export default function Home() {
       <section className="px-6 py-20 lg:px-14 lg:py-28">
         <div className="mx-auto max-w-[1280px]">
           <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-[5fr_7fr] md:gap-16">
-            <div className="relative aspect-4/5 overflow-hidden rounded-sharp bg-concrete shadow-xl">
+            <div className="relative aspect-4/5 overflow-hidden rounded-sharp bg-concrete shadow-photo">
               <Image
                 src="/images/bragi.webp"
                 alt="Bragi Michaelsson, stofnandi Beton ehf."
@@ -211,7 +211,7 @@ export default function Home() {
                   þú getir tekið upplýsta ákvörðun og byggt hana á góðum grunni.
                 </p>
               </div>
-              <Link href="/umokkur" className={btn("quiet", "md", "mt-6 -ml-2 px-2!")}>
+              <Link href="/umokkur" className={btn("quiet", "md", "mt-6 -ml-2")}>
                 Lesa meira um Beton <span aria-hidden="true">→</span>
               </Link>
             </div>
@@ -236,7 +236,7 @@ export default function Home() {
                 Verð miðast við stærð íbúðarhúsnæðis. VSK innifalin og akstur innan
                 höfuðborgarsvæðisins. Atvinnuhúsnæði og húsfélög samkvæmt tilboði.
               </p>
-              <Link href="/verdskra" className={btn("quiet", "md", "mt-4 -ml-2 px-2!")}>
+              <Link href="/verdskra" className={btn("quiet", "md", "mt-4 -ml-2")}>
                 Sjá fulla verðskrá <span aria-hidden="true">→</span>
               </Link>
             </div>

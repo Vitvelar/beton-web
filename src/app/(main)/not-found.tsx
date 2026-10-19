@@ -21,7 +21,7 @@ export default function NotFound() {
           <Link href="/" className={btn("primary", "lg")}>
             Á forsíðu <span aria-hidden="true">→</span>
           </Link>
-          <Link href="/samband" className={btn("quiet", "lg", "px-2!")}>
+          <Link href="/samband" className={btn("quiet", "lg")}>
             Hafa samband
           </Link>
         </div>

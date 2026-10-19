@@ -109,7 +109,11 @@ function load(file, mocks = {}) {
 
   // ---- leiðir og leifar ----
   assert.ok(fs.existsSync(path.join(ROOT, 'src/app/(main)/not-found.tsx')));
-  assert.ok(read('src/app/(main)/[...rest]/page.tsx').includes('notFound()'));
+  // Óþekktar slóðir: app/global-not-found.tsx (rétt 404-staða + efni í HTML), ekki catch-all.
+  assert.ok(read('next.config.ts').includes('globalNotFound: true'), 'experimental.globalNotFound á');
+  const gnf = read('src/app/global-not-found.tsx');
+  assert.ok(gnf.includes('Síðan fannst ekki') && gnf.includes('There is nothing at'), 'global-not-found með Beton- og Rondva-útgáfu');
+  assert.ok(!fs.existsSync(path.join(ROOT, 'src/app/(main)/[...rest]')), 'engin catch-all í (main) (hún gaf tóman <body>)');
   assert.ok(!fs.existsSync(path.join(ROOT, 'src/app/(auth)')), 'gamla lykilorðssíðan á að vera farin');
   assert.ok(!fs.existsSync(path.join(ROOT, 'src/app/api/auth')));
   assert.ok(!read('src/app/robots.ts').includes('/login/'));

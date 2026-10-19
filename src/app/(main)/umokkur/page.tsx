@@ -116,7 +116,7 @@ export default function UmOkkur() {
 
           {/* Right: portrait — sticky on desktop, B&W */}
           <div className="order-first self-start lg:sticky lg:top-32 lg:order-last">
-            <div className="relative aspect-4/5 overflow-hidden rounded-sharp bg-concrete shadow-xl">
+            <div className="relative aspect-4/5 overflow-hidden rounded-sharp bg-concrete shadow-photo">
               <Image
                 src="/images/bragi.webp"
                 alt="Bragi Michaelsson, stofnandi Beton ehf."
