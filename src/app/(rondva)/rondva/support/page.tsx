@@ -276,8 +276,8 @@ const sections: LegalSection[] = [
           </li>
         </ul>
         <p>
-          Every plan includes 2 AI revisions per report, unlimited manual editing and
-          re-exports, and your company branding. {RONDVA_PRICE_NOTE} Reports are used in this
+          Every plan includes 2 AI revisions per report and your company branding. Manual edits
+          and re-exports don&apos;t use a report. {RONDVA_PRICE_NOTE} Reports are used in this
           order: reports from your free first month first, then your plan&apos;s reports for the
           month (they don&apos;t carry over), then report packs. When the free month ends or you
           run out, the app offers plans and packs.
@@ -466,7 +466,7 @@ export default function RondvaSupportPage() {
         </p>
       }
       sections={sections}
-      revised="9 October 2026"
+      revised="20 October 2026"
     >
       <div className="mt-10 rounded-card border border-line bg-paper p-6 shadow-[0_24px_60px_-40px_rgba(16,20,24,0.25)]">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted">Contact</p>

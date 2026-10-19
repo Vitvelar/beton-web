@@ -105,10 +105,10 @@ pass('Pro is the only recommended plan; Pro blurb: "For a busy inspector — 30 
 // 3. Innifalið í öllum áætlunum.
 assert.deepEqual(RONDVA_INCLUDED, [
   '2 AI revisions included with every report',
-  'Unlimited manual editing and re-exports',
+  "Manual edits and re-exports don't use a report",
   'Your company branding on every report',
 ]);
-pass('every plan includes 2 AI revisions, unlimited editing and re-exports, company branding');
+pass('every plan includes 2 AI revisions, company branding, and manual edits/re-exports that don\'t use a report (never "unlimited")');
 
 // 4. Fyrsti mánuður frír: 20 skýrslur / 30 dagar, ekkert kort, ekkert Ísland; stofnmannatilboðið horfið;
 //    ein tilboðslína smíðuð úr RONDVA_TRIAL, og athugasemdin um verð í mynt kaupandans.
@@ -203,6 +203,16 @@ for (const rel of sweepRoots.flatMap(walk)) {
   if (skip.has(rel)) continue;
   assert.ok(!sweep.test(read(rel)), `${rel} still contains launch-blocking wording (${sweep})`);
 }
+// 6b. DON'T-SAY (2026-10-19, aðallota): „unlimited“ og markaðsverð á borð við „NZ$500+“ koma hvergi fyrir á Rondva-svæðinu
+//     (síður, íhlutir, rondva-*.ts í lib), heldur ekki í lagatextum.
+{
+  const libRondva = fs.readdirSync(path.join(root, 'src/lib')).filter((f) => /^rondva-.*\.ts$/.test(f)).map((f) => `src/lib/${f}`);
+  for (const rel of [...sweepRoots.flatMap(walk), ...libRondva]) {
+    const text = read(rel);
+    assert.ok(!/unlimited/i.test(text), `${rel} says "unlimited" (DON'T-SAY)`);
+    assert.ok(!/NZ\$\s?500|You charge NZ\$/i.test(text), `${rel} quotes a market rate (DON'T-SAY)`);
+  }
+}
 pass('no old prices, "first 2 reports free" or complimentary wording; no "in development / waitlist / coming to the App Store" outside privacy, cookies and the unused WaitlistForm');
 
 // 7. Tilboðið (forsíða frá verðkaflanum, /support-verð, skilmálar) nefnir ekki Ísland.
@@ -264,7 +274,7 @@ pass('App Store badge, QR and NZ screenshots exist (<60 KB); header CTA links to
 const aiStops = read('src/components/rondva/WhereAiStops.tsx');
 assert.match(landingCode, /Who builds Rondva/);
 assert.ok(landingCode.indexOf('id="who"') > -1 && landingCode.indexOf('id="who"') < landingCode.indexOf('id="pricing"'), 'builder block sits above pricing');
-for (const s of ['Hjalti Sigmundsson', 'hjalti@rondva.com', 'Built in Reykjavík with a pre-purchase inspection firm that writes every one of its reports in', 'from about 3 hours 40 minutes to about 30 minutes', 'Your data is stored in the EU (Ireland)', 'Every report says it was AI-drafted and reviewed by you.', 'Billed by Apple in your currency. Cancel any time in Settings, no contract.']) {
+for (const s of ['Hjalti Sigmundsson', 'hjalti@rondva.com', 'Built in Reykjavík with a pre-purchase inspection firm that writes every one of its reports in', 'from about 3 hours 40 minutes to about 30 minutes', 'Your data is stored in the EU (Ireland)', 'Every report says which text was drafted with AI assistance; you review it and issue it under your name.', 'Billed by Apple in your currency. Cancel any time in Settings, no contract.']) {
   assert.ok(landing.replace(/\s+/g, ' ').includes(s), `landing says: ${s}`);
 }
 assert.ok(/\{BRANDS\.rondva\.company\} · reg\. no\. \{BRANDS\.rondva\.companyId\} · \{BRANDS\.rondva\.companyAddress\}/.test(landing), 'company line has the same fields as /support');
@@ -296,10 +306,11 @@ assert.ok(nzPlain.includes('Photos, notes, moisture readings and your own rating
 assert.ok(nzPlain.includes("Rondva is an iPhone app that drafts NZS 4306:2005 pre-purchase inspection reports from the inspector's photos, notes and ratings. The inspector reviews and issues the report."));
 assert.ok(nzPlain.includes('Captures with no signal: under the house, in the roof space.'));
 assert.ok(nzPlain.includes('Pro and the Report Pack are priced in NZ$ in the App Store.'));
-assert.ok(nzPlain.includes('<strong>Solo {soloPrice}/month:</strong> {soloReports} AI reports, about {soloPerReport} a report. You charge NZ$500+ for one.'));
+assert.ok(nzPlain.includes('<strong>Solo {soloPrice}/month:</strong> {soloReports} AI-drafted reports a month.'));
+assert.ok(!/per report|a report\.|soloPerReport|NZ\$\d+\+/.test(stripComments(nz).replace('never use up a report.', '')), '/nz shows no per-report or market-rate figures (DON\'T-SAY 2026-10-19)');
 const nzPricing = load('src/lib/rondva-pricing.ts');
 assert.equal(nzPricing.RONDVA_NZ_SOLO.price, '99.99');
-assert.equal(nzPricing.nzSoloPerReport(), '6.67');
+assert.equal(nzPricing.nzSoloPerReport, undefined, 'no NZ per-report figure is published');
 assert.ok(!/Pro[^.]{0,40}NZ\$\d|Report Pack[^.]{0,40}NZ\$\d/.test(nzPlain), 'no guessed NZ$ prices for Pro or the Report Pack');
 // „What's in the report“: hver liður verður að vera kafli í Nzs4306Report.tsx.
 const report = read('src/components/report/Nzs4306Report.tsx');

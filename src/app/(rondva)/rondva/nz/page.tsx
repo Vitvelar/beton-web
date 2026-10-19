@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
 import { HAS_SAMPLE, SAMPLE_REPORT_URL } from "@/lib/rondva-links";
-import { RONDVA_NZ_SOLO, RONDVA_OFFER_LINE, RONDVA_PLANS, nzSoloPerReport } from "@/lib/rondva-pricing";
+import { RONDVA_NZ_SOLO, RONDVA_OFFER_LINE, RONDVA_PLANS } from "@/lib/rondva-pricing";
 import { breadcrumbLd, faqPageLd, organizationLd, softwareApplicationLd } from "@/lib/rondva-seo";
 import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
@@ -48,7 +48,6 @@ export const metadata: Metadata = {
 const DEFINITION =
   "Rondva is an iPhone app that drafts NZS 4306:2005 pre-purchase inspection reports from the inspector's photos, notes and ratings. The inspector reviews and issues the report.";
 
-const soloPerReport = `${RONDVA_NZ_SOLO.currency}${nzSoloPerReport()}`;
 const soloPrice = `${RONDVA_NZ_SOLO.currency}${RONDVA_NZ_SOLO.price}`;
 const soloReports = RONDVA_PLANS.find((p) => p.id === "solo")?.reports ?? 0;
 
@@ -98,7 +97,7 @@ const FAQ_ANSWERS = {
     "Yes. Everything you record is saved on your phone first, so you can keep inspecting with no signal, for example under the house or in the roof space. It syncs when you are back online.",
   responsible:
     "You are. Rondva drafts the report text from your photos, notes and ratings, you review every word, and you issue the PDF under your company name.",
-  price: `Solo is ${soloPrice} a month for ${soloReports} AI-drafted reports, about ${soloPerReport} a report. Pro and the Report Pack are priced in NZ$ in the App Store. ${RONDVA_OFFER_LINE}`,
+  price: `Solo is ${soloPrice} a month for ${soloReports} AI-drafted reports, charged by Apple in NZ$. Pro and the Report Pack are priced in NZ$ in the App Store. ${RONDVA_OFFER_LINE}`,
 } as const;
 
 const FAQ: { id: keyof typeof FAQ_ANSWERS; q: string }[] = [
@@ -259,8 +258,7 @@ export default function RondvaNzPage() {
             </SectionHeading>
             <div className="rv-reveal mt-10 max-w-2xl rounded-card border border-line-strong bg-paper p-7 sm:p-9" style={{ "--i": 1 } as React.CSSProperties}>
               <p className="text-xl leading-relaxed text-ink">
-                <strong>Solo {soloPrice}/month:</strong> {soloReports} AI reports, about {soloPerReport} a report.
-                You charge NZ$500+ for one.
+                <strong>Solo {soloPrice}/month:</strong> {soloReports} AI-drafted reports a month.
               </p>
               <p className="mt-4 leading-relaxed text-muted">
                 Pro and the Report Pack are priced in NZ$ in the App Store. {RONDVA_OFFER_LINE} Charged by Apple

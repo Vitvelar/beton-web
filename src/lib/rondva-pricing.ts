@@ -49,7 +49,7 @@ export const RONDVA_PACK = {
 /** Innifalið í öllum áætlunum. */
 export const RONDVA_INCLUDED = [
   "2 AI revisions included with every report",
-  "Unlimited manual editing and re-exports",
+  "Manual edits and re-exports don't use a report",
   "Your company branding on every report",
 ] as const;
 
@@ -76,14 +76,11 @@ export const RONDVA_PRICE_NOTE =
 
 /**
  * NZ-verð á /nz. Aðeins Solo er staðfest í App Store Connect (NZ$99.99); Pro og Report pack eru
- * EKKI gefin upp í NZ$ fyrr en þau eru lesin úr ASC — ekki giska. Verð á skýrslu er reiknað.
+ * EKKI gefin upp í NZ$ fyrr en þau eru lesin úr ASC — ekki giska. Verð á skýrslu er EKKI birt á /nz
+ * (DON'T-SAY 2026-10-19: engar óleyfðar tölur); B5-verify reiknar það aðeins til að tryggja að
+ * pakkinn (≥ NZ$139.99) sé dýrari á skýrslu en Solo.
  */
 export const RONDVA_NZ_SOLO = { price: "99.99", currency: "NZ$" } as const;
-
-export function nzSoloPerReport(): string {
-  const solo = RONDVA_PLANS.find((p) => p.id === "solo");
-  return solo ? (Number(RONDVA_NZ_SOLO.price) / solo.reports).toFixed(2) : "";
-}
 
 /** Verð á skýrslu í USD (2 aukastafir), t.d. 49.99 / 15 → "3.33". */
 export function perReport(price: string, reports: number): string {

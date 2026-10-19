@@ -259,8 +259,8 @@ const sections: LegalSection[] = [
           <li>
             Plans are a monthly subscription, Solo or Pro, each with a set number of report
             credits per month, plus a report pack of extra credits. Every plan includes 2 AI
-            revisions per report, unlimited manual editing and re-exports, and your company
-            branding.
+            revisions per report and your company branding. Manual edits and re-exports
+            don&apos;t use a report.
           </li>
           <li>
             <strong>Auto-renewal.</strong> Subscriptions renew automatically every month at the
@@ -455,7 +455,7 @@ export default function RondvaTermsPage() {
         </p>
       }
       sections={sections}
-      revised="8 October 2026"
+      revised="20 October 2026"
       toc
     />
   );

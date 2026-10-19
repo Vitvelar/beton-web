@@ -324,7 +324,7 @@ export default function RondvaLandingPage() {
                         Your data is stored in the EU (Ireland)
                       </Link>
                     </>,
-                    <>Every report says it was AI-drafted and reviewed by you.</>,
+                    <>Every report says which text was drafted with AI assistance; you review it and issue it under your name.</>,
                     <>
                       Billed by Apple in your currency. Cancel any time in Settings, no contract.{" "}
                       <Link href="/terms#availability" className="underline underline-offset-4 hover:text-blue">
