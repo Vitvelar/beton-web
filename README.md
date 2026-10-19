@@ -37,7 +37,7 @@ Opnaðu [http://localhost:3000](http://localhost:3000) í vafranum.
 ## Uppsetning tölvupósts (Resend)
 
 1. Búðu til aðgang á [resend.com](https://resend.com)
-2. Staðfestu lén (betonehf.is) á Resend
+2. Staðfestu lén (beton.is) á Resend
 3. Búðu til API lykil og settu í `RESEND_API_KEY`
 4. Uppfærðu `from` í `src/app/api/contact/route.ts` í staðfest lén
 

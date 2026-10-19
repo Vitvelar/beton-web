@@ -5,7 +5,7 @@
    á app.rondva.com geti skipt um litaspjald með html[data-brand="rondva"]
    (neðst). Gildin sjálf eru óbreytt → Beton-síðurnar líta eins út. */
 @theme {
-  /* Exact palette extracted from betonehf.is (Squarespace HSL → HEX) */
+  /* Exact palette extracted from the old Beton Squarespace site (HSL → HEX) */
   --color-ink: #000000;                /* black */
   --color-navy: #003fba;               /* accent — primary blue */
   --color-navy-deep: #002e87;          /* darker accent */
