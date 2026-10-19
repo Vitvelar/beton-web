@@ -23,6 +23,9 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // (docs/release/ACCOUNT_DELETION.md, IN_APP_PURCHASES.md, PRIVACY_DATA_INVENTORY.md;
 // supabase/functions/delete-account, apple-purchase, weather-lookup). Appið notar enga
 // staðsetningarheimild (app.json/app.config.ts: aðeins myndavél og myndasafn).
+// 2026-10-08 (prufutími, beton-app 20261008150000_report_trial_month.sql): trial_claims — saltað
+// SHA-256 hakk af föstu auðkenni Apple/Google-innskráningar og netfangi, lifir eyðingu reiknings
+// (misnotkunarvörn, art. 6(1)(f)), eytt 24 mánuðum eftir veitingu (pg_cron report-trial-claims-purge).
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -168,6 +171,17 @@ const sections: LegalSection[] = [
           name on its reports. The legal basis is the agreement with you or your company (GDPR
           art. 6(1)(b)) and, for sign-in security records, our legitimate interest in keeping
           accounts safe (art. 6(1)(f)).
+        </p>
+        <p>
+          <strong>Free first month.</strong> A new company gets its free first month only once.
+          So that the same person can&apos;t get it again by deleting the account and signing up
+          again, when a company account is activated we store a fingerprint (a keyed, salted
+          SHA-256 hash) of the stable account identifier from your Apple or Google sign-in and
+          of your email address. It isn&apos;t stored in readable form; we can only use it to
+          check whether a given sign-in has had a free month before. Because we hold the key,
+          this is pseudonymised personal data, not anonymous data. It is kept for 24 months,
+          also after the account is deleted. The legal basis is our legitimate interest in
+          preventing abuse of the free month (GDPR art. 6(1)(f)).
         </p>
       </>
     ),
@@ -395,14 +409,15 @@ const sections: LegalSection[] = [
         <p>
           <strong>Who we write to.</strong> Building inspectors who publish a work email address
           in a public register or on their company&apos;s own website, for example the New
-          Zealand Institute of Building Inspectors directory (nzibi.co.nz). We write to them
+          Zealand Institute of Building Inspectors directory (nzibi.co.nz). We find these
+          addresses by hand from public registers and company websites. We write to them
           about Rondva, because it is a tool for exactly their job. This is a short series of
           up to three emails, not a newsletter. The emails carry no tracking pixels and no
           tracked links.
         </p>
         <p>
           <strong>What we hold.</strong> Your name, your work email address, your company&apos;s
-          name and website as published, where we found them, and a note of when we wrote and
+          name and website as published, the web address and date where we found them, and a note of when we wrote and
           whether you replied or asked us to stop. Nothing else. We use it only to write to you
           about Rondva, we don&apos;t sell or share it, and we don&apos;t build a profile of
           you. We send and store the emails with Google Workspace (see{" "}
@@ -410,11 +425,14 @@ const sections: LegalSection[] = [
         </p>
         <p>
           <strong>Why we may do this.</strong> Our legitimate interest in telling professionals
-          about a product made for their work (GDPR art. 6(1)(f)). We weighed it against your
+          about a product made for their work (GDPR art. 6(1)(f)). For recipients in New Zealand
+          we rely on the deemed consent that the Unsolicited Electronic Messages Act 2007
+          allows for a work address published in a business capacity. We weighed it against your
           interests: we write to a work address that is published for business contact,
           the intrusion is small, you can stop it with one reply, and an inspector can
           reasonably expect an email about tools for inspections. You can object at any time
-          (see below).
+          (GDPR art. 21, see below), and we tell you about this section in our first email
+          to you (art. 14).
         </p>
         <p>
           <strong>How long we keep it.</strong> For 12 months after our last email to you, unless
@@ -427,7 +445,7 @@ const sections: LegalSection[] = [
         <p>
           <strong>Stop, object or ask what we hold.</strong> Reply &ldquo;unsubscribe&rdquo; to any of our
           emails, or write to <LegalLink href={mail}>{R.contactEmail}</LegalLink>, and we remove
-          you straight away and don&apos;t write again. You can also ask us what we hold about
+          you the same day, and always within 5 working days, and don&apos;t write again. You can also ask us what we hold about
           you, have it corrected or deleted, or object to our using it. Objecting to direct
           marketing always succeeds. We reply within one month.
         </p>
@@ -510,8 +528,9 @@ const sections: LegalSection[] = [
             time.
           </li>
           <li>
-            <strong>Hosting logs and abuse prevention:</strong> our legitimate interest in
-            running and protecting the service (art. 6(1)(f)).
+            <strong>Hosting logs and abuse prevention</strong> (including the free-month
+            fingerprints): our legitimate interest in running and protecting the service
+            (art. 6(1)(f)).
           </li>
           <li>
             <strong>Analytics and marketing cookies on rondva.com:</strong> your consent
@@ -601,6 +620,12 @@ const sections: LegalSection[] = [
             content and, after deletion, no longer points to your account or company.
           </li>
           <li>
+            The fingerprints used for the free first month (see Your account), so that deleting
+            the account and signing up again doesn&apos;t give a new free month. They no longer
+            point to your account or company and are deleted 24 months after the free month was
+            given.
+          </li>
+          <li>
             If your company has other members, the company and its data stay; only your own
             membership is removed.
           </li>
@@ -645,6 +670,11 @@ const sections: LegalSection[] = [
           <li>
             <strong>AI usage records</strong> (date, model, cost, whether a credit was used):
             kept as a usage history without inspection content.
+          </li>
+          <li>
+            <strong>Free-month fingerprints</strong> (pseudonymised hashes of your sign-in
+            identifier and email address): 24 months from when the free month was given, also
+            after the account is deleted, then deleted automatically.
           </li>
           <li>
             <strong>Weather lookups:</strong> the address and the coordinates are not stored.
@@ -756,7 +786,7 @@ export default function RondvaPrivacyPage() {
         </p>
       }
       sections={sections}
-      revised="9 October 2026"
+      revised="20 October 2026"
       toc
     />
   );

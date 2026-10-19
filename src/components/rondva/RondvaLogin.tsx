@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { BRANDS } from "@/lib/brand";
+import { APP_STORE_URL } from "@/lib/rondva-links";
 
 // Innskráning á app.rondva.com. Aðeins Google og Apple (þegar kveikt er á
 // Apple). Nýskráning er opin (2026-10-06): nýr notandi án fyrirtækis fer á
@@ -146,8 +147,8 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-navy">Dashboard</p>
           <h1 className="rv-serif mt-3 text-[34px] leading-tight text-ink">Sign in to Rondva</h1>
           <p className="mt-3 text-[15px] leading-relaxed text-fog">
-            Use the {appleEnabled ? "Google or Apple" : "Google"} account your company was approved
-            with.
+            Sign in with {appleEnabled ? "Google or Apple" : "Google"}. New here? You&apos;ll set up your
+            company in under a minute.
           </p>
 
           {queryError && !error && (
@@ -203,14 +204,14 @@ export function RondvaLogin({ appleEnabled }: { appleEnabled: boolean }) {
 
           <div className="mt-10 border-t border-concrete pt-6 text-sm leading-relaxed text-fog">
             New to Rondva? Sign in above to set up your company account &mdash; your first
-            reports are free. The iPhone app is coming to the App Store; until then,{" "}
+            reports are free. The iPhone app is on the{" "}
             <a
-              href={`${R.marketingUrl}/#waitlist`}
+              href={APP_STORE_URL}
               className="font-semibold text-ink underline decoration-concrete-dk underline-offset-4 transition-colors hover:decoration-ink"
             >
-              join the waitlist
-            </a>{" "}
-            and we&apos;ll tell you when it&apos;s live.
+              App Store
+            </a>
+            ; sign in there with the same account.
           </div>
         </div>
 

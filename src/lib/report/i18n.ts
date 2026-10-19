@@ -14,6 +14,8 @@
 // Texti með breytum er sniðmát með {nafni}, birtur með fill()/format()
 // (src/lib/i18n/format.ts) svo íslenskan haldi sömu textahnútum og áður.
 
+import type { EnglishVariant } from "./english-variant";
+
 export const REPORT_LOCALES = ["is", "en"] as const;
 export type ReportLocale = (typeof REPORT_LOCALES)[number];
 
@@ -374,8 +376,29 @@ const en: ReportCopy = {
 
 export const REPORT_COPY: Readonly<Record<ReportLocale, ReportCopy>> = { is, en };
 
-export function reportCopy(locale: ReportLocale): ReportCopy {
-  return REPORT_COPY[locale];
+// Enskt afbrigði (Phase 1, plan/rondva/ENSK-AFBRIGDI-HONNUN.md): fastir textar skýrslunnar nota
+// stafsetningu afbrigðisins þar sem orð er ólíkt. Öll afbrigði nema en-US nota bresku/samveldis-
+// stafsetninguna í `en` óbreytta. en-US: sjálfvirk umbreyting orða sem koma fyrir í `en` (nú aðeins
+// „mould“) — scripts/verify-report-settings.cjs athugar að engin bresk stafsetning sé eftir.
+const US_SPELLING: ReadonlyArray<readonly [RegExp, string]> = [
+  [/\bmould/g, "mold"],
+  [/\bMould/g, "Mold"],
+];
+
+function usSpelling<T>(value: T): T {
+  if (typeof value === "string") return US_SPELLING.reduce((text, [from, to]) => text.replace(from, to), value as string) as T;
+  if (Array.isArray(value)) return value.map(usSpelling) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, usSpelling(v)])) as T;
+  }
+  return value;
+}
+
+const enUS: ReportCopy = usSpelling(en);
+
+/** Textar skýrslu á máli hennar; `variant` skiptir aðeins máli á ensku (en-US stafsetning). */
+export function reportCopy(locale: ReportLocale, variant: EnglishVariant = "en"): ReportCopy {
+  return locale === "en" && variant === "en-US" ? enUS : REPORT_COPY[locale];
 }
 
 /** Heiti matsþáttar í rooms.ratings; íslenska: lykillinn með bilum (eins og áður). */

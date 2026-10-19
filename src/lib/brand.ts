@@ -41,6 +41,10 @@ export const BRANDS = {
     name: "Beton ehf.",
     marketingUrl: "https://beton.is",
     appUrl: "https://admin.beton.is",
+    // Google Tag Manager-gámur beton.is (Ingvar, f.h. Braga, 2026-10-18). Inni í
+    // honum liggja Meta pixel og Google Ads-taggið. Hleðst AÐEINS á
+    // markaðssíðunni (src/app/(main)/layout.tsx), ekki á admin.beton.is.
+    gtmId: "GTM-N9X9TKXF",
   },
   rondva: {
     name: "Rondva",
