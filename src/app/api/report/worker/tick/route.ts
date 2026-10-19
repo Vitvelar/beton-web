@@ -11,6 +11,7 @@ import {
 } from "@/lib/report/shared";
 import { reportCopy, reportLocaleOf } from "@/lib/report/i18n";
 import { resolveBranding } from "@/lib/report/branding";
+import { enqueueReportFailure } from "@/lib/ops/alerts";
 
 // Background PDF render worker, in-process. Pinged by Supabase pg_cron (and any
 // best-effort kick) — drains the report_jobs queue, rendering the canonical
@@ -178,6 +179,13 @@ async function processJob(
         .update({ status: "error", report_error: msg, updated_at: new Date().toISOString() })
         .eq("id", inspectionId);
       if (inspFailErr) console.error(`[worker] job=${job.id} inspections error-merking mistókst: ${inspFailErr.message}`);
+      // P6: viðvörun á rondva@ (í biðröð; /api/ops/alerts/drain sendir). Kastar aldrei.
+      await enqueueReportFailure(svc, {
+        inspectionId,
+        jobId: job.id,
+        stage: `pdf_render (giveUp after ${job.attempts ?? 0} attempts)`,
+        error: msg,
+      });
     } else {
       // Re-queue for another pass.
       const { error: requeueErr } = await svc
