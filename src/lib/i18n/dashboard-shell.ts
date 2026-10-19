@@ -48,7 +48,6 @@ const is = {
     stillReviewing: "Við erum enn að fara yfir fyrirtækið. Síðast athugað kl. {time}.",
     checkFailed: "Ekki tókst að athuga stöðuna. Reyndu aftur eftir smástund.",
     navStalled: "Fyrirtækið var skráð en næsta síða opnaðist ekki. Reyndu aftur.",
-    signedInAs: "Skráð inn sem {email}",
   },
   emptyRondva: {
     title: "Engar skoðanir ennþá",
@@ -103,7 +102,6 @@ const en: DashboardShellCopy = {
     stillReviewing: "We're still reviewing your company. Last checked at {time}.",
     checkFailed: "We couldn't check the status. Please try again in a moment.",
     navStalled: "Your company was registered, but the next page didn't open. Please try again.",
-    signedInAs: "Signed in as {email}",
   },
   emptyRondva: {
     title: "No inspections yet",

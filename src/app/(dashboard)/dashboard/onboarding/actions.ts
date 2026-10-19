@@ -1,12 +1,14 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { checkDashboardAccess } from "@/lib/access";
+import { checkDashboardAccess, loginErrorFor } from "@/lib/access";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { dashboardCopy } from "@/lib/i18n/dashboard";
+import { shellCopy } from "@/lib/i18n/dashboard-shell";
 import {
   COMPANY_WEBSITE_KEY,
   ONBOARDING_PATH,
+  onboardingFor,
   registerOutcome,
   validateCompanyForm,
   type CompanyField,
@@ -89,4 +91,41 @@ export async function registerCompany(
 
   const access = await checkDashboardAccess(supabase, user.email, "rondva");
   return { next: access.allowed ? "/dashboard" : ONBOARDING_PATH };
+}
+
+export interface CheckStatusResult {
+  /** Hvert vafrinn fer næst (heil síðuhleðsla), t.d. /dashboard þegar fyrirtækið er samþykkt. */
+  next?: string;
+  /** Aðgangurinn bíður enn yfirferðar. */
+  reviewing?: true;
+  /** Ekki tókst að athuga (tenging/þjónn); texti á tungumáli stjórnborðsins. */
+  error?: string;
+}
+
+// „Athuga aftur“ á biðsíðunni: metur aðganginn upp á nýtt og svarar beint, svo hnappurinn
+// geti sýnt „enn í yfirferð — athugað kl. …“ í stað þess að hlaða sömu síðu þegjandi.
+// Rondva-aðgangur eingöngu; breytir engu í gagnagrunninum.
+export async function checkCompanyStatus(): Promise<CheckStatusResult> {
+  const locale = await getDashboardLocale();
+  const failed = { error: shellCopy(locale).onboarding.checkFailed };
+  if ((await getRequestBrand()) !== "rondva") return failed;
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { next: "/dashboard/login" };
+
+    const access = await checkDashboardAccess(supabase, user.email, "rondva");
+    if (access.allowed) return { next: "/dashboard" };
+    if (onboardingFor("rondva", access) === "pending") return { reviewing: true };
+    // Skráningarform (ekkert fyrirtæki enn) eða stöðvað/villa: síðan sjálf metur það.
+    return access.reason === "no_account" && access.canRegister
+      ? { next: ONBOARDING_PATH }
+      : { next: `/dashboard/login?error=${loginErrorFor(access)}` };
+  } catch (error) {
+    console.error("checkCompanyStatus failed:", error instanceof Error ? error.message : error);
+    return failed;
+  }
 }
