@@ -42,13 +42,13 @@ const marketing: Row[] = [
     name: "_fbp",
     provider: "Meta (Facebook / Instagram ads)",
     purpose:
-      "Lets us measure whether a Meta ad led to a waitlist signup and build audiences for our own ads. Set only if you accept marketing cookies.",
+      "Lets us measure whether a Meta ad brought you to rondva.com and build audiences for our own ads. Set only if you accept marketing cookies.",
     expiry: "90 days",
   },
   {
     name: "_gcl_au",
     provider: "Google Ads",
-    purpose: "Attributes a waitlist signup to a Google ad click. Set only if you accept marketing cookies.",
+    purpose: "Links your visit to rondva.com to the Google ad click that brought you here. Set only if you accept marketing cookies.",
     expiry: "90 days",
   },
 ];
@@ -168,7 +168,7 @@ export default function RondvaCookiesPage() {
               </section>
 
               <div className="mt-16 flex flex-wrap items-center gap-x-6 text-sm text-muted">
-                <p className="py-2">Last revised 21 September 2026.</p>
+                <p className="py-2">Last revised 20 October 2026.</p>
                 <Link href="/" className={rvTapLink}>
                   Back to the front page
                 </Link>
