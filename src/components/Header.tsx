@@ -48,7 +48,7 @@ export function Header() {
     >
       <nav className="px-6 lg:px-14" aria-label="Aðalvalmynd">
         <div className="mx-auto max-w-[1280px]">
-          <div className="flex h-16 items-center justify-between md:h-24">
+          <div className="flex h-18 items-center justify-between md:h-24">
             <Link href="/" className="flex items-center" aria-label="Beton ehf. — forsíða">
               <Image
                 src="/images/beton-logo.webp"
@@ -56,7 +56,7 @@ export function Header() {
                 width={264}
                 height={96}
                 priority
-                className="-ml-2 h-11 w-auto md:-ml-4 md:h-22"
+                className="-ml-3 h-16 w-auto md:-ml-4 md:h-22"
               />
             </Link>
 
