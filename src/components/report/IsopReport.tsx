@@ -110,7 +110,6 @@ const SECTION = "px-8 py-8 border-t border-concrete print:border-0 print:break-b
 const SECTION_FLOW = "px-8 py-8 border-t border-concrete print:border-0 print:mt-4";
 const SAFETY_COLOR = { color: "#8a1c1c", bg: "#f6e3e3" };
 const NEUTRAL_COLOR = "#8a8278";
-const CATEGORY_ORDER: DeficiencyCategory[] = ["safety", "major", "repair"];
 const NO_DEFICIENCIES = "No deficiencies were recorded by the inspector.";
 
 export function IsopReport({
@@ -244,7 +243,7 @@ export function IsopReport({
             {insp.attendees?.length > 0 ? <Row label="Present" value={insp.attendees.join(", ")} /> : null}
             {conditions.agreement_ref?.trim() ? <Row label="Agreement reference" value={conditions.agreement_ref.trim()} /> : null}
             <Row label="Inspector" value={inspectorName} />
-            {qualificationsText ? <Row label="License / certification" value={qualificationsText} /> : null}
+            {qualificationsText ? <Row label="License / qualifications" value={qualificationsText} /> : null}
             <Row label="Company" value={brand.name} />
           </tbody>
         </table>
@@ -490,7 +489,7 @@ export function IsopReport({
                           return (
                             <div
                               key={obs.id}
-                              className="rounded-lg p-4 border-l-4 bg-white shadow-[0_0_2px_rgba(0,0,0,0.04)]"
+                              className="rounded-lg p-4 border-l-4 bg-white shadow-[0_0_2px_rgba(0,0,0,0.04)] print:break-inside-avoid"
                               style={{ borderLeftColor: colorOf(badge).color }}
                             >
                               <div className="flex items-baseline gap-2 flex-wrap mb-1 rpt-obs-title">
@@ -525,7 +524,7 @@ export function IsopReport({
                           );
                         })}
                       </div>
-                    ) : (
+                    ) : row?.status === "not_present" || row?.status === "not_inspected" ? null : (
                       <p className="text-sm text-fog italic">No observations were recorded.</p>
                     )}
                   </div>
@@ -558,6 +557,9 @@ export function IsopReport({
           <Para>No general limitations were recorded by the inspector.</Para>
         )}
         {limitedSystems.length > 0 ? (
+          <p className="text-xs text-fog mb-1">Limitations by system</p>
+        ) : null}
+        {limitedSystems.length > 0 ? (
           <ul className="list-disc pl-5 text-sm text-ink/80 mb-6">
             {limitedSystems.map((row) => (
               <li key={row.key}>
@@ -571,7 +573,7 @@ export function IsopReport({
         {/* LÖGFRÆÐILEG YFIRFERÐ + BANDARÍSKUR YFIRLESTUR: okkar eigin orð, ekki texti úr neinum staðli. */}
         <div className="space-y-2 text-sm text-ink/80 leading-relaxed">
           <p>
-            This was a visual inspection of the parts of the home that were accessible and safe to reach on the day of the
+            This was a visual inspection of the parts of the home that could be reached safely on the day of the
             inspection. The inspector does not open walls, move furniture or stored items, or take equipment apart.
           </p>
           <p>

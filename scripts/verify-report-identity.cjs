@@ -35,6 +35,14 @@ const GOLDEN = {
   'en-condition_1_3:web': '79c52f8aa82ac521f4f3f07066013e4b2f638289898a5529c99fba894699511e',
 };
 
+// isop-golden (nýtt snið, vef PR W2): markup tilbúnu sýnisskoðunarinnar (scripts/isop-sample/), reiknað þegar sniðið var
+// smíðað. EKKI hluti af 8 hash-unum hér að ofan — þeir eru óbreyttir. Breytist aðeins með meðvitaðri breytingu á sniðinu
+// (skráð í PR-lýsingu þeirrar breytingar).
+const GOLDEN_ISOP = {
+  'isop-us:pdf': '3f3d79ba07a380396d056449e473f9deaf2ac35ba5c7ca684713ffc3e5bc64f7',
+  'isop-us:web': 'a1b10c01d3ed778f6c726448d051f853f8fdaf2f518c66ed442f9fbaf4bb2063',
+};
+
 const sha = s => crypto.createHash('sha256').update(s, 'utf8').digest('hex');
 
 // ── Tilbúin gögn ────────────────────────────────────────────────────────────
@@ -175,6 +183,21 @@ async function main() {
   const changed = Object.keys(hashes).filter(k => hashes[k] !== GOLDEN[k]);
   assert.deepEqual(changed, [], `report markup changed for ${changed.join(', ')} — compare ${output}/*.html with the same files rendered on origin/main`);
   console.log(`PASS report markup identical to origin/main golden for ${Object.keys(hashes).length} renders: ${Object.keys(FIXTURES).join(', ')} × (pdf=1, web)`);
+
+  // isop-sniðið (nýtt): eigin golden; engin áhrif á hash-in að ofan.
+  {
+    const { buildIsopSampleRecord } = require('./isop-sample/sample-inspection.cjs');
+    const opts = { dashboardLocale: 'en', brand: 'rondva' };
+    const isop = {
+      'isop-us:pdf': await renderReportMarkup(buildIsopSampleRecord(), { pdf: true, ...opts }),
+      'isop-us:web': await renderReportMarkup(buildIsopSampleRecord(), { pdf: false, ...opts }),
+    };
+    const isopHashes = Object.fromEntries(Object.entries(isop).map(([k, v]) => [k, sha(v)]));
+    for (const [k, v] of Object.entries(isop)) fs.writeFileSync(path.join(output, `${k.replace(':', '.')}.html`), v);
+    if (process.env.REPORT_IDENTITY_PRINT === '1') console.log(JSON.stringify(isopHashes, null, 2));
+    assert.deepEqual(isopHashes, GOLDEN_ISOP, 'isop sample markup changed — compare ' + output + '/isop-us.*.html (REPORT_IDENTITY_PRINT=1 prints the hashes)');
+    console.log('PASS isop golden: sample report markup (pdf=1, web) unchanged');
+  }
 
   // nz_terms (NZ-matsorð) á venjulegu sniði: aðeins heitin breytast, ekkert golden.
   const nzRecord = JSON.parse(JSON.stringify(FIXTURES['en-standard']));
