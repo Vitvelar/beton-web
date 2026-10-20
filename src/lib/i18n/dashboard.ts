@@ -131,7 +131,7 @@ const is = {
   // Birtingarheiti athugasemdaflokka. Íslenska birtir geymda gildið sjálft.
   categories: {} as Record<string, string>,
   list: {
-    loadError: "Villa við að sækja skoðanir: {message}",
+    loadError: "Ekki tókst að sækja skoðanir.",
     emptyTitle: "Engar skoðanir fundust",
     emptyBody: "Skoðanir sem eru samstilltar úr appinu birtast hér.",
     title: "Skoðanir",
@@ -520,7 +520,7 @@ const en: DashboardCopy = {
     "Flísar": "Tiling",
   },
   list: {
-    loadError: "Could not load inspections: {message}",
+    loadError: "Could not load inspections.",
     emptyTitle: "No inspections yet",
     emptyBody: "Inspections synced from the app appear here.",
     title: "Inspections",

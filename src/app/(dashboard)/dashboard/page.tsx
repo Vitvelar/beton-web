@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "@/components/dashboard/StatusBadge";
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { RondvaDashboardEmpty } from "@/components/rondva/RondvaDashboardEmpty";
-import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
+import { dashboardCopy } from "@/lib/i18n/dashboard";
 import { shellCopy } from "@/lib/i18n/dashboard-shell";
 import type { InspectionStatus } from "@/lib/supabase/types";
 
@@ -37,11 +37,10 @@ export default async function DashboardPage() {
     .order("inspection_date", { ascending: false });
 
   if (error) {
-    return (
-      <div role="alert" className="rounded-xl border border-danger bg-danger-tint p-6 text-danger">
-        {fill(t.loadError, { message: error.message })}
-      </div>
-    );
+    // Hrá villa úr gagnagrunni birtist aldrei notanda; hún fer í loggann og síðan sýnir
+    // villuskjá stjórnborðsins (dashboard/error.tsx) með „Reyna aftur“.
+    console.error("dashboard list load failed:", error.message);
+    throw new Error(t.loadError);
   }
 
   if (!inspections || inspections.length === 0) {
