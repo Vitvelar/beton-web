@@ -92,19 +92,7 @@ async function quietly(fn) {
   assert.equal(sent.length, 0);
   console.log('PASS honeypot is silently dropped; invalid input → 400; neither sends');
 
-  // Biðlisti: skráning tekst þótt tilkynningarpóstur bregðist, en bilunin er loggð.
-  process.env.RESEND_FROM = 'Rondva <noreply@example.com>';
-  let inserted = null;
-  const waitlistMocks = {
-    ...mocks,
-    '@/lib/supabase/service': { createServiceClient: () => ({ from: () => ({ insert: async (row) => { inserted = row; return { error: null }; } }) }) },
-  };
-  const waitlist = load('src/app/api/waitlist/route.ts', waitlistMocks);
-  sent.length = 0; nextResult = { data: null, error: { name: 'application_error', message: 'down' } };
-  const wl = await quietly(() => waitlist.POST(post({ email: 'Someone@Example.com', country: 'United Kingdom', website: '' })));
-  assert.equal(wl.result.status, 200);
-  assert.equal(inserted.email, 'someone@example.com');
-  assert.equal(sent.length, 1);
-  assert.ok(wl.logged.some((l) => l.includes('Waitlist notification email failed')));
-  console.log('PASS waitlist signup is saved even if the notification fails, and the failure is logged');
+  // Biðlistinn lokaði við útgáfuna 2026-10-19 (0 skráningar): /api/waitlist er farið.
+  assert.ok(!fs.existsSync(path.join(ROOT, 'src/app/api/waitlist')), 'biðlista-API á að vera farið');
+  console.log('PASS waitlist endpoint removed (closed at launch)');
 })().catch((e) => { console.error(e); process.exitCode = 1; });
