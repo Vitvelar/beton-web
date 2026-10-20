@@ -9,6 +9,7 @@ import {
   dashboardCopy,
   type DashboardLocale,
 } from "@/lib/i18n/dashboard";
+import { field, fieldError, fieldHelp, fieldLabel } from "@/lib/ui";
 
 // Tungumálaval á stillingasíðunni (aðeins Rondva). Vistast í user_metadata og
 // gildir líka í appinu; síðan birtist strax aftur á valda málinu.
@@ -24,20 +25,22 @@ export function LanguageSetting({ locale }: { locale: DashboardLocale }) {
     setError(null);
     setSelected(next);
     startTransition(async () => {
-      const result = await setDashboardLocale(next);
-      if ("error" in result) {
-        setError(result.error);
+      try {
+        const result = await setDashboardLocale(next);
+        if ("error" in result) {
+          setError(result.error);
+          setSelected(locale);
+        } else router.refresh();
+      } catch {
+        setError(t.saveFailed);
         setSelected(locale);
-      } else router.refresh();
+      }
     });
   }
 
   return (
-    <div className="mb-6 rounded-xl border border-concrete bg-white p-6">
-      <label
-        htmlFor="dashboard_locale"
-        className="block text-xs font-mono uppercase tracking-wider text-fog mb-1.5"
-      >
+    <div className="mb-6 rounded-xl border border-concrete bg-surface p-6">
+      <label htmlFor="dashboard_locale" className={fieldLabel}>
         {t.title}
       </label>
       <select
@@ -45,7 +48,10 @@ export function LanguageSetting({ locale }: { locale: DashboardLocale }) {
         value={selected}
         disabled={isPending}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full max-w-xs rounded-md border border-concrete-dk bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none disabled:opacity-60"
+        aria-describedby={error ? "dashboard_locale_error" : "dashboard_locale_hint"}
+        aria-invalid={error ? true : undefined}
+        aria-busy={isPending}
+        className={field("box", "max-w-xs")}
       >
         {DASHBOARD_LOCALES.map((code) => (
           <option key={code} value={code} lang={code}>
@@ -53,8 +59,8 @@ export function LanguageSetting({ locale }: { locale: DashboardLocale }) {
           </option>
         ))}
       </select>
-      <p className="mt-1 text-xs text-fog">{t.hint}</p>
-      {error ? <p className="mt-2 text-sm text-sev-danger">{error}</p> : null}
+      <p id="dashboard_locale_hint" className={fieldHelp}>{t.hint}</p>
+      {error ? <p id="dashboard_locale_error" role="alert" className={fieldError}>{error}</p> : null}
     </div>
   );
 }
