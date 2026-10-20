@@ -356,12 +356,21 @@ export default async function ReportPage({
       isopRoomPhotos[room.slug] = dbRoom ? roomPhotos(dbRoom.id).map(toPhoto) : [];
       for (const obs of room.observations) isopObsPhotos[obs.id] = obsPhotos(obs.id).map(toPhoto);
     }
+    // ai_report_data.rooms hefur ekkert id (report-data.ts í edge er læst), en sérsniðin rými varpast á kerfi með
+    // isop.systems.room_map[<rými-id>]. id er því sótt úr rýmum skoðunarinnar eftir slug (sama id og edge/appið nota).
+    const isopReport: IsopReportInput = {
+      ...report,
+      rooms: report.rooms.map((room) => {
+        const own = (room as { id?: unknown }).id;
+        return typeof own === "string" && own ? room : { ...room, id: dbRooms.find((r) => r.slug === room.slug)?.id };
+      }),
+    };
     return (
       <div className="max-w-4xl mx-auto print:max-w-none">
         <style dangerouslySetInnerHTML={{ __html: reportPrintCss(isPdfMode) }} />
         <ReportNav id={id} ui={ui} />
         <IsopReport
-          report={report}
+          report={isopReport}
           brand={brand}
           inspectorName={inspectorName}
           qualifications={qualifications}

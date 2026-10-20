@@ -157,6 +157,24 @@ async function main() {
   for (const marker of defaultMarkers) assert.ok(!unknownHtml.includes(marker), `unknown stamp → default renderer (${marker})`);
   pass('isop stamp without an isop block, and unknown stamps, fall back to the default renderer');
 
+  // (h2) Sérsniðið rými: ai_report_data.rooms hefur ekkert id (edge report-data.ts læst) → id úr rýmum skoðunarinnar
+  //      eftir slug, svo room_map[<id>] varpi því á kerfi; óvarpað sérsniðið rými fer í Additional items.
+  const custom = clone(base);
+  const shed = { id: 'room-shed', name: 'Detached shed', slug: 'shed', sort_order: 99, ratings: {}, notes: '' };
+  const shedObs = { id: 'obs-shed-1', category: 'Wiring', title: 'Open junction box in the shed', description: 'd', suggestion: 's', severity: 'alvarleg' };
+  custom.rooms.push({ ...shed, observations: [{ ...shedObs, observation_number: null, sort_order: 0, photos: [] }], photos: [] });
+  const aiShed = { ...shed, observations: [{ ...shedObs, number: null }] }; delete aiShed.id;
+  custom.ai_report_data.rooms.push(aiShed);
+  const unmapped = textOf(article(await renderReportMarkup(custom, OPTS)));
+  assert.ok(unmapped.includes('Additional items'), 'unmapped custom room → Additional items');
+  custom.ai_report_data.isop.systems.room_map = { 'room-shed': 'electrical' };
+  const mappedLines = textOf(article(await renderReportMarkup(custom, OPTS)));
+  assert.ok(!mappedLines.includes('Additional items'), 'mapped custom room is not in Additional items');
+  const elec = mappedLines.slice(mappedLines.indexOf('7.'), mappedLines.indexOf('8.'));
+  assert.ok(elec.includes('Detached shed') && elec.includes('Open junction box in the shed'), 'mapped custom room is printed under Electrical');
+  assert.ok(mappedLines.includes('Inspected · 3 deficiencies'), 'Electrical deficiency count includes the mapped room');
+  pass('custom room without an id in ai_report_data: id from the inspection rooms by slug, so room_map places it in its system');
+
   // (j) settings.ts
   const settings = load('src/lib/report/settings.ts');
   const same = (a, b) => assert.deepEqual(JSON.parse(JSON.stringify(a)), b);
