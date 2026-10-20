@@ -19,8 +19,16 @@ export default function MainLayout({
 }>) {
   return (
     <BetonHtml gtmId={GTM_ID}>
+      <a
+        href="#content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:rounded-full focus:bg-ink focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-paper focus-visible:outline-accent-on-inverse"
+      >
+        Fara í efni
+      </a>
       <Header />
-      <main className="flex-1">{children}</main>
+      <main id="content" tabIndex={-1} className="flex-1 focus:outline-none">
+        {children}
+      </main>
       <Footer />
       <script
         type="application/ld+json"

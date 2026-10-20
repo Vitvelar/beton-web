@@ -2,13 +2,20 @@ import type { Metadata } from "next";
 import { COMPANY } from "@/lib/constants";
 
 // Sameiginleg Beton-metadata fyrir allar Beton-rótarútlitsskrár ((main),
-// (dashboard), (auth)). Flutt óbreytt úr gamla src/app/layout.tsx þegar
+// (dashboard)). Flutt óbreytt úr gamla src/app/layout.tsx þegar
 // Rondva fékk eigin rótarútlit.
+const OG_IMAGE = {
+  url: "/images/og-beton.jpg",
+  width: 1200,
+  height: 630,
+  alt: "Beton ehf. — Ástandsskoðun fasteigna á höfuðborgarsvæðinu",
+};
+
 export const betonMetadata: Metadata = {
   metadataBase: new URL("https://beton.is"),
   title: {
     default: "Beton ehf. | Ástandsskoðun fasteigna á höfuðborgarsvæðinu",
-    template: "Beton ehf. | %s",
+    template: "%s | Beton ehf.",
   },
   description:
     "Fagleg ástandsskoðun fasteigna á höfuðborgarsvæðinu. Beton ehf. veitir hlutlausa ráðgjöf fyrir kaupendur og seljendur. Hafnarfjörður, Ísland.",
@@ -20,21 +27,14 @@ export const betonMetadata: Metadata = {
     type: "website",
     siteName: "Beton ehf.",
     url: "https://beton.is",
-    images: [
-      {
-        url: "/images/hero.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Beton ehf. — Ástandsskoðun fasteigna",
-      },
-    ],
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: "Beton ehf. — Ástandsskoðun fasteigna",
     description:
       "Fagleg og hlutlaus ástandsskoðun fasteigna á höfuðborgarsvæðinu.",
-    images: ["/images/hero.jpg"],
+    images: [OG_IMAGE.url],
   },
   alternates: {
     canonical: "https://beton.is",
@@ -48,6 +48,44 @@ export const betonMetadata: Metadata = {
     apple: "/apple-icon.png",
   },
 };
+
+/**
+ * Metadata fyrir undirsíðu á beton.is: titill, lýsing, canonical og
+ * openGraph/twitter með titli, lýsingu og slóð síðunnar sjálfrar (annars erfa
+ * allar síður forsíðuspjaldið). Titillinn fær „| Beton ehf." úr titilsniðmátinu.
+ */
+export function betonPageMetadata({
+  title,
+  description,
+  path,
+}: {
+  title: string;
+  description: string;
+  path: string;
+}): Metadata {
+  const url = `https://beton.is${path}`;
+  const fullTitle = `${title} | Beton ehf.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: fullTitle,
+      description,
+      locale: "is_IS",
+      type: "website",
+      siteName: "Beton ehf.",
+      url,
+      images: [OG_IMAGE],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: fullTitle,
+      description,
+      images: [OG_IMAGE.url],
+    },
+  };
+}
 
 export const betonLocalBusinessJsonLd = {
   "@context": "https://schema.org",

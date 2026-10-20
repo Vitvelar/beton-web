@@ -24,15 +24,18 @@ const { load, renderReportMarkup, reportHtml, applicationCss, serveReports, load
 
 // Golden: reiknað á origin/main 2370380 (src óbreytt í PR0). Uppfærist AÐEINS með
 // meðvitaðri, skráðri breytingu (sjá PR-lýsingu þeirrar breytingar).
+// 2026-10-19 (UX-umferð W3a): hnapparöðin EFST á skýrslusíðunni (ReportNav, utan
+// <article>) fékk nýja hnappa/skilaboð; <article> og allt sem á eftir kemur er bæti fyrir
+// bæti eins og á origin/claude/ux-pass (borið saman við hreint tré).
 const GOLDEN = {
-  'beton-is-standard:pdf': '0a5895fe107a72715a7db2c5263e344d252b0a28406fa8b18b2acb704edbc224',
-  'beton-is-standard:web': '421cce1f54fafb714e17b36217e9885c556780d664658e994b1246104ed6fa3e',
-  'vitvelar-is:pdf': '323a8e28ac0f744a0c356b3b7686764d708688c6f037bff58cafeb274028cf0e',
-  'vitvelar-is:web': 'ee69052328ffb76122bb34f67b7da631404de854eac163e60528b4e8a9f3f6fc',
-  'en-standard:pdf': '6f1fb7589295c172710cad2def3ed07d8d989dbc5e87a90e7eabca22e8c135cd',
-  'en-standard:web': '48372f7840563aef0ac5968e24a66db6ed95a1a42ca686205ee27f084eb99aec',
-  'en-condition_1_3:pdf': '22d0ac6dbf06f1fdce71c4056f0fd00003f411e59f74ccd6343367c1436ee5aa',
-  'en-condition_1_3:web': '79c52f8aa82ac521f4f3f07066013e4b2f638289898a5529c99fba894699511e',
+  'beton-is-standard:pdf': '935163321eaa1a012b9bd46bbc34f9401caa4190a413c78947d5a2e0d767c591',
+  'beton-is-standard:web': '2057822a7ddb7308436292fbb862c24c2e62de592ab08dfcaa391d5d63e376b4',
+  'vitvelar-is:pdf': '19f8aab5f90a0259340b4db4e4b49ba8c90561c022e24612fc8bac513520f7ed',
+  'vitvelar-is:web': 'df34b4bf23ccee29137daea61a0e1ee4964106f238b3a91b10ece1fa8de812bc',
+  'en-standard:pdf': '18f44223f56f5cb78a5eca93688ffae456c7f51e858993434c03375a8cd12d0d',
+  'en-standard:web': '13f8df529a43d7f0a7a47cb1f6cc4cb6d2a35cae4ef70b874ba21053a85f2f3a',
+  'en-condition_1_3:pdf': 'b5a586f2e414e628559b1e554c2cee98acaea2f5dc4b588bf8c56336e2cc6db2',
+  'en-condition_1_3:web': '0330e3be3aa2b53cf76c94a4ed12a0d03b743c4654496e90819c0fe7355a5242',
 };
 
 const sha = s => crypto.createHash('sha256').update(s, 'utf8').digest('hex');

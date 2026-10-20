@@ -12,7 +12,14 @@ import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // „local": aðeins þessi vafri skráist út. Sjálfgefið („global") ógildir líka
+  // innskráninguna í iPhone-appinu (ákvörðun eiganda 2026-10-19).
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch (e) {
+    // Kökurnar eru hreinsaðar hér að neðan hvort sem er; notandinn kemst alltaf út.
+    console.error("signOut failed:", e);
+  }
 
   const cookieStore = await cookies();
   for (const cookie of cookieStore.getAll()) {

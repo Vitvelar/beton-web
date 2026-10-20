@@ -8,24 +8,47 @@ import { applyNzs4306Edit, type Nzs4306Conditions, type Nzs4306Edit, type Nzs430
 import { getDashboardLocale, getRequestBrand } from "@/lib/request-brand";
 import { dashboardCopy, localeForBrand, USER_LOCALE_KEY, type DashboardCopy } from "@/lib/i18n/dashboard";
 
+const OBSERVATION_SEVERITIES = new Set(["athugasemd", "alvarleg", "mjog_alvarleg"]);
+
+// Allt sem ritillinn sendir — tómir reitir koma sem null og hreinsa gildið í grunninum
+// (áður var `"" || undefined` sleppt, svo ekki var hægt að tæma lýsingu/tillögu/flokk).
 export async function updateObservation(
   obsId: string,
   data: {
-    title?: string;
-    description?: string;
-    suggestion?: string;
-    severity?: string;
-    category?: string;
+    title: string;
+    description: string | null;
+    suggestion: string | null;
+    severity: string;
+    category: string | null;
   }
-) {
+): Promise<{ success: true } | { error: string; field?: "title" }> {
+  const copy = await actionCopy();
+  const title = (data.title ?? "").trim();
+  if (!title) return { error: copy.observation.titleRequired, field: "title" };
+  if (!OBSERVATION_SEVERITIES.has(data.severity)) return { error: copy.actions.invalidSeverity };
+
+  const clean = (value: string | null | undefined) => (value ?? "").trim() || null;
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("observations")
-    .update(data)
-    .eq("id", obsId);
+    .update({
+      title,
+      description: clean(data.description),
+      suggestion: clean(data.suggestion),
+      severity: data.severity,
+      category: clean(data.category),
+    })
+    .eq("id", obsId)
+    .select("id");
 
   if (error) {
-    return { error: error.message };
+    console.error("updateObservation failed:", error.message);
+    return { error: copy.observation.saveFailed };
+  }
+  // RLS getur látið uppfærslu fara í gegn án þess að nokkur lína breytist.
+  if (!updated || updated.length === 0) {
+    console.error("updateObservation: no row updated", obsId);
+    return { error: copy.observation.saveFailed };
   }
 
   return { success: true };
@@ -40,16 +63,31 @@ async function actionCopy() {
 // fyrirtæki, tungumál og matskerfi skoðunarinnar, skýrsluinneign og PDF-biðröð á einum
 // stað. Beton-promptið þar er bæti fyrir bæti það sem vefurinn notaði áður (ákvörðun
 // eiganda 2026-09-27; gamla vef-promptið skrifaði „Beton ehf." í skýrslur annarra).
-export async function generateReport(inspectionId: string) {
+//
+// confirmAdditionalCredit: edge-fallið krefst staðfestingar (402
+// additional_credit_confirmation_required) áður en endurgerð umfram innifaldar endurgerðir
+// notar skýrsluinneign. Vefurinn sendir `confirm_additional_credit: true` AÐEINS eftir að
+// notandinn hefur sjálfur samþykkt það í glugga; inneignarreglurnar sjálfar eru í edge-fallinu
+// og gagnagrunninum og breytast ekki hér.
+export async function generateReport(
+  inspectionId: string,
+  options?: { confirmAdditionalCredit?: boolean }
+): Promise<
+  | { status: "success"; ai_summary: string }
+  | { error: string; code?: string }
+> {
   const copy = await actionCopy();
   const supabase = await createClient();
   const { data, error } = await supabase.functions.invoke("generate-report", {
-    body: { inspection_id: inspectionId },
+    body: {
+      inspection_id: inspectionId,
+      ...(options?.confirmAdditionalCredit === true ? { confirm_additional_credit: true } : {}),
+    },
   });
   if (error) {
     const code = await edgeErrorCode(error);
     console.error("generate-report failed:", code ?? error.message);
-    return { error: edgeErrorText(copy, code) };
+    return { error: edgeErrorText(copy, code), ...(code ? { code } : {}) };
   }
 
   revalidatePath(`/dashboard/${inspectionId}`);
@@ -98,6 +136,9 @@ function edgeErrorText(copy: DashboardCopy, code: string | null): string {
 // speglar athugasemdatexta í observations-töfluna (svo appið/ritillinn sýni það
 // sama) og setur PDF-render í biðröð ÁN þess að snerta AI.
 
+// Villa sem inniheldur þegar þýddan texta fyrir notandann (annað er aldrei sýnt óbreytt).
+class UserFacingError extends Error {}
+
 export interface ReportTextEdit {
   introduction: string;
   property_description: string;
@@ -140,8 +181,12 @@ export async function updateReportText(
     .eq("id", inspectionId)
     .maybeSingle();
 
-  if (fetchError || !inspection) {
-    return { error: fetchError?.message ?? t.inspectionNotFound };
+  if (fetchError) {
+    console.error("updateReportText fetch failed:", fetchError.message);
+    return { error: t.reportUpdateFailed };
+  }
+  if (!inspection) {
+    return { error: t.inspectionNotFound };
   }
   if (!inspection.ai_report_data) {
     return { error: t.noAiReport };
@@ -194,8 +239,10 @@ export async function updateReportText(
           .from("observations")
           .update({ ...changed, updated_at: new Date().toISOString() })
           .eq("id", obs.id);
-        if (error)
-          throw new Error(t.observationUpdateFailed(error.message));
+        if (error) {
+          console.error("updateReportText observation mirror failed:", error.message);
+          throw new UserFacingError(t.observationUpdateFailed);
+        }
       }
     }
 
@@ -248,8 +295,10 @@ export async function updateReportText(
       .eq("id", inspectionId)
       .select("ai_report_data")
       .maybeSingle();
-    if (inspErr)
-      throw new Error(t.reportUpdateFailed(inspErr.message));
+    if (inspErr) {
+      console.error("updateReportText snapshot update failed:", inspErr.message);
+      throw new UserFacingError(t.reportUpdateFailed);
+    }
     if (saved?.ai_report_data) {
       committedToken = snapshotToken(saved.ai_report_data);
     }
@@ -273,8 +322,10 @@ export async function updateReportText(
           queuedFresh = true;
           break;
         }
-        if (jobErr.code !== "23505")
-          throw new Error(t.queueFailed(jobErr.message));
+        if (jobErr.code !== "23505") {
+          console.error("updateReportText queue insert failed:", jobErr.message);
+          throw new UserFacingError(t.queueFailed);
+        }
         const { data: active, error: activeErr } = await supabase
           .from("report_jobs")
           .select("status")
@@ -311,7 +362,8 @@ export async function updateReportText(
       if (rbErr)
         console.error("updateReportText status rollback failed:", rbErr.message);
     }
-    const msg = e instanceof Error ? e.message : t.unknownError;
+    // Aðeins okkar eigin (þýddu) skilaboð ná til notandans — aldrei texti úr Supabase eða fetch.
+    const msg = e instanceof UserFacingError ? e.message : t.reportUpdateFailed;
     // committedToken fylgir með ef snapshot-skrifið var komið í gegn (villan
     // varð t.d. í biðraðarinnsetningu) — annars situr ritillinn með úrelt token
     // og hver einasta endurvistun stoppar á villandi "breytt annars staðar".
@@ -341,7 +393,11 @@ export async function getReportProgress(inspectionId: string): Promise<import("@
   if (error) throw new Error(t.statusFetchFailed);
   if (!data) return { state: "error", detail: t.inspectionGone };
   if (data.status === "report_ready" && data.report_url) return { state: "ready" };
-  if (data.status === "error") return { state: "error", detail: data.report_error || t.reportFailed };
+  if (data.status === "error") {
+    // report_error er innra villuskilaboð workersins — skráð, ekki sýnt notandanum.
+    if (data.report_error) console.error("report job failed:", data.report_error);
+    return { state: "error", detail: t.reportFailed };
+  }
   if (data.status === "generating" || data.status === "rendering_pdf") return { state: "pending" };
   return { state: "error", detail: t.noPdfForStatus };
 }
@@ -376,7 +432,8 @@ export async function sendToDrive(inspectionId: string) {
     .download(inspection.report_url);
 
   if (downloadError || !fileData) {
-    return { error: t.reportDownloadFailed(downloadError?.message) };
+    console.error("sendToDrive download failed:", downloadError?.message);
+    return { error: t.reportDownloadFailed };
   }
 
   const buffer = await fileData.arrayBuffer();
@@ -394,8 +451,10 @@ export async function sendToDrive(inspectionId: string) {
     },
   });
 
-  if (error) {
-    return { error: error.message };
+  const edgeError = (data as { error?: unknown } | null)?.error;
+  if (error || edgeError) {
+    console.error("upload-to-drive failed:", error?.message ?? edgeError);
+    return { error: t.driveFailed };
   }
 
   revalidatePath(`/dashboard/${inspectionId}`);
