@@ -178,7 +178,7 @@ const ISOP = {
   disclosure: { inspector: 'Jordan Sample', company: 'Example Home Inspections LLC', model: 'none (hand-written layout sample, no AI)', generated_at: '2026-10-14T01:30:00Z' },
 };
 
-function buildIsopSampleRecord() {
+function buildIsopSampleRecord(variant = 'en-US') {
   const inspection = {
     address: '123 Example Street', postal_code: '60000', municipality: 'Anytown', fastanumer: '',
     customer_name: 'A. Sample Buyer', inspection_date: '2026-10-13', weather: 'Dry, 52 °F', attendees: ['A. Sample Buyer', 'Buyer’s agent'],
@@ -201,7 +201,7 @@ function buildIsopSampleRecord() {
       photos: o.photoLabels.map((label, k) => photo(`${o.id}-p${k + 1}`, label, { obsId: o.id, sort: k })),
     })),
   }));
-  return {
+  const record = {
     id: INSPECTION_ID, local_id: `local-${INSPECTION_ID}`, ...inspection, ai_report_data, ai_summary: AI_SUMMARY.conclusion.split('.')[0],
     ai_cost_usd: 0, ai_model: null, report_generated_at: '2026-10-14T02:00:00Z',
     inspectors: {
@@ -212,6 +212,35 @@ function buildIsopSampleRecord() {
     },
     rooms: dbRooms,
   };
+  return variant === 'en-CA' ? toCanada(record) : record;
+}
+
+
+/** Nákvæm heiðarleg merking sýnisins: á forsíðu og í hverjum fæti sýnis-PDF (scripts/isop-sample/render.cjs). */
+const SAMPLE_NOTICE = 'Sample report. Made-up property and findings to show the layout; not a real inspection and not AI output from a real job.';
+
+// en-CA afbrigði sama sýnis: Ontario-heimilisfang og póstnúmer, °C, m² fyrst, dagsetningar og stafsetning samveldis.
+// Skáldað eins og US-sýnið; engin raunveruleg eign, leyfi eða fyrirtæki.
+const CA_REPLACEMENTS = [
+  ['Anytown, IL', 'Anytown, ON'],
+  ['10/13/2026', '2026-10-13'],
+  ['10/12/2026', '2026-10-12'],
+  ['Dry, 52 °F', 'Dry, 11 °C'],
+  ['below 60 °F', 'below 15 °C'],
+  ['IL Home Inspector License 450.000000 (sample)', 'Ontario sample registration 000000 (sample)'],
+  ['Discoloration', 'Discolouration'],
+  ['discolored', 'discoloured'],
+];
+function toCanada(record) {
+  let json = JSON.stringify(record);
+  for (const [from, to] of CA_REPLACEMENTS) json = json.split(from).join(to);
+  const out = JSON.parse(json);
+  const d = out.ai_report_data;
+  d.english_variant = 'en-CA';
+  d.inspection.postal_code = 'A1A 1A1';
+  d.isop.conditions.state = 'ON';
+  d.inspection.property_data.isop = d.isop.conditions;
+  return out;
 }
 
 /** Staðgengilsmyndir fyrir allar myndir sýnisins: slóð → { type, body }. */
@@ -227,4 +256,4 @@ function samplePhotos(record) {
   return out;
 }
 
-module.exports = { buildIsopSampleRecord, samplePhotos, INSPECTION_ID };
+module.exports = { buildIsopSampleRecord, samplePhotos, INSPECTION_ID, SAMPLE_NOTICE };
