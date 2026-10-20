@@ -79,10 +79,25 @@ for (const json of ['status: 401', 'status: 404', 'status: 500', 'status: 202'])
 pass('PDF route: browsers are redirected with ?pdf=…, Bearer callers keep the JSON responses');
 
 // Villumörk til staðar.
-for (const f of ['error.tsx', 'not-found.tsx', 'loading.tsx', '[...rest]/page.tsx', 'settings/loading.tsx', '[id]/loading.tsx', '[id]/observation/[obsId]/loading.tsx', '[id]/report/edit/loading.tsx']) {
+for (const f of ['error.tsx', 'not-found.tsx', '[...rest]/page.tsx', 'settings/loading.tsx', '[id]/observation/[obsId]/loading.tsx', '[id]/report/edit/loading.tsx']) {
   assert.ok(fs.existsSync(path.join(root, 'src/app/(dashboard)/dashboard', f)), f);
 }
 assert.ok(fs.existsSync(path.join(root, 'src/app/global-error.tsx')));
-pass('error, not-found, catch-all, loading and global-error boundaries exist');
+pass('error, not-found, catch-all, leaf loading and global-error boundaries exist');
+
+
+// ---- Engin loading.tsx sem vefur /report: PDF-workerinn rendar með JavaScript slökkt, og
+// Suspense-straumur skilar þá skýrslunni í <div hidden> → tómt PDF með beinagrind (dæmt 2026-10-20).
+{
+  const fs = require("fs");
+  const path = require("path");
+  const root = path.join(__dirname, "..");
+  for (const dir of ["src/app/(dashboard)", "src/app/(dashboard)/dashboard", "src/app/(dashboard)/dashboard/[id]", "src/app/(dashboard)/dashboard/[id]/report"]) {
+    if (fs.existsSync(path.join(root, dir, "loading.tsx"))) {
+      throw new Error(`${dir}/loading.tsx vefur skýrslusíðuna í Suspense — PDF-workerinn myndi rendra beinagrind`);
+    }
+  }
+  pass("no loading.tsx wraps the report page (worker renders without JS)");
+}
 
 console.log(`${n} dashboard-core checks passed.`);
