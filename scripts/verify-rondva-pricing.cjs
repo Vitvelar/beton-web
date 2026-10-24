@@ -21,6 +21,20 @@ const stripComments = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s
 
 // Hleður .ts-einingu (með @/-samheitum og ./-innflutningi) án byggingar.
 const cache = new Map();
+// process.env í vm-samhenginu: tómt nema prófið setji það (ISOP_ENABLED óstillt = sjálfgefið í framleiðslu).
+let vmEnv = {};
+function loadWithEnv(rel, env) {
+  const saved = [new Map(cache), vmEnv];
+  cache.clear();
+  vmEnv = env;
+  try {
+    return load(rel);
+  } finally {
+    cache.clear();
+    for (const [k, v] of saved[0]) cache.set(k, v);
+    vmEnv = saved[1];
+  }
+}
 function load(rel) {
   if (cache.has(rel)) return cache.get(rel);
   const mod = { exports: {} };
@@ -39,6 +53,7 @@ function load(rel) {
     Number,
     Array,
     Object,
+    process: { get env() { return vmEnv; } },
     require: (id) => (resolve(id) ? load(resolve(id)) : require(id)),
   });
   cache.set(rel, mod.exports);
@@ -513,45 +528,87 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
       assert.match(rep, /\.slice\(0, 10\)/, 'action list = 10 most serious');
     }
 
-    // f. US og CA: tíu kerfi í réttri röð (isop-hönnun §2.1), staða á kerfi, deficiencies-tafla, ekkert „state form“-loforð.
+    // f. US og CA: sniðtextinn fer eftir isopEnabled() við bygginguna. Sjálfgefið (ISOP_ENABLED óstillt, eins og í
+    //    framleiðslu í dag): almenna enska skýrslan. ISOP_ENABLED=1: isop-textinn sem VAL í stillingum.
+    const systems = ['Roof', 'Exterior', 'Basement, Foundation, Crawlspace & Structure', 'Heating', 'Cooling', 'Plumbing', 'Electrical', 'Fireplace', 'Attic, Insulation & Ventilation', 'Doors, Windows & Interior'];
+    const isopWords = /Summary of deficiencies|Not inspected|Not present|Repair or replace|Major defect|Maintenance|ten systems|by system|Home inspection format/;
+    assert.deepEqual(plain(cm.ISOP_SYSTEMS), systems);
+    assert.deepEqual(plain(cm.ISOP_COPY).systems, systems);
     {
-      const systems = ['Roof', 'Exterior', 'Basement, Foundation, Crawlspace & Structure', 'Heating', 'Cooling', 'Plumbing', 'Electrical', 'Fireplace', 'Attic, Insulation & Ventilation', 'Doors, Windows & Interior'];
-      assert.deepEqual(plain(cm.ISOP_SYSTEMS), systems);
-      const copy = plain(cm.ISOP_COPY);
-      assert.deepEqual(copy.systems, systems);
-      for (const cc of ['us', 'ca']) {
-        const c = byCode[cc];
-        assert.deepEqual(c.format.items, copy.items, `${cc} format items are the isop copy`);
-        const sysItem = c.format.items.find((i) => i.title === 'Ten systems, in a fixed order');
-        let at = -1;
-        for (const s of systems) {
-          const i = sysItem.body.indexOf(s, at + 1);
-          assert.ok(i > at, `${cc}: system "${s}" in order`);
-          at = i;
-        }
-        assert.ok(sysItem.body.includes('Additional items'));
-        const all = JSON.stringify(c);
-        for (const s of ['Summary of deficiencies', 'Inspected', 'Not inspected', 'Not present', 'Maintenance', 'Repair or replace', 'Major defect', 'not written by the AI', 'Use of AI in this report']) assert.ok(all.includes(s), `${cc} mentions ${s}`);
-        assert.ok(/does not replace any (state-required form|form your province requires)/.test(c.formatLine), `${cc}: does not replace a state-required form`);
-        assert.ok(!c.screen, `${cc}: no phone figure (the screenshots show NZ content)`);
+      const isopSrc = read('src/lib/report/isop.ts');
+      assert.match(isopSrc, /export function isopEnabled\(env: Record<string, string \| undefined> = process\.env\): boolean \{\s*return env\.ISOP_ENABLED === "1";/, 'isopEnabled() is on only for ISOP_ENABLED=1');
+      assert.match(dataSrc, /import \{ isopEnabled \} from "@\/lib\/report\/isop";/);
+      assert.match(dataSrc, /const ISOP_ON = isopEnabled\(\);/);
+      assert.match(dataSrc, /redeploy/, 'static pages: an env change needs a redeploy (comment)');
+      // Sjálfgefið: engin isop-orð á /us og /ca, almenna skýrslan í amerískri/kanadískri ensku með AU-orðum.
+      const us = byCode.us;
+      const ca = byCode.ca;
+      assert.equal(us.lead, "Rondva is an iPhone app that drafts home inspection reports from the inspector's photos, notes and ratings. The inspector reviews and issues the report under their own company name.");
+      assert.equal(ca.lead, us.lead);
+      assert.equal(us.formatLine, "The report is Rondva's general English report, in American English, with findings rated Minor, Serious or Very serious. It does not replace any state-required form.");
+      assert.equal(ca.formatLine, "The report is Rondva's general English report, in Canadian English, with findings rated Minor, Serious or Very serious. It does not replace any form your province requires. Reports are in English only.");
+      for (const c of [us, ca]) {
+        assert.ok(!isopWords.test(JSON.stringify(c)), `${c.code} (flag off): no isop wording anywhere on the page data`);
+        assert.deepEqual(c.format.items.map((i) => i.title), plain(cm.AU).format.items.map((i) => i.title), `${c.code} (flag off): same general report items as AU`);
+        assert.equal(c.format.items[0].title, 'Minor, Serious and Very serious');
+        assert.equal(c.faq.find((f) => f.id === 'format').q, 'What does the report look like?');
+        assert.ok(/general English report/.test(c.faq.find((f) => f.id === 'format').a) && /Minor, Serious or Very serious/.test(c.faq.find((f) => f.id === 'format').a));
+        assert.ok(/^general English report in (American|Canadian) English with findings rated Minor, Serious or Very serious; /.test(c.llms));
+        assert.ok(!/ by system/.test(c.title + c.description + c.h1.before + c.h1.em), `${c.code}: title/description/H1 do not say "by system"`);
+        assert.equal(c.screen.src, '/rondva/screens/observation-nz.webp', `${c.code} (flag off): the AU observation screen is true here too`);
+        assert.equal(c.sample, null, `${c.code}: no sample link`);
       }
-      assert.ok(byCode.ca.formatLine.includes('Reports are in English only.'), 'CA: English reports only');
-      assert.ok(!/Minor, Serious|Very serious|condition rating/i.test(JSON.stringify([byCode.us, byCode.ca])), 'US/CA use the isop rating words, not the AU/UK ones');
-      // ISOP-textinn er allur í einum hlut með íslenskri athugasemd um að hann bíði eftir að isop sé í loftinu.
+      assert.ok(ca.formatLine.includes('Reports are in English only.'), 'CA: English reports only');
+      assert.ok(!/condition rating/i.test(JSON.stringify([us, ca])));
+      // ISOP-textinn er allur í einum hlut (ISOP_COPY) með íslenskri athugasemd: hvergi annars staðar í einingunni.
       assert.match(dataSrc, /\/\/ ATH: Allur US\/CA-sniðstextinn er í þessum eina hlut.*\n(?:\/\/.*\n)*export const ISOP_SYSTEMS/);
       assert.equal((dataSrc.match(/export const ISOP_COPY/g) || []).length, 1);
       {
-        const outside = dataSrc.slice(0, dataSrc.indexOf('export const ISOP_SYSTEMS')) + dataSrc.slice(dataSrc.indexOf('// ── Hjálparföll'));
-        for (const k of ['Summary of deficiencies', 'Repair or replace', 'Major defect', 'Not inspected']) assert.ok(!outside.includes(k), `"${k}" appears only in the ISOP object`);
+        const outside = dataSrc.slice(0, dataSrc.indexOf('export const ISOP_SYSTEMS')) + dataSrc.slice(dataSrc.indexOf('// US og CA velja sniðtexta'));
+        for (const k of ['Summary of deficiencies', 'Repair or replace', 'Major defect', 'Not inspected', 'Choose the Home inspection format']) assert.ok(!outside.includes(k), `"${k}" appears only in the ISOP object`);
       }
       for (const cc of ['au', 'uk', 'ie']) assert.ok(!/Summary of deficiencies|Not inspected|Repair or replace/.test(JSON.stringify(byCode[cc])), `${cc} has no isop wording`);
+
+      // ISOP_ENABLED=1 (annað vm-samhengi): isop-textinn, þar sem hann er VAL í stillingum.
+      const on = plain(loadWithEnv('src/lib/rondva-countries.ts', { ISOP_ENABLED: '1' }).COUNTRIES);
+      const onBy = Object.fromEntries(on.map((c) => [c.code, c]));
+      const off0 = plain(loadWithEnv('src/lib/rondva-countries.ts', {}).COUNTRIES);
+      assert.deepEqual(off0, COUNTRIES, 'ISOP_ENABLED unset = default build');
+      assert.deepEqual(plain(loadWithEnv('src/lib/rondva-countries.ts', { ISOP_ENABLED: '0' }).COUNTRIES), COUNTRIES, 'ISOP_ENABLED=0 = default build');
+      for (const cc of ['au', 'uk', 'ie']) assert.deepEqual(onBy[cc], byCode[cc], `${cc} is unchanged by ISOP_ENABLED`);
+      const copy = plain(cm.ISOP_COPY);
+      for (const cc of ['us', 'ca']) {
+        const c = onBy[cc];
+        assert.deepEqual(c.format.items, copy.items, `${cc} (ISOP_ENABLED=1) format items are the isop copy`);
+        const sysItem = c.format.items.find((i) => i.title === 'Ten systems, in a fixed order');
+        let at = -1;
+        for (const sys of systems) {
+          const i = sysItem.body.indexOf(sys, at + 1);
+          assert.ok(i > at, `${cc}: system "${sys}" in order`);
+          at = i;
+        }
+        assert.ok(sysItem.body.includes('Additional items'));
+        assert.ok(c.formatLine.startsWith('Choose the Home inspection format in Settings and the report has ten systems in a fixed order, a status for each system, and a summary of deficiencies at the front, built from your ratings.'), `${cc}: isop is a choice`);
+        assert.ok(/does not replace any (state-required form|form your province requires)/.test(c.formatLine), `${cc}: does not replace a state-required form`);
+        assert.ok(c.faq.find((f) => f.id === 'format').a.startsWith('If you choose the Home inspection format in Settings, it has ten systems'), `${cc}: FAQ says it is a choice`);
+        const all = JSON.stringify(c);
+        for (const w of ['Summary of deficiencies', 'Inspected', 'Not inspected', 'Not present', 'Maintenance', 'Repair or replace', 'Major defect', 'not written by the AI', 'Use of AI in this report', 'Choose the Home inspection format in Settings']) assert.ok(all.includes(w), `${cc} (ISOP_ENABLED=1) mentions ${w}`);
+        assert.ok(!c.screen, `${cc} (ISOP_ENABLED=1): no phone figure (the screen shows the general report words)`);
+        assert.equal(c.sample, null, `${cc}: no sample link`);
+        assert.ok(!/Minor, Serious|Very serious|condition rating/i.test(all), `${cc} (ISOP_ENABLED=1) uses the isop rating words`);
+        assert.ok(!/AI-generated|compliant/i.test(all));
+        assert.ok(/^the Home inspection format, chosen in Settings, has ten systems/.test(c.llms), `${cc}: llms line says it is a choice`);
+      }
+      assert.ok(onBy.ca.formatLine.includes('Reports are in English only.'), 'CA (ISOP_ENABLED=1): English only');
+      // Bannorð gilda líka um isop-textann (hann er í gagnaeiningunni sem er skönnuð í c.).
+      assert.ok(!/compliant|certified|InterNACHI|ASHI|TREC/.test(JSON.stringify(on)), 'isop copy: no banned claims');
     }
 
     // g. Skjámyndir: aðeins þar sem innihaldið er satt fyrir landið (AU: athugasemdaskjár með Minor/Serious/Very serious).
     for (const c of COUNTRIES) {
       const blob = JSON.stringify(c);
       assert.ok(!/offline-nz|overview-nz/.test(blob), `${c.code}: no NZ-only screenshot`);
-      if (c.code === 'au') assert.equal(c.screen.src, '/rondva/screens/observation-nz.webp');
+      if (['au', 'us', 'ca'].includes(c.code)) assert.equal(c.screen.src, '/rondva/screens/observation-nz.webp');
       else assert.equal(c.screen, undefined, `${c.code}: no phone figure`);
       assert.ok(!/NZ|New Zealand|NZS|WME/.test(blob), `${c.code}: no NZ wording`);
     }

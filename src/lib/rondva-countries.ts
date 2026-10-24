@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BRANDS } from "@/lib/brand";
+import { isopEnabled } from "@/lib/report/isop";
 import { HAS_SAMPLE, SAMPLE_REPORT_URL } from "@/lib/rondva-links";
 import { RONDVA_OFFER_LINE, RONDVA_PACK, RONDVA_PLANS } from "@/lib/rondva-pricing";
 
@@ -128,6 +129,15 @@ const AU_RATING_ITEM: CountryItem = {
   body: "You rate every finding. Minor is damage that does not affect how the building element or the building functions. Serious is damage that impairs the function of the element in the longer term. Very serious is damage that has already impaired it, or will soon.",
 };
 
+// Aðeins athugasemdaskjárinn: Minor/Serious/Very serious eru orðin í almennu skýrslunni (AU og US/CA
+// meðan isop er ekki í boði). Rýmisskjárinn (offline-nz) sýnir NZ-svæði og er því ekki notaður.
+const GENERAL_SCREEN: NonNullable<Country["screen"]> = {
+  src: "/rondva/screens/observation-nz.webp",
+  alt: "Rondva observation screen: the severity you choose (Minor, Serious or Very serious, with Very serious selected), category, title, a description, a recommendation, and photos including a thermal image",
+  aspect: "!aspect-[997/2010]",
+  caption: "You set the severity, the AI never does.",
+};
+
 const CONDITION_RATING_ITEM: CountryItem = {
   title: "Condition ratings 1, 2 and 3",
   body: "You rate every finding. Rating 1: no repair is needed at present. Rating 2: a defect that needs repairing or replacing, but is not serious or urgent. Rating 3: a serious defect, or one that needs urgent attention.",
@@ -135,9 +145,10 @@ const CONDITION_RATING_ITEM: CountryItem = {
 
 // ── US og CA: `isop`-sniðið ──────────────────────────────────────────────────────────────────
 // ATH: Allur US/CA-sniðstextinn er í þessum eina hlut og lýsir `isop`-skýrslusniðinu
-// (plan/rondva/ISOP-SNID-HONNUN.md §1–§2), sem er í smíðum í annarri lotu. Hann er ekki sannur
-// fyrr en isop er komið í loftið í appinu og á vefnum: skipta út eða breyta HÉR áður en /us og /ca
-// eru sett í sitemap/kynnt. Engin staðalnöfn (InterNACHI, ASHI, TREC, CSA) og engin „compliant“.
+// (plan/rondva/ISOP-SNID-HONNUN.md §1–§2; vefur: src/lib/report/isop.ts). Hann birtist AÐEINS þegar
+// isopEnabled() er satt við bygginguna (sjá ISOP_ON hér neðar) og þá sem val í stillingum
+// („Home inspection“), aldrei sem sjálfgefið. Engin staðalnöfn (InterNACHI, ASHI, TREC, CSA) og
+// engin „compliant“.
 export const ISOP_SYSTEMS = [
   "Roof",
   "Exterior",
@@ -153,9 +164,9 @@ export const ISOP_SYSTEMS = [
 
 export const ISOP_COPY = {
   systems: ISOP_SYSTEMS,
-  lead: "Rondva is an iPhone app that drafts home inspection reports from the inspector's photos, notes and ratings, with the findings organized by system: roof, exterior, structure, heating, cooling, plumbing, electrical and more. The inspector reviews and issues the report under their own company name.",
+  lead: "Rondva is an iPhone app that drafts home inspection reports from the inspector's photos, notes and ratings. Its Home inspection format organizes the findings by system: roof, exterior, structure, heating, cooling, plumbing, electrical and more. The inspector reviews and issues the report under their own company name.",
   formatLine:
-    "The report has ten systems in a fixed order, a status for each system, and a summary of deficiencies at the front, built from your ratings.",
+    "Choose the Home inspection format in Settings and the report has ten systems in a fixed order, a status for each system, and a summary of deficiencies at the front, built from your ratings.",
   notReplace: {
     us: "It does not replace any state-required form.",
     ca: "It does not replace any form your province requires.",
@@ -187,13 +198,59 @@ export const ISOP_COPY = {
       body: "A fixed statement that the report text was drafted with AI assistance, with your name and your company's.",
     },
   ] as CountryItem[],
+  formatHeading: "What goes into the report, system by system.",
   note: "Your company logo and your own terms go in the report. A Rondva report is your professional inspection, written up; you are responsible for its content before you issue it.",
   formatFaq: {
     q: "What does the report look like?",
-    a: "It has ten systems in a fixed order, a status for each system (Inspected, Not inspected with your reason, or Not present), and a summary of deficiencies at the front, built from your ratings without AI. Findings are rated Maintenance, Repair or replace, or Major defect.",
+    a: "If you choose the Home inspection format in Settings, it has ten systems in a fixed order, a status for each system (Inspected, Not inspected with your reason, or Not present), and a summary of deficiencies at the front, built from your ratings without AI. Findings are then rated Maintenance, Repair or replace, or Major defect.",
   },
-  llms: "ten systems in a fixed order with a status for each and a summary of deficiencies built from the inspector's ratings; findings rated Maintenance, Repair or replace, or Major defect",
+  llms: "the Home inspection format, chosen in Settings, has ten systems in a fixed order with a status for each and a summary of deficiencies built from the inspector's ratings, and findings rated Maintenance, Repair or replace, or Major defect",
 };
+
+// US og CA velja sniðtexta við BYGGINGU úr isopEnabled() (ISOP_ENABLED=1 á þjóninum): síðurnar eru
+// kyrrstæðar, svo breyting á umhverfisbreytunni krefst nýrrar útgáfu (redeploy) til að texti síðunnar
+// breytist. Sjálfgefið (óvirkt, eins og í framleiðslu í dag) fær US/CA almennu ensku skýrsluna,
+// alveg eins og stillingar fyrirtækisins gefa (settings.ts: US/CA → standard "default"); `isop`-textinn
+// í ISOP_COPY birtist aðeins þegar valkosturinn er í boði og þá sem VAL í stillingum.
+const ISOP_ON = isopEnabled();
+
+type Region = "us" | "ca";
+
+function usCaFormat(region: Region) {
+  const notReplace = region === "us" ? ISOP_COPY.notReplace.us : ISOP_COPY.notReplace.ca;
+  const dialect = region === "us" ? "American English" : "Canadian English";
+  const englishOnly = region === "ca" ? ` ${ISOP_COPY.caEnglish}` : "";
+  if (ISOP_ON) {
+    return {
+      lead: ISOP_COPY.lead,
+      formatLine: `${ISOP_COPY.formatLine} ${notReplace}${englishOnly}`,
+      format: {
+        heading: ISOP_COPY.formatHeading,
+        items: ISOP_COPY.items,
+        note: `${ISOP_COPY.note} ${notReplace}${englishOnly}`,
+      },
+      formatFaq: ISOP_COPY.formatFaq,
+      llms: `${ISOP_COPY.llms}; ${region === "us" ? "does not replace any state-required form" : "English only; does not replace any provincial form"}`,
+      screen: undefined,
+    };
+  }
+  const formatLine = `The report is Rondva's general English report, in ${dialect}, with findings rated Minor, Serious or Very serious. ${notReplace}${englishOnly}`;
+  return {
+    lead: "Rondva is an iPhone app that drafts home inspection reports from the inspector's photos, notes and ratings. The inspector reviews and issues the report under their own company name.",
+    formatLine,
+    format: {
+      heading: "What goes into the report, section by section.",
+      items: generalReportItems(AU_RATING_ITEM, "Minor, Serious and Very serious"),
+      note: `${GENERAL_NOTE} ${notReplace}${englishOnly}`,
+    },
+    formatFaq: {
+      q: "What does the report look like?",
+      a: `It is Rondva's general English report, in ${dialect}: a cover, a summary, a section for each room or area, an action list and the limitations, with findings rated Minor, Serious or Very serious. ${notReplace}`,
+    },
+    llms: `general English report in ${dialect} with findings rated Minor, Serious or Very serious; ${region === "us" ? "does not replace any state-required form" : "English only; does not replace any provincial form"}`,
+    screen: GENERAL_SCREEN,
+  };
+}
 
 // ── Hjálparföll fyrir texta sem er sameiginlegur ─────────────────────────────────────────────
 const OFFLINE_BODY =
@@ -274,14 +331,8 @@ export const AU = build({
     items: generalReportItems(AU_RATING_ITEM, "Minor, Serious and Very serious"),
     note: `${GENERAL_NOTE} It is not set out in the AS 4349.1 format yet.`,
   },
-  // Aðeins athugasemdaskjárinn: Minor/Serious/Very serious eru orðin sem AU-skoðunarmaður sér.
-  // Rýmisskjárinn (offline-nz) sýnir NZ-svæði og er því ekki notaður hér.
-  screen: {
-    src: "/rondva/screens/observation-nz.webp",
-    alt: "Rondva observation screen: the severity you choose (Minor, Serious or Very serious, with Very serious selected), category, title, a description, a recommendation, and photos including a thermal image",
-    aspect: "!aspect-[997/2010]",
-    caption: "You set the severity, the AI never does.",
-  },
+  // Athugasemdaskjárinn (GENERAL_SCREEN), sjá skýringu við hann.
+  screen: GENERAL_SCREEN,
   offlineHeading: "Captures with no signal: under the house, in the roof space.",
   formatFaq: {
     q: "Does Rondva write AS 4349.1 reports?",
@@ -368,20 +419,13 @@ export const US = build({
   currencyName: "US dollars",
   prices: { solo: "49.99", pro: "99.99", pack: "69.99" },
   taxLine: "App Store prices in the US exclude sales tax; Apple adds sales tax where it applies.",
-  title: "Home inspection reports by system, drafted on your iPhone | Rondva",
+  title: "Home inspection reports, drafted on your iPhone | Rondva",
   descriptionLead:
-    "Rondva is an iPhone app that drafts home inspection reports by system from your photos, notes and ratings, even with no signal on site.",
+    "Rondva is an iPhone app that drafts home inspection reports from your photos, notes and ratings, even with no signal on site.",
   eyebrow: "United States · iPhone app on the App Store",
   h1: { before: "Home inspection reports, ", em: "drafted from your site notes." },
-  lead: ISOP_COPY.lead,
-  formatLine: `${ISOP_COPY.formatLine} ${ISOP_COPY.notReplace.us}`,
-  format: {
-    heading: "What goes into the report, system by system.",
-    items: ISOP_COPY.items,
-    note: `${ISOP_COPY.note} ${ISOP_COPY.notReplace.us}`,
-  },
+  ...usCaFormat("us"),
   offlineHeading: "Captures with no signal: in the attic, in the crawlspace.",
-  formatFaq: ISOP_COPY.formatFaq,
   ratingsFaq: RATINGS_LOCKED,
   extraFaq: [
     {
@@ -390,7 +434,6 @@ export const US = build({
       a: "No. Rondva does not produce state-required forms and does not replace one. If your state requires a specific form, you still complete it.",
     },
   ],
-  llms: `${ISOP_COPY.llms}; does not replace any state-required form`,
 });
 
 export const CA = build({
@@ -404,20 +447,13 @@ export const CA = build({
   currencyName: "Canadian dollars",
   prices: { solo: "69.99", pro: "129.99", pack: "99.99" },
   taxLine: "Prices exclude tax; Apple adds GST/HST where it applies.",
-  title: "Home inspection reports by system for Canada, drafted on your iPhone | Rondva",
+  title: "Home inspection reports for Canada, drafted on your iPhone | Rondva",
   descriptionLead:
-    "Rondva is an iPhone app that drafts home inspection reports by system from your photos, notes and ratings, even with no signal on site.",
+    "Rondva is an iPhone app that drafts home inspection reports from your photos, notes and ratings, even with no signal on site.",
   eyebrow: "Canada · iPhone app on the App Store",
   h1: { before: "Home inspection reports, ", em: "drafted from your site notes." },
-  lead: ISOP_COPY.lead,
-  formatLine: `${ISOP_COPY.formatLine} ${ISOP_COPY.notReplace.ca} ${ISOP_COPY.caEnglish}`,
-  format: {
-    heading: "What goes into the report, system by system.",
-    items: ISOP_COPY.items,
-    note: `${ISOP_COPY.note} ${ISOP_COPY.notReplace.ca} ${ISOP_COPY.caEnglish}`,
-  },
+  ...usCaFormat("ca"),
   offlineHeading: "Captures with no signal: in the attic, in the crawlspace.",
-  formatFaq: ISOP_COPY.formatFaq,
   ratingsFaq: RATINGS_LOCKED,
   extraFaq: [
     {
@@ -426,7 +462,6 @@ export const CA = build({
       a: "No. Rondva does not produce provincial forms and does not replace one. If your province requires a specific form, you still complete it. Reports are in English only.",
     },
   ],
-  llms: `${ISOP_COPY.llms}; English only; does not replace any provincial form`,
 });
 
 export const COUNTRIES: readonly Country[] = [AU, UK, IE, US, CA];
