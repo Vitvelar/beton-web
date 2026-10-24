@@ -28,7 +28,7 @@ export function GET() {
     "- Works with no signal: everything is saved on the phone first and syncs when back online.",
     "- Drafts the report text and summary with AI. Your severity ratings are locked; the AI cannot change them.",
     "- On NZS 4306 reports, any figure in a finding's write-up and every moisture reading must match a number the inspector entered, or Rondva falls back to the inspector's own words.",
-    "- The PDF carries the inspector's company name and logo and states that the text was drafted with AI assistance.",
+    "- The PDF carries the inspector's company name and logo. NZS 4306 reports also state that the text was drafted with AI assistance.",
     "- Data is stored in the EU (Ireland).",
     "",
     "## Availability and price",

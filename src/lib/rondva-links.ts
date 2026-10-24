@@ -7,9 +7,11 @@ export const APP_STORE_URL = "https://apps.apple.com/app/id6817769506";
 /**
  * Er til alvöru AI-sýnisskýrsla (public/rondva/sample-nzs4306.pdf)? EKKI setja true fyrr en
  * hún er til: hnappurinn „See a sample report“ er þá falinn. Gamla handskrifaða layout-PDF
- * er ekki AI-úttak og má aldrei birtast hér.
+ * er ekki AI-úttak og má aldrei birtast hér. Núverandi PDF (2026-10-24): raunveruleg drög úr
+ * generate-report á prófunarfyrirtækinu Test NZ Ltd, skálduð eign og myndskreytingar; smíðað með
+ * plan/rondva/sample-reports/make-sample.mjs (utan git).
  */
-export const HAS_SAMPLE = false;
+export const HAS_SAMPLE = true;
 // Hrein slóð: proxy.ts endurskrifar /sample-nzs4306.pdf á public/rondva/sample-nzs4306.pdf.
 // Sýnisskýrslur hinna landanna: SAMPLE_REPORTS í rondva-countries.ts.
 export const SAMPLE_REPORT_URL = "/sample-nzs4306.pdf";

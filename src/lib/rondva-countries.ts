@@ -44,7 +44,7 @@ export function rondvaLanguages(): Record<string, string> {
 export type SampleReport = { url: string; enabled: boolean };
 export const SAMPLE_REPORTS: Record<CountryCode, SampleReport | null> = {
   nz: { url: SAMPLE_REPORT_URL, enabled: HAS_SAMPLE },
-  au: { url: "/sample-report-au.pdf", enabled: false },
+  au: { url: "/sample-report-au.pdf", enabled: true },
   uk: { url: "/sample-condition-ratings.pdf", enabled: false },
   ie: { url: "/sample-condition-ratings.pdf", enabled: false },
   us: null,
@@ -158,7 +158,7 @@ export const ISOP_COPY = {
     "The report has ten systems in a fixed order, a status for each system, and a summary of deficiencies at the front, built from your ratings.",
   notReplace: {
     us: "It does not replace any state-required form.",
-    ca: "It does not replace any form your state or province requires.",
+    ca: "It does not replace any form your province requires.",
   },
   caEnglish: "Reports are in English only.",
   items: [
@@ -423,10 +423,10 @@ export const CA = build({
     {
       id: "forms",
       q: "Does it replace a form my province requires?",
-      a: "No. Rondva does not produce state or provincial forms and does not replace one. If your province requires a specific form, you still complete it. Reports are in English only.",
+      a: "No. Rondva does not produce provincial forms and does not replace one. If your province requires a specific form, you still complete it. Reports are in English only.",
     },
   ],
-  llms: `${ISOP_COPY.llms}; English only; does not replace any state or provincial form`,
+  llms: `${ISOP_COPY.llms}; English only; does not replace any provincial form`,
 });
 
 export const COUNTRIES: readonly Country[] = [AU, UK, IE, US, CA];

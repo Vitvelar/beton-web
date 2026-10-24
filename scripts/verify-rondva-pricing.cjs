@@ -532,7 +532,7 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
         assert.ok(sysItem.body.includes('Additional items'));
         const all = JSON.stringify(c);
         for (const s of ['Summary of deficiencies', 'Inspected', 'Not inspected', 'Not present', 'Maintenance', 'Repair or replace', 'Major defect', 'not written by the AI', 'Use of AI in this report']) assert.ok(all.includes(s), `${cc} mentions ${s}`);
-        assert.ok(/does not replace any (state-required form|form your state or province requires)/.test(c.formatLine), `${cc}: does not replace a state-required form`);
+        assert.ok(/does not replace any (state-required form|form your province requires)/.test(c.formatLine), `${cc}: does not replace a state-required form`);
         assert.ok(!c.screen, `${cc}: no phone figure (the screenshots show NZ content)`);
       }
       assert.ok(byCode.ca.formatLine.includes('Reports are in English only.'), 'CA: English reports only');
@@ -597,8 +597,11 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
     // j. Sýnisskýrslur: rofi á hvert land; true ⇒ skráin í public/rondva/ er til, false ⇒ hún má ekki vera til.
     {
       assert.equal(links.SAMPLE_REPORT_URL, '/sample-nzs4306.pdf');
-      assert.equal(links.HAS_SAMPLE, false);
+      // 2026-10-24: NZ (NZS 4306) og AU (almennt enskt snið) eru raunveruleg drög úr generate-report á
+      // prófunarfyrirtækinu; UK/IE (einkunnir 1–3) bíða.
+      assert.equal(links.HAS_SAMPLE, true);
       const S = plain(cm.SAMPLE_REPORTS);
+      assert.deepEqual(Object.fromEntries(Object.entries(S).filter(([, v]) => v).map(([k, v]) => [k, v.enabled])), { nz: true, au: true, uk: false, ie: false });
       assert.deepEqual(Object.fromEntries(Object.entries(S).map(([k, v]) => [k, v && v.url])), {
         nz: '/sample-nzs4306.pdf', au: '/sample-report-au.pdf', uk: '/sample-condition-ratings.pdf', ie: '/sample-condition-ratings.pdf', us: null, ca: null,
       });
@@ -607,7 +610,14 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
         if (!s) continue;
         const file = path.join(root, 'public/rondva', s.url);
         assert.equal(typeof s.enabled, 'boolean');
-        if (s.enabled) assert.ok(fs.existsSync(file), `${cc}: sample flag is true so ${s.url} must exist in public/rondva/`);
+        if (s.enabled) {
+          assert.ok(fs.existsSync(file), `${cc}: sample flag is true so ${s.url} must exist in public/rondva/`);
+          // Viðhengi í sölupósti: PDF undir 3 MB, og lýsigögnin segja að eignin sé skálduð.
+          const pdf = fs.readFileSync(file);
+          assert.equal(pdf.subarray(0, 5).toString(), '%PDF-', `${cc}: ${s.url} is a PDF`);
+          assert.ok(pdf.length < 3 * 1024 * 1024, `${cc}: ${s.url} is under 3 MB`);
+          assert.ok(pdf.includes('fictional property'), `${cc}: ${s.url} metadata says the property is fictional`);
+        }
         else assert.ok(!fs.existsSync(file), `${cc}: sample flag is false so ${s.url} must not exist yet`);
       }
       assert.match(compSrc, /c\.sample\?\.enabled \?/);
