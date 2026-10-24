@@ -1,5 +1,13 @@
 export type Severity = "athugasemd" | "alvarleg" | "mjog_alvarleg";
-export type InspectionStatus = "draft" | "inspecting" | "completed";
+export type InspectionStatus =
+  | "draft"
+  | "inspecting"
+  | "completed"
+  // Skýrslustaða (edge-fallið generate-report og PDF-workerinn setja þessi gildi).
+  | "generating"
+  | "rendering_pdf"
+  | "report_ready"
+  | "error";
 export type PhotoType = "visible" | "thermal";
 
 export interface Inspector {

@@ -9,8 +9,12 @@
   --color-paper: #fafbfc;      /* síðubakgrunnur */
   --color-paper-alt: #f1f3f6;  /* mjúkur flötur fyrir kafla */
   --color-line: #e2e6eb;       /* rammalínur */
-  --color-line-strong: #c9d0d8;
+  --color-line-strong: #838c96; /* rammi á reitum og stjórntækjum, ≥3:1 */
   --color-muted: #5a6672;      /* hlutlaus texti */
+  --color-surface: #ffffff;    /* spjöld og reitir */
+  --color-danger: #a32020;
+  --color-on-inverse-muted: #b4b9bf; /* aukatexti á ink, ≥6:1 */
+  --color-accent-on-inverse: #8fb0ff; /* áhersla á ink — aldrei blue á ink */
 
   /* Alvarleikaskali — aðskilinn frá vörumerkjalitnum, alltaf með texta */
   --color-sev-note: #4a6b8a;
@@ -22,6 +26,34 @@
   --font-serif: var(--font-source-serif), "Source Serif 4", Georgia, serif;
 
   --radius-card: 14px;
+
+  /* Skuggar (DESIGN.md §5): ein upphafin fyrir mælt spjald, ein fyrir yfirlag. */
+  --shadow-raised: 0 30px 70px -30px rgba(16, 20, 24, 0.55);
+  --shadow-overlay: 0 12px 40px rgba(16, 20, 24, 0.12);
+}
+
+/* Grunnreglur (DESIGN.md §6–§9). Í @layer base svo nytjaklasar geti hnekkt þeim. */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  label[for],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+  /* Á dökkum flötum nær blár fókushringur ekki 3:1. */
+  :where(.rv-blueprint, .rv-dark) :focus-visible {
+    outline-color: var(--color-accent-on-inverse);
+  }
 }
 
 html {
@@ -43,11 +75,15 @@ body {
 }
 
 .rv-eyebrow {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-blue);
+}
+/* Yfirtexti á dökkum grunni (blueprint, hetja). Á eftir .rv-eyebrow svo hann vinnur. */
+.rv-eyebrow-inverse {
+  color: var(--color-accent-on-inverse);
 }
 
 .rv-balance {
@@ -67,6 +103,10 @@ body {
   font-style: italic;
   font-weight: 400;
   color: var(--color-blue);
+}
+/* Á dökkum grunni (hetja, „Where the AI stops“) er skáletrið ljósblátt, annars fær það 2,8:1. */
+.rv-blueprint .rv-display em {
+  color: var(--color-accent-on-inverse);
 }
 
 /* Teikniblaðs-net: dauft rúðunet eins og á byggingateikningu */
@@ -99,22 +139,22 @@ body {
   background-size: 160px 160px;
 }
 
-/* Skrunbirting: falið þar til IntersectionObserver setur data-shown */
+/* Skrunbirting. Efni sést alltaf án JavaScript: RevealObserver setur data-rv-ready á <html>
+   og fyrst þá er efni neðan við brotið falið þar til það kemur í sýn (data-shown).
+   Aldrei á efni ofan við brotið (hetjan). */
 .rv-reveal {
-  opacity: 0;
-  transform: translateY(22px);
   transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: calc(var(--i, 0) * 90ms);
 }
-
-.rv-reveal[data-shown="true"] {
-  opacity: 1;
-  transform: none;
+html[data-rv-ready] .rv-reveal:not([data-shown="true"]) {
+  opacity: 0;
+  transform: translateY(22px);
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .rv-reveal { animation: none; opacity: 1; transform: none; transition: none; }
+  html[data-rv-ready] .rv-reveal:not([data-shown="true"]) { opacity: 1; transform: none; }
+  .rv-reveal { transition: none; }
 }
 
 /* Alvarleikamerki — alltaf með texta, aldrei litur einn */
@@ -122,7 +162,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -216,8 +256,3 @@ body {
 }
 .rv-film-toggle:hover { color: #fafbfc; border-color: rgb(250 251 252 / 0.45); }
 .rv-film-toggle:focus-visible { outline: 2px solid #fafbfc; outline-offset: 3px; }
-
-/* Skáletrið í fyrirsögninni á dökkum grunni: aðeins ljósari blár svo birtuskil ná 3:1. */
-.rv-hero .rv-display em {
-  color: #2c62ec;
-}

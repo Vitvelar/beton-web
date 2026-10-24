@@ -14,6 +14,11 @@ const LOGIN_ALIASES = new Set(["/login", "/signin", "/sign-in"]);
 // tilvísun yfir á rondva.com.
 const STATIC_FILE = /^\/(?:rondva|fonts)\/[^?]*\.(?:svg|png|ico|webp|jpg|jpeg|ttf|otf|woff2?)$/i;
 
+// Kyrrstæðar skrár sem admin.beton.is þjónar sjálft: skrár í rót public/
+// (favicon.ico, apple-icon.png, icon-*.png), skýrsluletrið og robots.txt. Allar
+// aðrar slóðir utan /dashboard og /api/ eiga heima á beton.is.
+const ADMIN_STATIC = /^\/(?:fonts\/[^?]*|[^/?]+\.(?:svg|png|ico|webp|jpg|jpeg|txt))$/i;
+
 function createSupabaseProxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -69,18 +74,57 @@ export async function proxy(request: NextRequest) {
     );
   }
 
+  // beton.is/login (og samheiti) → innskráning stjórnborðsins á admin.beton.is.
+  // (rondva.com/login er meðhöndlað hér að neðan.)
+  if (
+    hostConfig?.brand === "beton" &&
+    hostConfig.role === "marketing" &&
+    hostConfig.adminHost &&
+    LOGIN_ALIASES.has(pathname)
+  ) {
+    return NextResponse.redirect(`https://${hostConfig.adminHost}/dashboard/login`, 308);
+  }
+
+  // beton.is/rondva* → rondva.com. Rondva-síðurnar búa undir /rondva/* í appinu
+  // en eiga ekki að vera aðgengilegar á Beton-léninu (áður tómt 404). Preview og
+  // localhost (hostConfig === null) fá að sjá þær til prófunar.
+  if (
+    hostConfig?.brand === "beton" &&
+    /^\/rondva(?:\/|$)/.test(pathname)
+  ) {
+    const rest = pathname.slice(RONDVA_ROUTE_PREFIX.length) || "/";
+    return NextResponse.redirect(`${BRANDS.rondva.marketingUrl}${rest}${search}`, 308);
+  }
+
   // app-lén: rót → /dashboard
   if (hostConfig?.role === "app" && pathname === "/") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // app.rondva.com/login (og samheiti) → innskráningarsíða stjórnborðsins.
+  // app-lén: /login (og samheiti) → innskráningarsíða stjórnborðsins.
+  if (hostConfig?.role === "app" && LOGIN_ALIASES.has(pathname)) {
+    return NextResponse.redirect(new URL("/dashboard/login", request.url));
+  }
+
+  // admin.beton.is þjónar aðeins stjórnborðinu, API og eigin kyrrstæðu skrám.
+  // Markaðssíðurnar (t.d. /samband) birtust áður líka þar — sendum á beton.is.
+  if (
+    hostConfig?.brand === "beton" &&
+    hostConfig.role === "app" &&
+    !pathname.startsWith("/dashboard") &&
+    !pathname.startsWith("/api/") &&
+    !ADMIN_STATIC.test(pathname)
+  ) {
+    return NextResponse.redirect(`${BRANDS.beton.marketingUrl}${pathname}${search}`, 308);
+  }
+
+  // app.rondva.com/favicon.ico → eigið tákn Rondva (áður tilvísun af léninu).
   if (
     hostConfig?.brand === "rondva" &&
     hostConfig.role === "app" &&
-    LOGIN_ALIASES.has(pathname)
+    pathname === "/favicon.ico"
   ) {
-    return NextResponse.redirect(new URL("/dashboard/login", request.url));
+    return NextResponse.rewrite(new URL("/rondva/favicon.ico", request.url));
   }
 
   // app.rondva.com þjónar aðeins stjórnborðinu, API og eigin kyrrstæðu skrám
@@ -107,12 +151,6 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith(RONDVA_ROUTE_PREFIX)) return NextResponse.next();
     const target = pathname === "/" ? RONDVA_ROUTE_PREFIX : `${RONDVA_ROUTE_PREFIX}${pathname}`;
     return NextResponse.rewrite(new URL(`${target}${search}`, request.url));
-  }
-
-  // Rondva-síðurnar mega ekki leka út á Beton-lénin (beton.is/rondva). Preview
-  // og localhost (hostConfig === null) fá að sjá þær til prófunar.
-  if (hostConfig && hostConfig.brand !== "rondva" && pathname.startsWith(RONDVA_ROUTE_PREFIX)) {
-    return new NextResponse(null, { status: 404 });
   }
 
   // --- Dashboard routes: Supabase auth ---

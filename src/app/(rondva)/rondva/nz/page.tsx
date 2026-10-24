@@ -4,6 +4,7 @@ import { BRANDS } from "@/lib/brand";
 import { HAS_SAMPLE, SAMPLE_REPORT_URL } from "@/lib/rondva-links";
 import { RONDVA_NZ_SOLO, RONDVA_OFFER_LINE, RONDVA_PLANS } from "@/lib/rondva-pricing";
 import { breadcrumbLd, faqPageLd, organizationLd, softwareApplicationLd } from "@/lib/rondva-seo";
+import { rvBtn } from "@/components/rondva/ui";
 import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 import { AppStoreBadge, AppStoreQr } from "@/components/rondva/AppStoreBadge";
@@ -127,9 +128,6 @@ const check = (
 export default function RondvaNzPage() {
   return (
     <>
-      <noscript>
-        <style>{`.rv-reveal{opacity:1!important;transform:none!important}`}</style>
-      </noscript>
       <JsonLd
         nodes={[
           organizationLd(),
@@ -142,45 +140,38 @@ export default function RondvaNzPage() {
         ]}
       />
       <RondvaHeader />
-      <main className="flex-1">
+      <main id="content" className="flex-1">
         {/* 1. Hetja */}
-        <section aria-labelledby="nz-title" className="rv-hero rv-blueprint rv-grain relative overflow-hidden text-paper">
+        <section aria-labelledby="nz-title" className="rv-hero rv-blueprint rv-grain relative overflow-hidden px-6 text-paper">
           <div className="pointer-events-none absolute -right-64 -top-72 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
-          <div className="relative mx-auto max-w-[1180px] px-6 pb-16 pt-12 sm:pt-16 md:pb-24 md:pt-20">
-            <p className="rv-reveal rv-eyebrow !text-paper/60">
+          <div className="relative mx-auto max-w-[1180px] pb-16 pt-12 sm:pt-16 md:pb-24 md:pt-20">
+            <p className="rv-eyebrow rv-eyebrow-inverse">
               New Zealand · NZS 4306:2005 · iPhone app on the App Store
             </p>
             <h1
               id="nz-title"
-              className="rv-reveal rv-display rv-balance mt-6 max-w-4xl text-[40px] sm:text-[56px] md:text-[64px]"
-              style={{ "--i": 1 } as React.CSSProperties}
+              className="rv-display rv-balance mt-6 max-w-4xl text-[40px] sm:text-[56px] md:text-[64px]"
             >
               Your <span className="whitespace-nowrap">NZS 4306</span> report, <em>drafted from your site notes.</em>
             </h1>
-            <p
-              className="rv-reveal mt-7 max-w-2xl text-lg leading-relaxed text-paper/80 md:text-xl"
-              style={{ "--i": 2 } as React.CSSProperties}
-            >
+            <p className="mt-7 max-w-2xl text-lg leading-relaxed text-on-inverse-muted md:text-xl">
               Photos, notes, moisture readings and your own rating for each area, even under the house with no
               signal. Rondva drafts the report in NZS 4306:2005 order. You review every word, and the PDF goes out
               under your company name.
             </p>
-            <p className="rv-reveal mt-5 max-w-2xl text-base leading-relaxed text-paper/65" style={{ "--i": 2 } as React.CSSProperties}>
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-on-inverse-muted">
               {DEFINITION}
             </p>
-            <div className="rv-reveal mt-9 flex flex-wrap items-center gap-x-5 gap-y-4" style={{ "--i": 3 } as React.CSSProperties}>
+            <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-4 lg:items-end">
               <AppStoreBadge />
               {HAS_SAMPLE ? (
-                <a
-                  href={SAMPLE_REPORT_URL}
-                  className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
-                >
+                <a href={SAMPLE_REPORT_URL} className={rvBtn("inverse", "md")}>
                   See a sample NZS 4306 report (PDF)
                 </a>
               ) : null}
-              <AppStoreQr className="ml-2" />
+              <AppStoreQr className="lg:ml-2" />
             </div>
-            <p className="rv-reveal mt-6 text-sm text-paper/55" style={{ "--i": 4 } as React.CSSProperties}>
+            <p className="mt-6 text-sm text-on-inverse-muted">
               {RONDVA_OFFER_LINE}
             </p>
           </div>
@@ -256,7 +247,7 @@ export default function RondvaNzPage() {
             <SectionHeading id="nz-pricing-title" eyebrow="Pricing in New Zealand">
               Priced in New Zealand dollars, charged by Apple.
             </SectionHeading>
-            <div className="rv-reveal mt-10 max-w-2xl rounded-card border border-line-strong bg-paper p-7 sm:p-9" style={{ "--i": 1 } as React.CSSProperties}>
+            <div className="rv-reveal mt-10 max-w-2xl rounded-card border border-line bg-surface p-7 sm:p-9" style={{ "--i": 1 } as React.CSSProperties}>
               <p className="text-xl leading-relaxed text-ink">
                 <strong>Solo {soloPrice}/month:</strong> {soloReports} AI-drafted reports a month.
               </p>
@@ -266,7 +257,7 @@ export default function RondvaNzPage() {
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <AppStoreBadge />
-                <Link href="/#pricing" className="text-sm font-semibold text-ink underline underline-offset-4 hover:text-blue">
+                <Link href="/#pricing" className={rvBtn("secondary", "md")}>
                   All plans and the offer
                 </Link>
               </div>

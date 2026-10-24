@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BRANDS } from "@/lib/brand";
 import { RONDVA_TRIAL } from "@/lib/rondva-pricing";
 import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/LegalPage";
+import { rondvaPageMetadata } from "@/components/rondva/page-meta";
 
 // rondva.com/terms — notkunarskilmálar Rondva (Terms of Use-tengill sem App Store
 // krefst fyrir áskriftir, 3.1.2). Appleyfið sjálft fer eftir Standard EULA Apple;
@@ -15,9 +16,12 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // í beton-app. Orðalagið „When paid plans are offered in the app“ er haldið (verify-rondva-pricing).
 
 export const metadata: Metadata = {
-  title: "Terms of use",
-  description:
-    "The terms of use for Rondva, the inspection app and dashboard from Vitvélar ehf.: accounts, AI-drafted reports you must review, your content, data processing, free reports, App Store subscriptions and auto-renewal, and liability.",
+  ...rondvaPageMetadata({
+    title: "Terms of use",
+    description:
+      "The terms of use for Rondva, the inspection app and dashboard from Vitvélar ehf.: accounts, AI-drafted reports you must review, your content, data processing, free reports, App Store subscriptions and auto-renewal, and liability.",
+    path: "/terms",
+  }),
   alternates: { canonical: `${BRANDS.rondva.marketingUrl}/terms` },
 };
 

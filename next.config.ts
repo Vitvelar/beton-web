@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Mörg rótarútlit: óþekktar slóðir fá src/app/global-not-found.tsx (rétt 404 + efni í HTML).
+  experimental: { globalNotFound: true },
   // puppeteer-core og @sparticuz/chromium nota Node-eiginleika og mega ekki
   // vera bundluð af Next. Þessir pakkar eru reyndar í sjálfgefnum lista Next
   // yfir ytri pakka, en við erum skýr hér til öryggis (og fyrir læsileika).

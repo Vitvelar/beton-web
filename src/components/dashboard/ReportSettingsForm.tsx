@@ -5,6 +5,7 @@ import { saveReportSettings, saveReportStandard } from "@/app/(dashboard)/action
 import { dashboardCopy, LOCALE_NAMES, type DashboardLocale } from "@/lib/i18n/dashboard";
 import { REPORT_LOCALES, type ReportLocale } from "@/lib/report/i18n";
 import type { RatingScheme, ReportStandard } from "@/lib/report/settings";
+import { field, fieldHelp, fieldLabel } from "@/lib/ui";
 
 // Skýrslumál, matskerfi og skýrslusnið fyrirtækis (aðeins eigandi, app.rondva.com).
 // Vistast um leið og valið breytist (engin Vista-hnappur); fer til baka ef vistun
@@ -18,7 +19,7 @@ export function ReportSettingsForm({
   initial,
 }: {
   locale: DashboardLocale;
-  initial: { reportLocale: ReportLocale; ratingScheme: RatingScheme; reportStandard: ReportStandard; standardSupported: boolean };
+  initial: { reportLocale: ReportLocale; ratingScheme: RatingScheme; reportStandard: ReportStandard; standardSupported: boolean; isopAvailable: boolean; texas: boolean };
 }) {
   const t = dashboardCopy(locale).reportSettings;
   const [saved, setSaved] = useState<Values>({
@@ -30,18 +31,24 @@ export function ReportSettingsForm({
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
   const showNz = initial.standardSupported || value.ratingScheme === "nz_terms";
+  const showIsop = initial.isopAvailable || value.reportStandard === "isop";
 
   function change(next: Values) {
     setValue(next);
     setMessage(null);
     startTransition(async () => {
-      const result = await saveReportSettings(next.reportLocale, next.ratingScheme);
-      if ("error" in result) {
+      try {
+        const result = await saveReportSettings(next.reportLocale, next.ratingScheme);
+        if ("error" in result) {
+          setValue(saved);
+          setMessage({ kind: "error", text: result.error });
+        } else {
+          setSaved(next);
+          setMessage({ kind: "ok", text: t.saved });
+        }
+      } catch {
         setValue(saved);
-        setMessage({ kind: "error", text: result.error });
-      } else {
-        setSaved(next);
-        setMessage({ kind: "ok", text: t.saved });
+        setMessage({ kind: "error", text: t.saveFailed });
       }
     });
   }
@@ -51,27 +58,43 @@ export function ReportSettingsForm({
     setValue(next);
     setMessage(null);
     startTransition(async () => {
-      const result = await saveReportStandard(reportStandard);
-      if ("error" in result) {
+      try {
+        const result = await saveReportStandard(reportStandard);
+        if ("error" in result) {
+          setValue(saved);
+          setMessage({ kind: "error", text: result.error });
+        } else {
+          // Matskerfi án skráðs gildis fylgir sniðinu — sýna virku gildin eftir vistun.
+          let now = result.settings ?? next;
+          // Home inspection fer með eigin matsorð; aðrir sniðvalkostir losa það aftur (aðeins ef skráð).
+          const wanted = reportStandard === "isop" ? "isop_terms" : saved.ratingScheme === "isop_terms" ? (reportStandard === "nzs_4306" ? "nz_terms" : "standard") : null;
+          if (wanted && now.ratingScheme !== wanted) {
+            const paired = await saveReportSettings(now.reportLocale, wanted);
+            if ("error" in paired) {
+              setMessage({ kind: "error", text: paired.error });
+              setSaved(now);
+              setValue(now);
+              return;
+            }
+            now = { ...now, ratingScheme: wanted };
+          }
+          setSaved(now);
+          setValue(now);
+          setMessage({ kind: "ok", text: t.saved });
+        }
+      } catch {
         setValue(saved);
-        setMessage({ kind: "error", text: result.error });
-      } else {
-        // Matskerfi án skráðs gildis fylgir sniðinu — sýna virku gildin eftir vistun.
-        const now = result.settings ?? next;
-        setSaved(now);
-        setValue(now);
-        setMessage({ kind: "ok", text: t.saved });
+        setMessage({ kind: "error", text: t.saveFailed });
       }
     });
   }
 
-  const labelCls = "block text-xs font-mono uppercase tracking-wider text-fog mb-1.5";
-  const selectCls =
-    "w-full max-w-xs rounded-md border border-concrete-dk bg-white px-3 py-2 text-sm text-ink focus:border-navy focus:outline-none disabled:opacity-60";
+  const labelCls = fieldLabel;
+  const selectCls = field("box", "max-w-xs");
 
   return (
-    <div className="mb-6 space-y-5 rounded-xl border border-concrete bg-white p-6">
-      <h2 className="text-sm font-semibold text-ink">{t.title}</h2>
+    <div className="mb-6 space-y-5 rounded-xl border border-concrete bg-surface p-6">
+      <h2 className="text-base font-semibold text-ink">{t.title}</h2>
       {initial.standardSupported ? (
         <div>
           <label htmlFor="report_standard" className={labelCls}>
@@ -82,12 +105,19 @@ export function ReportSettingsForm({
             value={value.reportStandard}
             disabled={isPending}
             onChange={(e) => changeStandard(e.target.value)}
+            aria-describedby="report_standard_hint"
             className={selectCls}
           >
             <option value="default">{t.standardDefault}</option>
             <option value="nzs_4306">{t.standardNzs}</option>
+            {showIsop ? <option value="isop">{t.standardIsop}</option> : null}
           </select>
-          <p className="mt-1 text-xs text-fog">{t.standardHint}</p>
+          <p id="report_standard_hint" className={fieldHelp}>{value.reportStandard === "isop" ? t.isopHint : t.standardHint}</p>
+          {value.reportStandard === "isop" && initial.texas ? (
+            <p role="note" className="mt-2 rounded-md border border-concrete-dk bg-concrete px-3 py-2 text-xs text-ink">
+              {t.texasNotice}
+            </p>
+          ) : null}
         </div>
       ) : null}
       <div>
@@ -99,6 +129,7 @@ export function ReportSettingsForm({
           value={value.reportLocale}
           disabled={isPending}
           onChange={(e) => change({ ...value, reportLocale: e.target.value })}
+          aria-describedby="report_locale_hint"
           className={selectCls}
         >
           {REPORT_LOCALES.map((code) => (
@@ -107,7 +138,7 @@ export function ReportSettingsForm({
             </option>
           ))}
         </select>
-        <p className="mt-1 text-xs text-fog">{t.languageHint}</p>
+        <p id="report_locale_hint" className={fieldHelp}>{t.languageHint}</p>
       </div>
       <div>
         <label htmlFor="rating_scheme" className={labelCls}>
@@ -118,17 +149,20 @@ export function ReportSettingsForm({
           value={value.ratingScheme}
           disabled={isPending}
           onChange={(e) => change({ ...value, ratingScheme: e.target.value })}
+          aria-describedby="rating_scheme_hint"
           className={selectCls}
         >
           <option value="standard">{t.schemeStandard}</option>
           <option value="condition_1_3">{t.schemeCondition}</option>
           {showNz ? <option value="nz_terms">{t.schemeNz}</option> : null}
+          {showIsop ? <option value="isop_terms">{t.schemeIsop}</option> : null}
         </select>
-        <p className="mt-1 text-xs text-fog">{t.schemeHint}</p>
+        <p id="rating_scheme_hint" className={fieldHelp}>{t.schemeHint}</p>
       </div>
-      <p role="status" aria-live="polite" className={`min-h-5 text-sm ${message?.kind === "error" ? "text-sev-danger" : "text-emerald-700"}`}>
-        {isPending ? t.saving : message?.text ?? ""}
-      </p>
+      <div className="min-h-5 text-sm">
+        <p role="status" className="text-fog">{isPending ? t.saving : message?.kind === "ok" ? <span className="text-success">{message.text}</span> : null}</p>
+        {message?.kind === "error" ? <p role="alert" className="text-danger">{message.text}</p> : null}
+      </div>
     </div>
   );
 }

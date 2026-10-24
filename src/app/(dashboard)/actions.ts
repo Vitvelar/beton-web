@@ -8,11 +8,19 @@ import { getDashboardLocale } from "@/lib/request-brand";
 import { dashboardCopy, isDashboardLocale, USER_LOCALE_KEY } from "@/lib/i18n/dashboard";
 import { isReportLocale } from "@/lib/report/i18n";
 import { isRatingScheme, isReportStandard } from "@/lib/report/settings";
+import { isopOfferedTo } from "@/lib/report/isop";
 import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
 
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  // „local": aðeins þessi vafri skráist út. Sjálfgefið („global") ógildir líka
+  // innskráninguna í iPhone-appinu (ákvörðun eiganda 2026-10-19).
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch (e) {
+    // Kökurnar eru hreinsaðar hér að neðan hvort sem er; notandinn kemst alltaf út.
+    console.error("signOut failed:", e);
+  }
 
   const cookieStore = await cookies();
   for (const cookie of cookieStore.getAll()) {
@@ -58,7 +66,9 @@ export async function saveReportSettings(
   });
   if (error) {
     console.error("saveReportSettings failed:", error.message);
-    return failed();
+    return ratingScheme === "isop_terms"
+      ? { error: dashboardCopy(await getDashboardLocale()).reportSettings.isopUnavailable }
+      : failed();
   }
   revalidatePath("/dashboard/settings");
   return { ok: true };
@@ -78,12 +88,19 @@ export async function saveReportStandard(
   if (!isReportStandard(reportStandard)) return failed();
 
   const supabase = await createClient();
+  // 'isop' (US/Kanada): aðeins þegar kveikt er á (ISOP_ENABLED=1) og fyrirtækið er í US/CA, og
+  // kurteis villa ef gagnagrunnurinn hafnar gildinu (flutningurinn ekki keyrður).
+  const unavailable = async () => ({ error: dashboardCopy(await getDashboardLocale()).reportSettings.isopUnavailable });
+  if (reportStandard === "isop") {
+    const current = await fetchCompanyReportSettings(supabase, { ownerOnly: true }).catch(() => null);
+    if (!current || !isopOfferedTo(current.country)) return unavailable();
+  }
   const { error } = await supabase.rpc("set_company_report_standard", {
     p_report_standard: reportStandard,
   });
   if (error) {
     console.error("saveReportStandard failed:", error.message);
-    return failed();
+    return reportStandard === "isop" ? unavailable() : failed();
   }
   revalidatePath("/dashboard/settings");
   const company = await fetchCompanyReportSettings(supabase, { ownerOnly: true }).catch(() => null);
