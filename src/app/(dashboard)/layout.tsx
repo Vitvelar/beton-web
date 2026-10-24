@@ -6,6 +6,8 @@ import { DashboardRealtimeRefresh } from "@/components/dashboard/DashboardRealti
 import { BetonHtml } from "@/components/BetonHtml";
 import { RondvaAppHtml } from "@/components/rondva/RondvaAppHtml";
 import { betonMetadata } from "@/lib/beton-metadata";
+import { shellCopy } from "@/lib/i18n/dashboard-shell";
+import { btn } from "@/lib/ui";
 import { checkDashboardAccess } from "@/lib/access";
 import { getDashboardLocale, getRequestBrand, getRequestUser } from "@/lib/request-brand";
 import { BRANDS } from "@/lib/brand";
@@ -13,12 +15,18 @@ import { BRANDS } from "@/lib/brand";
 // Sama stjórnborð þjónar tveimur vörumerkjum eftir hýsli (src/lib/brand.ts):
 // admin.beton.is → Beton (íslenska, óbreytt), app.rondva.com → Rondva-útlit.
 
+// admin.beton.is er ekki markaðssíða: engin canonical/OG/Twitter-spjöld frá beton.is
+// (þau gerðu stjórnborðið að afriti af forsíðunni) og ekki í leitarvélum. Táknin haldast.
 const betonDashboardMetadata: Metadata = {
-  ...betonMetadata,
+  metadataBase: new URL(BRANDS.beton.appUrl),
   title: {
     default: "Stjórnborð | Beton ehf.",
     template: "%s | Stjórnborð — Beton ehf.",
   },
+  description: shellCopy("is").meta.betonDescription,
+  applicationName: "Beton ehf.",
+  icons: betonMetadata.icons,
+  robots: { index: false, follow: false },
 };
 
 const rondvaDashboardMetadata: Metadata = {
@@ -87,10 +95,19 @@ export default async function DashboardLayout({
   }
 
   return html(
-    <div className="min-h-screen bg-paper">
+    <div className="min-h-dvh bg-paper">
+      {/* Fyrsti fókusstaður: sleppir haus og valmynd (WCAG 2.4.1). Er utan skjás þar til hann fær fókus. */}
+      <a
+        href="#content"
+        className={btn("primary", "md", "fixed left-4 top-4 z-50 -translate-y-24 focus:translate-y-0 motion-reduce:transition-none")}
+      >
+        {shellCopy(locale).skipToContent}
+      </a>
       <DashboardRealtimeRefresh />
       <DashboardHeader email={user.email ?? ""} brand={brand} locale={locale} />
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main id="content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 focus:outline-none sm:px-6">
+        {children}
+      </main>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   usd,
 } from "@/lib/rondva-pricing";
 import { organizationLd, softwareApplicationLd } from "@/lib/rondva-seo";
+import { rvBtn } from "@/components/rondva/ui";
 import { RondvaHeader } from "@/components/rondva/RondvaHeader";
 import { RondvaFooter } from "@/components/rondva/RondvaFooter";
 import { AppStoreBadge, AppStoreQr } from "@/components/rondva/AppStoreBadge";
@@ -104,82 +105,57 @@ const whatYouGet = [
   },
   {
     Icon: IconCamera,
-    title: "Everything on the phone you already carry.",
-    body: "",
+    title: "Everything on the phone you already carry",
+    body: "Record on site, even with no signal, then review and export from the same app.",
   },
 ];
 
 export default function RondvaLandingPage() {
   return (
     <>
-      {/* Án JavaScript: allt efni sést strax (rv-reveal bíður annars eftir RevealObserver). */}
-      <noscript>
-        <style>{`.rv-reveal{opacity:1!important;transform:none!important}`}</style>
-      </noscript>
       <JsonLd nodes={[organizationLd(), softwareApplicationLd()]} />
       <RondvaHeader />
-      <main className="flex-1">
+      <main id="content" className="flex-1">
         {/* 1. Hetjuhlutinn — dökkt teikniblað: fyrirsögn, lína og hnappar fyrst, kynningarmyndin
             VIÐ HLIÐINA á breiðum skjá (16:9) og UNDIR textanum á síma (4:5, spilar þegar skrunað
             er að henni). Aldrei texti yfir myndinni og aldrei inni í snúnum ramma (merkið má
             ekki hallast). */}
-        <section aria-labelledby="hero-title" className="rv-hero rv-blueprint rv-grain relative overflow-hidden text-paper">
+        <section aria-labelledby="hero-title" className="rv-hero rv-blueprint rv-grain relative overflow-hidden px-6 text-paper">
           <div className="pointer-events-none absolute -right-64 -top-72 h-[560px] w-[560px] rounded-full bg-blue/25 blur-[140px]" aria-hidden="true" />
-          <div className="relative mx-auto grid max-w-[1320px] grid-cols-1 items-center gap-12 px-6 pb-16 pt-12 sm:pt-16 md:pb-24 md:pt-20 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14 lg:pb-24 lg:pt-20 xl:grid-cols-[0.85fr_1.15fr] xl:pb-28 xl:pt-24">
+          <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-center gap-12 pb-16 pt-12 sm:pt-16 md:pb-24 md:pt-20 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14 lg:pb-24 lg:pt-20 xl:grid-cols-[1fr_1fr] xl:pb-28 xl:pt-24">
             <div className="relative z-20">
-              <p className="rv-reveal rv-eyebrow !text-paper/60" style={{ "--i": 0 } as React.CSSProperties}>
+              <p className="rv-eyebrow rv-eyebrow-inverse">
                 Inspection app for iPhone · On the App Store
               </p>
               <h1
                 id="hero-title"
-                className="rv-reveal rv-display rv-balance mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[52px] xl:text-[60px] 2xl:text-[68px]"
-                style={{ "--i": 1 } as React.CSSProperties}
+                className="rv-display rv-balance mt-6 text-[44px] sm:text-[60px] md:text-[68px] lg:text-[52px] xl:text-[60px]"
               >
                 Walk the property.
                 <br />
                 <em>Rondva drafts the report.</em>
               </h1>
-              <p
-                className="rv-reveal mt-7 max-w-xl text-lg leading-relaxed text-paper/75 md:text-xl"
-                style={{ "--i": 2 } as React.CSSProperties}
-              >
+              <p className="mt-7 max-w-xl text-lg leading-relaxed text-on-inverse-muted md:text-xl">
                 Rondva is a field app for independent property inspectors. You record the rooms,
                 the photos, the thermal images and the severity. Rondva drafts the wording and the
                 summary — you stay the author of every judgement in it.
               </p>
-              <div
-                className="rv-reveal mt-9 flex flex-wrap items-center gap-x-5 gap-y-4"
-                style={{ "--i": 3 } as React.CSSProperties}
-              >
+              <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-4">
                 <AppStoreBadge />
                 {HAS_SAMPLE ? (
-                  <a
-                    href={SAMPLE_REPORT_URL}
-                    className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
-                  >
+                  <a href={SAMPLE_REPORT_URL} className={rvBtn("inverse", "md")}>
                     See a sample report
                   </a>
                 ) : null}
-                <a
-                  href="#how"
-                  className="inline-flex items-center rounded-full border border-paper/25 px-6 py-3.5 text-sm font-semibold text-paper/90 transition-colors hover:border-paper/60"
-                >
+                <a href="#how" className={rvBtn("inverse", "md")}>
                   See how it works
                 </a>
               </div>
-              <AppStoreQr className="rv-reveal mt-8" />
-              <p
-                className="rv-reveal mt-6 text-sm text-paper/55"
-                style={{ "--i": 4 } as React.CSSProperties}
-              >
-                {RONDVA_OFFER_LINE}
-              </p>
-              <p
-                className="rv-reveal mt-2 text-sm text-paper/55"
-                style={{ "--i": 4 } as React.CSSProperties}
-              >
+              <AppStoreQr className="mt-8" />
+              <p className="mt-6 text-sm text-on-inverse-muted">{RONDVA_OFFER_LINE}</p>
+              <p className="mt-2 text-sm text-on-inverse-muted">
                 In New Zealand?{" "}
-                <Link href="/nz" className="font-semibold text-paper/85 underline underline-offset-4 hover:text-paper">
+                <Link href="/nz" className="font-semibold text-paper underline underline-offset-4">
                   See the NZS 4306 page →
                 </Link>
               </p>
@@ -187,7 +163,7 @@ export default function RondvaLandingPage() {
 
             {/* Kynningarmyndin. Báðar útgáfur eru í DOM; CSS (.rv-film-wide/.rv-film-mobile) og
                 matchMedia í HeroFilm sjá til þess að aðeins sú sem passar birtist og sækir gögn. */}
-            <div className="rv-reveal relative z-10 w-full" style={{ "--i": 2 } as React.CSSProperties}>
+            <div className="relative z-10 w-full">
               <HeroFilm variant="wide" />
               <HeroFilm variant="mobile" />
             </div>
@@ -222,7 +198,7 @@ export default function RondvaLandingPage() {
                 {steps.map((s, i) => (
                   <li key={s.n} className="rv-reveal" style={{ "--i": i } as React.CSSProperties}>
                     <div className="flex items-center gap-3">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-paper text-ink">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface text-ink">
                         <s.Icon className="h-6 w-6" />
                       </span>
                       <span className="rv-tnum text-xs font-semibold tracking-[0.14em] text-blue">{s.n}</span>
@@ -259,12 +235,12 @@ export default function RondvaLandingPage() {
               {whatYouGet.map((item, i) => (
                 <li
                   key={item.title}
-                  className={`rv-reveal bg-paper p-7 ${i === whatYouGet.length - 1 ? "sm:col-span-2" : ""}`}
+                  className={`rv-reveal bg-surface p-7 ${i === whatYouGet.length - 1 ? "sm:col-span-2" : ""}`}
                   style={{ "--i": i } as React.CSSProperties}
                 >
                   <item.Icon className="h-7 w-7 text-blue" />
                   <h3 className="mt-5 text-[17px] font-semibold tracking-tight text-ink">{item.title}</h3>
-                  {item.body ? <p className="mt-2 leading-relaxed text-muted">{item.body}</p> : null}
+                  <p className="mt-2 leading-relaxed text-muted">{item.body}</p>
                 </li>
               ))}
             </ul>
@@ -282,7 +258,7 @@ export default function RondvaLandingPage() {
               A person you can write to.
             </SectionHeading>
             <div className="mt-12 grid gap-10 md:grid-cols-[auto_1fr] md:gap-14">
-              <div className="rv-reveal flex items-center gap-5 md:flex-col md:items-start" style={{ "--i": 0 } as React.CSSProperties}>
+              <div className="rv-reveal flex flex-wrap items-center gap-5 md:flex-col md:items-start" style={{ "--i": 0 } as React.CSSProperties}>
                 {HAS_FOUNDER_PHOTO ? (
                   <Image
                     src="/rondva/hjalti.jpg"
@@ -332,7 +308,7 @@ export default function RondvaLandingPage() {
                       </Link>
                     </>,
                   ].map((line, i) => (
-                    <li key={i} className="flex gap-3 rounded-card border border-line bg-paper p-5 text-[15px] leading-snug text-ink">
+                    <li key={i} className="flex gap-3 rounded-card border border-line bg-surface p-5 text-[15px] leading-snug text-ink">
                       <svg
                         viewBox="0 0 20 20"
                         className="mt-px h-5 w-5 shrink-0 text-blue"
@@ -369,7 +345,7 @@ export default function RondvaLandingPage() {
 
             {/* Fyrsti mánuður frír (prufutími) — í gildi núna */}
             <div
-              className="rv-reveal rv-blueprint-light mt-12 rounded-card border border-line-strong p-7 sm:p-10"
+              className="rv-reveal rv-blueprint-light mt-12 rounded-card border border-line p-7 sm:p-10"
               style={{ "--i": 1 } as React.CSSProperties}
             >
               <div className="grid gap-8 lg:grid-cols-[1.25fr_1fr] lg:items-center lg:gap-14">
@@ -394,10 +370,7 @@ export default function RondvaLandingPage() {
                 <div>
                   <div className="flex flex-col items-start gap-4 sm:flex-row sm:flex-wrap sm:items-center">
                     <AppStoreBadge />
-                    <a
-                      href={BRANDS.rondva.appUrl}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-line-strong bg-paper px-6 py-3.5 text-sm font-semibold text-ink transition-colors hover:border-ink"
-                    >
+                    <a href={BRANDS.rondva.appUrl} className={rvBtn("secondary", "md", "whitespace-normal text-center")}>
                       Create your company account
                       <span aria-hidden="true">→</span>
                     </a>
@@ -418,9 +391,7 @@ export default function RondvaLandingPage() {
                   <li
                     key={plan.id}
                     className={`rv-reveal relative flex flex-col rounded-card border p-7 sm:p-8 ${
-                      dark
-                        ? "border-ink bg-ink text-paper shadow-[0_30px_70px_-30px_rgba(16,20,24,0.55)]"
-                        : "border-line bg-paper shadow-[0_24px_60px_-34px_rgba(16,20,24,0.22)]"
+                      dark ? "border-ink bg-ink text-paper shadow-raised" : "border-line bg-surface shadow-sm"
                     }`}
                     style={{ "--i": i } as React.CSSProperties}
                   >
@@ -432,10 +403,10 @@ export default function RondvaLandingPage() {
                         </span>
                       ) : null}
                     </div>
-                    <p className={`mt-1 text-sm ${dark ? "text-paper/70" : "text-muted"}`}>{plan.blurb}</p>
+                    <p className={`mt-1 text-sm ${dark ? "text-on-inverse-muted" : "text-muted"}`}>{plan.blurb}</p>
                     <p className="rv-tnum mt-7 font-serif text-[46px] font-semibold leading-none tracking-tight sm:text-[52px]">
                       {usd(plan.price)}{" "}
-                      <span className={`whitespace-nowrap font-sans text-base font-medium tracking-normal ${dark ? "text-paper/70" : "text-muted"}`}>
+                      <span className={`whitespace-nowrap font-sans text-base font-medium tracking-normal ${dark ? "text-on-inverse-muted" : "text-muted"}`}>
                         / month
                       </span>
                     </p>
@@ -444,7 +415,7 @@ export default function RondvaLandingPage() {
                         <span className="rv-tnum font-serif text-[36px] font-semibold leading-none">{plan.reports}</span>
                         <span className="text-[15px] leading-snug">AI-drafted reports per month</span>
                       </p>
-                      <p className={`rv-tnum mt-3 text-[15px] ${dark ? "text-paper/70" : "text-muted"}`}>
+                      <p className={`rv-tnum mt-3 text-[15px] ${dark ? "text-on-inverse-muted" : "text-muted"}`}>
                         {usd(perReport(plan.price, plan.reports))} per report
                       </p>
                     </div>
@@ -452,7 +423,7 @@ export default function RondvaLandingPage() {
                 );
               })}
               <li
-                className="rv-reveal relative flex flex-col rounded-card border border-line bg-paper p-7 shadow-[0_24px_60px_-34px_rgba(16,20,24,0.22)] sm:p-8"
+                className="rv-reveal relative flex flex-col rounded-card border border-line bg-surface p-7 shadow-sm sm:p-8"
                 style={{ "--i": RONDVA_PLANS.length } as React.CSSProperties}
               >
                 <h3 className="font-serif text-[26px] font-semibold tracking-tight">{RONDVA_PACK.name}</h3>

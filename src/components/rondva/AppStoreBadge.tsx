@@ -6,7 +6,7 @@ export function AppStoreBadge({ className, height = 48 }: { className?: string; 
   return (
     <a
       href={APP_STORE_URL}
-      className={`inline-block rounded-[10px] transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue ${className ?? ""}`}
+      className={`inline-block rounded-[10px] transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 ${className ?? ""}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- opinbert SVG-merki, engin hagræðing */}
       <img
@@ -34,7 +34,7 @@ export function AppStoreQr({ className, tone = "dark" }: { className?: string; t
         height={96}
         className="h-24 w-24 rounded-lg"
       />
-      <p className={`max-w-[7rem] text-sm leading-snug ${tone === "dark" ? "text-paper/70" : "text-fog"}`}>Scan with your iPhone</p>
+      <p className={`max-w-[7rem] text-sm leading-snug ${tone === "dark" ? "text-on-inverse-muted" : "text-muted"}`}>Scan with your iPhone</p>
     </div>
   );
 }

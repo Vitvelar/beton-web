@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BRANDS } from "@/lib/brand";
 import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/LegalPage";
+import { rondvaPageMetadata } from "@/components/rondva/page-meta";
 
 // rondva.com/privacy — persónuverndarstefna Rondva: vefur, biðlisti, stjórnborð og
 // iOS-appið. Byggð á beton-app docs/release/PRIVACY_DATA_INVENTORY.md (gagnaflæði
@@ -28,9 +29,12 @@ import { LegalLink, LegalPage, type LegalSection } from "@/components/rondva/Leg
 // (misnotkunarvörn, art. 6(1)(f)), eytt 24 mánuðum eftir veitingu (pg_cron report-trial-claims-purge).
 
 export const metadata: Metadata = {
-  title: "Privacy",
-  description:
-    "How Vitvélar ehf. handles personal data in the Rondva app, on the app.rondva.com dashboard, on the waitlist and on rondva.com.",
+  ...rondvaPageMetadata({
+    title: "Privacy",
+    description:
+      "How Vitvélar ehf. handles personal data in the Rondva app, on the app.rondva.com dashboard and on rondva.com.",
+    path: "/privacy",
+  }),
   alternates: { canonical: `${BRANDS.rondva.marketingUrl}/privacy` },
 };
 
@@ -53,7 +57,7 @@ const processors: Processor[] = [
   },
   {
     name: "Vercel",
-    role: "Hosts rondva.com and app.rondva.com, runs the waitlist form, and renders report PDFs.",
+    role: "Hosts rondva.com and app.rondva.com, and renders report PDFs.",
     where: "United States and a global edge network",
   },
   {
@@ -68,7 +72,7 @@ const processors: Processor[] = [
   },
   {
     name: "Resend",
-    role: "Sends email: the notice to us when someone joins the waitlist, and emails we send to you.",
+    role: "Sends email: the emails we send to you, and service notices to our own inbox.",
     where: "United States (sending from the EU)",
   },
   {
@@ -120,7 +124,7 @@ const sections: LegalSection[] = [
         </p>
         <ul className={list}>
           <li>
-            For your Rondva account, the waitlist, this website and the{" "}
+            For your Rondva account, this website and the{" "}
             <LegalLink href="#business-contacts">business contacts we write to</LegalLink>,
             Vitvélar is the <strong>controller</strong>.
           </li>
@@ -367,31 +371,12 @@ const sections: LegalSection[] = [
   },
   {
     id: "waitlist",
-    title: "The waitlist",
+    title: "The waitlist (closed)",
     body: (
       <>
-        <p>When you join the waitlist on rondva.com we store:</p>
-        <ul className={list}>
-          <li>
-            <strong>Email address</strong> — so we can write to you when Rondva is ready for you
-            to try.
-          </li>
-          <li>
-            <strong>Country you inspect in</strong> — so we know which markets to open first and
-            which to contact first.
-          </li>
-          <li>
-            <strong>Technical details of the submission</strong> — the time, your
-            browser&apos;s user-agent string, and a one-way hash of your IP address. We use
-            these only to detect abuse and duplicate submissions. The hash cannot be turned
-            back into your IP address.
-          </li>
-        </ul>
         <p>
-          The legal basis is our legitimate interest in building a product with the people who
-          asked to hear about it (GDPR art. 6(1)(f)), and, for the email we send you, your
-          request to be contacted. We do not use the list for a newsletter, a drip campaign,
-          advertising, or profiling, and we do not sell or share it.
+          Before launch, rondva.com had a waitlist. It closed when Rondva launched in the App
+          Store on 19 October 2026. Nobody had joined it, so we hold no waitlist data.
         </p>
       </>
     ),
@@ -518,8 +503,8 @@ const sections: LegalSection[] = [
             legal duty to keep accounting records (art. 6(1)(c)).
           </li>
           <li>
-            <strong>The waitlist and your emails to us:</strong> our legitimate interest
-            (art. 6(1)(f)), as described in those sections.
+            <strong>Your emails to us:</strong> our legitimate interest in answering you
+            (art. 6(1)(f)), as described in <LegalLink href="#contacting-us">that section</LegalLink>.
           </li>
           <li>
             <strong>Business contacts we write to:</strong> our legitimate interest in telling
@@ -642,8 +627,8 @@ const sections: LegalSection[] = [
         <p>
           Accounts that are managed by a partner company, and accounts with purchase records
           made outside the App Store, can&apos;t be closed in the app; write to{" "}
-          <LegalLink href={mail}>{R.contactEmail}</LegalLink> and we will close them. The
-          waitlist is separate; ask us to remove you. Deleting your account does not cancel an
+          <LegalLink href={mail}>{R.contactEmail}</LegalLink> and we will close them. Deleting
+          your account does not cancel an
           App Store subscription. More on the{" "}
           <LegalLink href="/support#delete-account">support page</LegalLink>.
         </p>
@@ -691,12 +676,6 @@ const sections: LegalSection[] = [
           <li>
             <strong>On your phone:</strong> until you delete the inspection or remove the app.
           </li>
-          <li>
-            <strong>Waitlist:</strong> until Rondva launches and we have written to you, or until
-            you ask us to remove you, whichever comes first. If Rondva does not launch, the list
-            is deleted. Entries that never lead to an account are deleted no later than 24
-            months after they were submitted.
-          </li>
         </ul>
         <p>
           How to close your account is on the{" "}
@@ -713,7 +692,7 @@ const sections: LegalSection[] = [
         <p>
           You can ask to see what we hold about you, have it corrected or deleted, restrict or
           object to its use, or receive a copy in a portable format. Write to{" "}
-          <LegalLink href={mail}>{R.contactEmail}</LegalLink>. To leave the waitlist, you can
+          <LegalLink href={mail}>{R.contactEmail}</LegalLink>. To stop our emails, you can
           also reply to any email from us. We reply within one month, as the law requires.
         </p>
         <p>

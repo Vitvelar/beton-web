@@ -57,22 +57,3 @@ export function writeConsent(choice: { analytics: boolean; marketing: boolean })
 export function openConsentDialog() {
   window.dispatchEvent(new Event(CONSENT_OPEN_EVENT));
 }
-
-/** Tilkynna umbreytingu (t.d. biðlistaskráningu) til þeirra mælitækja sem eru hlaðin. */
-export function trackLead(source: string) {
-  if (typeof window === "undefined") return;
-  const w = window as unknown as {
-    gtag?: (...args: unknown[]) => void;
-    fbq?: (...args: unknown[]) => void;
-  };
-  try {
-    w.gtag?.("event", "generate_lead", { event_category: "waitlist", event_label: source });
-  } catch {
-    // ignore
-  }
-  try {
-    w.fbq?.("track", "Lead", { content_name: source });
-  } catch {
-    // ignore
-  }
-}

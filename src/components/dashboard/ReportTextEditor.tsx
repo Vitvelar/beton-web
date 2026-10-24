@@ -5,17 +5,19 @@
 // að keyra AI aftur. Fyrir vinnuflæðið "AI-tillagan er skrítin → laga/eyða
 // henni → fá lokaskýrslu" sem áður var gert í Canva.
 
-import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   updateReportText,
   type ReportTextEdit,
 } from "@/app/(dashboard)/dashboard/[id]/actions";
+import { GuardedLink } from "./GuardedLink";
 import { ReportProgress } from "./ReportProgress";
 import { SeverityBadge } from "./SeverityBadge";
+import { useUnsavedGuard } from "./useUnsavedGuard";
 import type { Severity } from "@/lib/supabase/types";
-import { dashboardCopy, fill, plural, type DashboardLocale } from "@/lib/i18n/dashboard";
+import { dashboardCopy, fill, format, plural, type DashboardLocale } from "@/lib/i18n/dashboard";
+import { btn, field, fieldHelp, fieldLabel, spinner, tapLink } from "@/lib/ui";
 import type { RatingScheme } from "@/lib/report/settings";
 import type { Nzs4306Conditions, Nzs4306ReportData } from "@/lib/report/nzs4306";
 
@@ -68,8 +70,12 @@ export function ReportTextEditor({
   const copy = dashboardCopy(locale);
   const t = copy.reportEditor;
   const router = useRouter();
+  const uid = useId();
+  const barRef = useRef<HTMLDivElement>(null);
   const [reportRequest, setReportRequest] = useState(0);
   const [isPending, startTransition] = useTransition();
+  // Hvor hnappurinn var ýttur — aðeins hann sýnir snúðinn.
+  const [pressed, setPressed] = useState<"pdf" | "nopdf" | null>(null);
   // Árekstravörn: token fylgir hverri vistun; server hafnar ef snapshot-ið
   // breyttist annars staðar. Uppfærist eftir hverja vistun.
   const [token, setToken] = useState(initialToken);
@@ -156,14 +162,38 @@ export function ReportTextEditor({
     });
   }
 
+  // Óvistaðar breytingar = munur á reitunum og síðast vistuðu útgáfu.
+  const [baseline, setBaseline] = useState(() => JSON.stringify(buildEdit()));
+  const dirty = JSON.stringify(buildEdit()) !== baseline;
+  useUnsavedGuard(dirty, copy.common.unsavedLeave);
+
+  // Fasta vistunarstikan má ekki hylja reitinn sem er í fókus: skrunbil neðst = hæð stikunnar.
+  useEffect(() => {
+    const bar = barRef.current;
+    if (!bar) return;
+    const root = document.documentElement;
+    const apply = () => {
+      root.style.scrollPaddingBottom = `${bar.offsetHeight + 24}px`;
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      root.style.scrollPaddingBottom = "";
+    };
+  }, []);
+
   function handleSave(regeneratePdf: boolean) {
     setMessage(null);
     setReportRequest(0);
+    setPressed(regeneratePdf ? "pdf" : "nopdf");
+    const edit = buildEdit();
     startTransition(async () => {
       try {
         const result = await updateReportText(
           inspectionId,
-          buildEdit(),
+          edit,
           regeneratePdf,
           token
         );
@@ -177,6 +207,7 @@ export function ReportTextEditor({
           setMessage({ type: "error", text: result.error });
           return;
         }
+        setBaseline(JSON.stringify(edit));
         const queued = "queued" in result && result.queued;
         if (!regeneratePdf) {
           setMessage({
@@ -196,23 +227,25 @@ export function ReportTextEditor({
         router.refresh();
       } catch {
         setMessage({ type: "error", text: t.saveUnconfirmed });
+      } finally {
+        setPressed(null);
       }
     });
   }
 
-  const textareaCls =
-    "w-full rounded-lg border border-concrete px-3 py-2 text-sm text-ink focus:border-navy focus:ring-1 focus:ring-navy outline-none transition-colors resize-y";
+  const textareaCls = field("box", "resize-y");
+  const cardCls = "rounded-xl border border-concrete bg-surface";
 
   return (
-    <div className={reportRequest > 0 ? "pb-80" : "pb-24"}>
+    <div>
       <div className="mb-6">
-        <Link
+        <GuardedLink
           href={`/dashboard/${inspectionId}`}
-          className="text-sm text-fog hover:text-ink transition-colors"
+          className={`${tapLink} text-sm text-fog hover:text-ink`}
         >
           {copy.common.backLink}
-        </Link>
-        <h1 className="text-xl font-semibold text-ink mt-1">
+        </GuardedLink>
+        <h1 className="mt-1 text-2xl font-semibold text-ink">
           {t.title}
         </h1>
         <p className="text-sm text-fog">
@@ -224,13 +257,14 @@ export function ReportTextEditor({
       </div>
 
       {/* Samantekt */}
-      <div className="rounded-xl border border-concrete bg-white p-6 space-y-5 mb-6">
-        <h2 className="text-sm font-semibold text-navy">{t.summary}</h2>
+      <div className={`${cardCls} p-6 space-y-5 mb-6`}>
+        <h2 className="text-lg font-semibold text-ink">{t.summary}</h2>
         <div>
-          <label className="block text-sm font-medium text-ink mb-1.5">
+          <label htmlFor={`${uid}-introduction`} className={fieldLabel}>
             {t.introduction}
           </label>
           <textarea
+            id={`${uid}-introduction`}
             value={introduction}
             onChange={(e) => setIntroduction(e.target.value)}
             rows={4}
@@ -238,10 +272,11 @@ export function ReportTextEditor({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink mb-1.5">
+          <label htmlFor={`${uid}-property`} className={fieldLabel}>
             {t.propertyDescription}
           </label>
           <textarea
+            id={`${uid}-property`}
             value={propertyDescription}
             onChange={(e) => setPropertyDescription(e.target.value)}
             rows={3}
@@ -249,10 +284,11 @@ export function ReportTextEditor({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink mb-1.5">
+          <label htmlFor={`${uid}-conclusion`} className={fieldLabel}>
             {t.conclusion}
           </label>
           <textarea
+            id={`${uid}-conclusion`}
             value={conclusion}
             onChange={(e) => setConclusion(e.target.value)}
             rows={6}
@@ -262,33 +298,33 @@ export function ReportTextEditor({
       </div>
 
       {nz ? (
-        <div className="rounded-xl border border-concrete bg-white p-6 space-y-5 mb-6">
-          <h2 className="text-sm font-semibold text-navy">{t.nzHeading}</h2>
+        <div className={`${cardCls} p-6 space-y-5 mb-6`}>
+          <h2 className="text-lg font-semibold text-ink">{t.nzHeading}</h2>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">{t.nzSignificant}</label>
-            <textarea value={nzSignificant} onChange={(e) => setNzSignificant(e.target.value)} rows={4} className={textareaCls} />
-            <p className="mt-1 text-xs text-fog">{t.nzSignificantHint}</p>
+            <label htmlFor={`${uid}-nz-significant`} className={fieldLabel}>{t.nzSignificant}</label>
+            <textarea id={`${uid}-nz-significant`} value={nzSignificant} onChange={(e) => setNzSignificant(e.target.value)} rows={4} className={textareaCls} />
+            <p className={fieldHelp}>{t.nzSignificantHint}</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">{t.nzMaintenance}</label>
-            <textarea value={nzMaintenance} onChange={(e) => setNzMaintenance(e.target.value)} rows={4} className={textareaCls} />
+            <label htmlFor={`${uid}-nz-maintenance`} className={fieldLabel}>{t.nzMaintenance}</label>
+            <textarea id={`${uid}-nz-maintenance`} value={nzMaintenance} onChange={(e) => setNzMaintenance(e.target.value)} rows={4} className={textareaCls} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-ink mb-1.5">{t.nzLimitations}</label>
-            <textarea value={nzLimitations} onChange={(e) => setNzLimitations(e.target.value)} rows={5} className={textareaCls} />
-            <p className="mt-1 text-xs text-fog">{t.nzLimitationsHint}</p>
+            <label htmlFor={`${uid}-nz-limitations`} className={fieldLabel}>{t.nzLimitations}</label>
+            <textarea id={`${uid}-nz-limitations`} value={nzLimitations} onChange={(e) => setNzLimitations(e.target.value)} rows={5} className={textareaCls} />
+            <p className={fieldHelp}>{t.nzLimitationsHint}</p>
           </div>
           <div>
-            <p className="block text-sm font-medium text-ink mb-1.5">{t.nzMoisture}</p>
-            <p className="mb-2 text-xs text-fog">{t.nzMoistureHint}</p>
+            <h3 className="text-sm font-medium text-ink">{t.nzMoisture}</h3>
+            <p className={`mb-2 ${fieldHelp}`}>{t.nzMoistureHint}</p>
             {nzRows.length === 0 ? (
               <p className="text-sm text-fog italic">{t.nzNoMoisture}</p>
             ) : (
-              <ul className="divide-y divide-concrete/40 rounded-lg border border-concrete">
+              <ul className="divide-y divide-concrete rounded-lg border border-concrete">
                 {nzRows.map((row, i) => {
                   const removed = removedRows.has(i);
                   return (
-                    <li key={`${row.source_id}-${i}`} className="flex items-center gap-3 px-3 py-2 text-sm">
+                    <li key={`${row.source_id}-${i}`} className="flex items-center gap-3 px-3 py-1 text-sm">
                       <span className={`flex-1 ${removed ? "text-fog line-through" : "text-ink"}`}>
                         {row.location} — <strong>{row.reading}</strong> {row.unit}
                         {row.assessment ? ` (${row.assessment})` : ""}
@@ -296,7 +332,7 @@ export function ReportTextEditor({
                       <button
                         type="button"
                         onClick={() => toggleRow(i)}
-                        className={`text-xs hover:underline ${removed ? "text-navy" : "text-sev-danger"}`}
+                        className={`inline-flex min-h-11 items-center px-2 text-sm font-medium underline-offset-4 hover:underline ${removed ? "text-navy" : "text-danger"}`}
                       >
                         {removed ? t.nzRestoreRow : t.nzRemoveRow}
                       </button>
@@ -311,12 +347,9 @@ export function ReportTextEditor({
 
       {/* Athugasemdir eftir rýmum */}
       {(report.rooms ?? []).map((room, roomIdx) => (
-        <div
-          key={room.slug}
-          className="rounded-xl border border-concrete bg-white mb-6"
-        >
-          <div className="px-6 py-3 border-b border-concrete/50">
-            <h2 className="text-sm font-semibold text-navy">
+        <div key={room.slug} className={`${cardCls} mb-6`}>
+          <div className="px-6 py-3 border-b border-concrete">
+            <h2 className="text-lg font-semibold text-ink">
               {roomIdx + 2}. {room.name}
             </h2>
           </div>
@@ -325,103 +358,118 @@ export function ReportTextEditor({
               {t.noObservations}
             </p>
           ) : (
-            <div className="divide-y divide-concrete/40">
-              {room.observations.map((obs, obsIdx) => (
-                <div key={obs.id} className="px-6 py-5 space-y-3">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="font-bold text-navy text-sm">
-                      {roomIdx + 2}.{obsIdx + 1}
-                    </span>
-                    <span className="font-semibold text-sm text-ink flex-1">
-                      {obs.title}
-                    </span>
-                    <SeverityBadge severity={obs.severity} locale={locale} scheme={scheme} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-fog mb-1">
-                      {t.description}
-                    </label>
-                    <textarea
-                      value={obsText[obs.id]?.description ?? ""}
-                      onChange={(e) =>
-                        setObsField(obs.id, "description", e.target.value)
-                      }
-                      rows={3}
-                      className={textareaCls}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-medium text-fog">
-                        {t.suggestion}
-                      </label>
-                      {(obsText[obs.id]?.suggestion ?? "") !== "" && (
-                        <button
-                          type="button"
-                          onClick={() => setObsField(obs.id, "suggestion", "")}
-                          className="text-xs text-sev-danger hover:underline"
-                        >
-                          {t.deleteSuggestion}
-                        </button>
-                      )}
+            <div className="divide-y divide-concrete">
+              {room.observations.map((obs, obsIdx) => {
+                const number = `${roomIdx + 2}.${obsIdx + 1}`;
+                const label = `${number} ${obs.title}`;
+                return (
+                  <div key={obs.id} className="px-6 py-5 space-y-3">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="font-bold text-ink text-sm">
+                        {number}
+                      </span>
+                      <h3 className="font-semibold text-sm text-ink flex-1">
+                        {obs.title}
+                      </h3>
+                      <SeverityBadge severity={obs.severity} locale={locale} scheme={scheme} />
                     </div>
-                    <textarea
-                      value={obsText[obs.id]?.suggestion ?? ""}
-                      onChange={(e) =>
-                        setObsField(obs.id, "suggestion", e.target.value)
-                      }
-                      rows={2}
-                      placeholder={t.emptySuggestion}
-                      className={textareaCls}
-                    />
+                    <div>
+                      <label htmlFor={`${uid}-${obs.id}-description`} className={fieldLabel}>
+                        {t.description}
+                      </label>
+                      <textarea
+                        id={`${uid}-${obs.id}-description`}
+                        aria-label={format(t.descriptionOf, { label })}
+                        value={obsText[obs.id]?.description ?? ""}
+                        onChange={(e) =>
+                          setObsField(obs.id, "description", e.target.value)
+                        }
+                        rows={3}
+                        className={textareaCls}
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label htmlFor={`${uid}-${obs.id}-suggestion`} className={fieldLabel}>
+                          {t.suggestion}
+                        </label>
+                        {(obsText[obs.id]?.suggestion ?? "") !== "" && (
+                          <button
+                            type="button"
+                            onClick={() => setObsField(obs.id, "suggestion", "")}
+                            className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-danger underline-offset-4 hover:underline"
+                          >
+                            {t.deleteSuggestion}
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        id={`${uid}-${obs.id}-suggestion`}
+                        aria-label={format(t.suggestionOf, { label })}
+                        value={obsText[obs.id]?.suggestion ?? ""}
+                        onChange={(e) =>
+                          setObsField(obs.id, "suggestion", e.target.value)
+                        }
+                        rows={2}
+                        placeholder={t.emptySuggestion}
+                        className={textareaCls}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       ))}
 
-      {/* Fast vistunarborði neðst */}
-      <div className="fixed bottom-0 left-0 right-0 max-h-[45vh] overflow-y-auto border-t border-concrete bg-white/95 backdrop-blur px-6 py-3 z-10">
-        {reportRequest > 0 && <div className="max-w-4xl mx-auto mb-2"><ReportProgress key={reportRequest} inspectionId={inspectionId} requestKey={reportRequest} locale={locale} /></div>}
-        <div className="max-w-4xl mx-auto flex items-center gap-3 flex-wrap">
+      {/* Vistunarstika: föst neðst en inni í síðunni (sama breidd), svo hún hylur ekki reitinn í fókus. */}
+      <div
+        ref={barRef}
+        className="sticky bottom-3 z-10 max-h-[45dvh] overflow-y-auto rounded-xl border border-concrete bg-surface p-3 shadow-sm"
+      >
+        {reportRequest > 0 && (
+          <div className="mb-2">
+            <ReportProgress key={reportRequest} inspectionId={inspectionId} requestKey={reportRequest} locale={locale} />
+          </div>
+        )}
+        <div className="flex items-center gap-3 flex-wrap">
           <button
+            type="button"
             onClick={() => handleSave(true)}
             disabled={isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-navy px-5 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors disabled:opacity-60"
+            aria-busy={pressed === "pdf"}
+            className={btn("primary")}
           >
-            {isPending && (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-            )}
+            {pressed === "pdf" && <span aria-hidden="true" className={spinner} />}
             {t.saveAndRegenerate}
           </button>
           <button
+            type="button"
             onClick={() => handleSave(false)}
             disabled={isPending}
-            className="rounded-lg border border-navy px-5 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors disabled:opacity-60"
+            aria-busy={pressed === "nopdf"}
+            className={btn("secondary")}
           >
+            {pressed === "nopdf" && <span aria-hidden="true" className={spinner} />}
             {t.saveWithoutPdf}
           </button>
-          <Link
-            href={`/dashboard/${inspectionId}/report`}
-            className="text-sm text-fog hover:text-ink transition-colors"
-          >
+          <GuardedLink href={`/dashboard/${inspectionId}/report`} className={btn("quiet")}>
             {t.viewReport}
-          </Link>
-          {message && (
-            <span
-              className={`text-sm ${
-                message.type === "error"
-                  ? "text-sev-danger"
-                  : message.type === "warning"
-                    ? "text-amber-700"
-                    : "text-emerald-700"
-              }`}
-            >
+          </GuardedLink>
+          <div aria-live="polite" className="text-sm">
+            {dirty && !isPending ? <span className="text-fog">{t.unsaved}</span> : null}
+            {!dirty && message && message.type !== "error" ? (
+              <span className={message.type === "warning" ? "text-sev-warn-text" : "text-success"}>
+                {message.text}
+              </span>
+            ) : null}
+          </div>
+          {message?.type === "error" ? (
+            <p role="alert" className="text-sm text-danger">
               {message.text}
-            </span>
-          )}
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
