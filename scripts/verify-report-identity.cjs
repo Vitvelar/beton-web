@@ -41,9 +41,11 @@ const GOLDEN = {
 // isop-golden (nýtt snið, vef PR W2): markup tilbúnu sýnisskoðunarinnar (scripts/isop-sample/), reiknað þegar sniðið var
 // smíðað. EKKI hluti af 8 hash-unum hér að ofan — þeir eru óbreyttir. Breytist aðeins með meðvitaðri breytingu á sniðinu
 // (skráð í PR-lýsingu þeirrar breytingar).
+// Endurpinnað 2026-10-24 (sameining við origin/main 942b022, UX-yfirferð #53): AÐEINS stjórnhnappastikan efst
+// (ReportNav, `print:hidden`, sama og venjulega sniðið og NZS 4306 fá) breyttist; meginmál skýrslunnar bæti-eins.
 const GOLDEN_ISOP = {
-  'isop-us:pdf': '3f3d79ba07a380396d056449e473f9deaf2ac35ba5c7ca684713ffc3e5bc64f7',
-  'isop-us:web': 'a1b10c01d3ed778f6c726448d051f853f8fdaf2f518c66ed442f9fbaf4bb2063',
+  'isop-us:pdf': '4dbb6eb7ab07e04587d5947b6cdc8b9ba90a88afd43d98de25c89be29b438e53',
+  'isop-us:web': '0b662d0e84b36223a2baddd7b8744e870e4dab754fcf4f22f9991f80dec1a961',
 };
 
 const sha = s => crypto.createHash('sha256').update(s, 'utf8').digest('hex');
