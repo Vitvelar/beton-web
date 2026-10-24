@@ -28,6 +28,7 @@ import {
 } from "@/lib/report/i18n";
 import { ratingSchemeOf, reportStandardOf, type RatingScheme } from "@/lib/report/settings";
 import { Nzs4306Report, type NzReportData, type NzReportPhoto } from "@/components/report/Nzs4306Report";
+import { IsopReport, type IsopReportInput, type IsopReportPhoto } from "@/components/report/IsopReport";
 import { fill, format } from "@/lib/i18n/format";
 import { dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
 import { getDashboardLocale } from "@/lib/request-brand";
@@ -38,12 +39,14 @@ interface ReportData {
   report_locale?: string;
   /** Matskerfi (standard | condition_1_3 | nz_terms), stimplað við gerð; vantar = standard. */
   rating_scheme?: string;
-  /** Skýrslusnið (default | nzs_4306), stimplað við gerð; vantar = núverandi snið. */
+  /** Skýrslusnið (default | nzs_4306 | isop), stimplað við gerð; vantar = núverandi snið. */
   report_standard?: string;
   /** Enskt afbrigði (en-NZ/AU/GB/IE/US/CA), stimplað við gerð; vantar = almenn enska (eins og áður). */
   english_variant?: string;
   /** NZS 4306-hluti (aðeins þegar report_standard = nzs_4306) — sjá src/lib/report/nzs4306.ts. */
   nzs4306?: NzReportData["nzs4306"];
+  /** isop-hluti (aðeins þegar report_standard = isop) — sjá src/lib/report/isop.ts. */
+  isop?: IsopReportInput["isop"];
   inspection: {
     address: string;
     postal_code: string;
@@ -366,6 +369,47 @@ export default async function ReportPage({
   // skilmála eins og áður. Öll önnur fyrirtæki (og önnur mál) fá hlutlausan kafla um
   // takmarkanir skoðunar, svo eigin skilmálatexta og/eða tengil — aldrei lagatexta Beton.
   const betonTerms = locale === "is" && brand.isBeton;
+
+  // isop (stimplað report_standard = "isop" OG ai_report_data.isop til): kerfaröð fyrir Bandaríkin og Kanada.
+  // Stimpill án isop-hluta (eða óþekkt snið) fellur í venjulega sniðið, svo engin skýrsla verður ólæsileg.
+  if (reportStandardOf(report) === "isop" && report.isop && typeof report.isop === "object" && !Array.isArray(report.isop)) {
+    const qualifications = await inspectorQualifications(supabase, inspection.id);
+    const toPhoto = (p: PhotoWithUrl): IsopReportPhoto => ({ id: p.id, url: p.url, caption: p.caption });
+    const isopRoomPhotos: Record<string, IsopReportPhoto[]> = {};
+    const isopObsPhotos: Record<string, IsopReportPhoto[]> = {};
+    for (const room of report.rooms) {
+      const dbRoom = dbRooms.find((r) => r.slug === room.slug);
+      isopRoomPhotos[room.slug] = dbRoom ? roomPhotos(dbRoom.id).map(toPhoto) : [];
+      for (const obs of room.observations) isopObsPhotos[obs.id] = obsPhotos(obs.id).map(toPhoto);
+    }
+    // ai_report_data.rooms hefur ekkert id (report-data.ts í edge er læst), en sérsniðin rými varpast á kerfi með
+    // isop.systems.room_map[<rými-id>]. id er því sótt úr rýmum skoðunarinnar eftir slug (sama id og edge/appið nota).
+    const isopReport: IsopReportInput = {
+      ...report,
+      rooms: report.rooms.map((room) => {
+        const own = (room as { id?: unknown }).id;
+        return typeof own === "string" && own ? room : { ...room, id: dbRooms.find((r) => r.slug === room.slug)?.id };
+      }),
+    };
+    return (
+      <div className="max-w-4xl mx-auto print:max-w-none">
+        <style dangerouslySetInnerHTML={{ __html: reportPrintCss(isPdfMode) }} />
+        <ReportNav id={id} ui={ui} nav={nav} />
+        <IsopReport
+          report={isopReport}
+          brand={brand}
+          inspectorName={inspectorName}
+          qualifications={qualifications}
+          variant={variant}
+          sevColors={SEV_COLORS}
+          coverPhotoUrl={coverPhoto?.url ?? null}
+          roomPhotos={isopRoomPhotos}
+          obsPhotos={isopObsPhotos}
+          reportGeneratedAt={inspection.report_generated_at ?? null}
+        />
+      </div>
+    );
+  }
 
   // NZS 4306:2005 (stimplað report_standard): eigið snið á ensku, sömu prentstílar og PDF-leið.
   if (reportStandardOf(report) === "nzs_4306") {
@@ -905,6 +949,25 @@ interface NavState {
   notice: "missing" | "pending" | "error" | null;
   pending: boolean;
   interactive: boolean;
+}
+
+// Réttindi skoðunarmanns (inspectors.qualifications) — sér fyrirspurn svo venjulega sniðið lesi aldrei nýja
+// dálkinn; bregst mjúklega ef hann er ekki til. Notað af isop-sniðinu (NZ-greinin hefur sitt eigið afrit).
+async function inspectorQualifications(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  inspectionId: string,
+): Promise<string | null> {
+  try {
+    const { data: q } = await supabase
+      .from("inspections")
+      .select("inspectors ( qualifications )")
+      .eq("id", inspectionId)
+      .maybeSingle();
+    const row = (Array.isArray(q?.inspectors) ? q?.inspectors[0] : q?.inspectors) as { qualifications?: unknown } | null | undefined;
+    return typeof row?.qualifications === "string" && row.qualifications.trim() ? row.qualifications.trim() : null;
+  } catch {
+    return null;
+  }
 }
 
 // Hnapparnir efst (stjórnborð), faldir í prentun. Sameiginlegt báðum sniðum.
