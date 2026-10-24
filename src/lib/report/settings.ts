@@ -8,10 +8,10 @@ import { type EnglishVariant, resolveEnglishVariant } from "./english-variant";
 // (samningur: plan/rondva/NZ-SKYRSLUSNID-HONNUN.md). Edge-fallið stimplar niðurstöðuna í
 // ai_report_data; hér er hún notuð til að sýna virk gildi á stillingasíðunni.
 
-export const REPORT_STANDARDS = ["default", "nzs_4306"] as const;
+export const REPORT_STANDARDS = ["default", "nzs_4306", "isop"] as const;
 export type ReportStandard = (typeof REPORT_STANDARDS)[number];
 
-export const RATING_SCHEMES = ["standard", "condition_1_3", "nz_terms"] as const;
+export const RATING_SCHEMES = ["standard", "condition_1_3", "nz_terms", "isop_terms"] as const;
 export type RatingScheme = (typeof RATING_SCHEMES)[number];
 
 export function isReportStandard(value: unknown): value is ReportStandard {
@@ -49,7 +49,7 @@ export function resolveReportSettings(
   const locale: ReportLocale = isReportLocale(company.report_locale) ? company.report_locale : country === "IS" ? "is" : "en";
   const scheme: RatingScheme = isRatingScheme(company.rating_scheme)
     ? company.rating_scheme
-    : standard === "nzs_4306" ? "nz_terms" : CONDITION_RATING_COUNTRIES.has(country) ? "condition_1_3" : "standard";
+    : standard === "nzs_4306" ? "nz_terms" : standard === "isop" ? "isop_terms" : CONDITION_RATING_COUNTRIES.has(country) ? "condition_1_3" : "standard";
   return locale === "en"
     ? { locale, scheme, standard, englishVariant: resolveEnglishVariant(country) }
     : { locale, scheme, standard };

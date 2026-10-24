@@ -90,6 +90,13 @@ function applicationCss() {
     for (const m of Object.values(g.__RSC_MANIFEST || {})) {
       const key = Object.keys(m.entryCSSFiles || {}).find(k => k.endsWith('src/app/(dashboard)/dashboard/[id]/report/page'));
       if (key) cssFiles = m.entryCSSFiles[key].map(f => path.join(root, '.next', f.path));
+      // `next build --webpack` (staðbundið): síðan sjálf fær aðeins sín eigin CSS-brot (typography) og Tailwind-hluti
+      // forritsins liggur í layout-færslum dashboard-hópsins. Þá eru þær teknar með, á undan síðunni. Turbopack-bygging
+      // (Vercel/CI) setur allt í færslu síðunnar og fer aldrei í þessa grein.
+      const layoutKey = Object.keys(m.entryCSSFiles || {}).find(k => k.endsWith('src/app/(dashboard)/layout'));
+      if (key && layoutKey && !cssFiles.some(f => fs.readFileSync(f, 'utf8').includes('.flex-col'))) {
+        cssFiles = [...m.entryCSSFiles[layoutKey].map(f => path.join(root, '.next', f.path)), ...cssFiles];
+      }
     }
   }
   if (!cssFiles.length) {
