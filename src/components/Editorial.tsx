@@ -1,15 +1,21 @@
+// Stíll fyrir meta-merki í Abel: 12px, hástafir, aldrei feitletrað (Abel hefur
+// ekkert feitt snið, svo font-semibold gæfi gervifeitletrun). DESIGN.md §6.
+export const metaLabel = "font-mono text-xs uppercase tracking-widest text-fog";
+
 interface EyebrowProps {
   children: React.ReactNode;
-  color?: string;
+  /** Á dökkum fleti notar yfirskriftin `accent-on-inverse` í stað `navy`. */
+  onDark?: boolean;
 }
 
-export function Eyebrow({ children, color = "var(--color-navy)" }: EyebrowProps) {
+export function Eyebrow({ children, onDark = false }: EyebrowProps) {
   return (
     <div
-      className="text-[11px] font-semibold tracking-[0.16em] uppercase flex items-center gap-2.5"
-      style={{ color }}
+      className={`flex items-center gap-2.5 text-label font-semibold uppercase ${
+        onDark ? "text-accent-on-inverse" : "text-navy"
+      }`}
     >
-      <span className="w-6 h-px" style={{ background: color }} />
+      <span className="h-px w-6 bg-current" aria-hidden="true" />
       {children}
     </div>
   );
@@ -22,9 +28,9 @@ interface NumberedDividerProps {
 
 export function NumberedDivider({ n, label }: NumberedDividerProps) {
   return (
-    <div className="flex items-baseline gap-4 pb-4 border-b border-concrete-dk mb-12">
-      <div className="text-xs font-semibold text-fog font-mono tracking-[0.05em]">{n}</div>
-      <div className="text-[13px] font-semibold text-ink tracking-[0.08em] uppercase">{label}</div>
+    <div className="mb-12 flex items-baseline gap-4 border-b border-concrete-dk pb-4">
+      <div className={metaLabel}>{n}</div>
+      <div className="text-label font-semibold uppercase text-ink">{label}</div>
     </div>
   );
 }

@@ -11,10 +11,13 @@ import {
 } from "@/lib/supabase/bearer";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
+  isStorageObjectPath,
   isWorkerRequest,
   WORKER_TOKEN_HEADER,
   reportTitle,
 } from "@/lib/report/shared";
+import { ReportProgress } from "@/components/dashboard/ReportProgress";
+import { btn, tapLink } from "@/lib/ui";
 import type { Severity } from "@/lib/supabase/types";
 import { resolveBranding } from "@/lib/report/branding";
 import {
@@ -27,7 +30,7 @@ import { ratingSchemeOf, reportStandardOf, type RatingScheme } from "@/lib/repor
 import { Nzs4306Report, type NzReportData, type NzReportPhoto } from "@/components/report/Nzs4306Report";
 import { IsopReport, type IsopReportInput, type IsopReportPhoto } from "@/components/report/IsopReport";
 import { fill, format } from "@/lib/i18n/format";
-import { dashboardCopy } from "@/lib/i18n/dashboard";
+import { dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
 import { getDashboardLocale } from "@/lib/request-brand";
 import type { Metadata } from "next";
 
@@ -179,7 +182,10 @@ export default async function ReportPage({
   // ?pdf=1 er sett af server-PDF leiðinni (report/pdf/route.ts). Þá leggur
   // puppeteer til spássíurnar (25,4mm til hliðanna o.fl.), svo við sleppum
   // láréttu og minnkum lóðréttu padding-i hér til að tvöfalda það ekki.
-  const isPdfMode = (await searchParams)?.pdf === "1";
+  const pdfParam = (await searchParams)?.pdf;
+  const isPdfMode = pdfParam === "1";
+  // ?pdf=missing|pending|error: report/pdf/route.ts sendir vafra hingað í stað JSON-svars.
+  const pdfNotice = pdfParam === "missing" || pdfParam === "pending" || pdfParam === "error" ? pdfParam : null;
   const hdrs = await headers();
   // Bakgrunns-worker (á beton.is) rendar þessa síðu með x-report-worker-token og
   // notar service-client (RLS bypass) því hann er ekki innskráður notandi. Annars
@@ -198,7 +204,7 @@ export default async function ReportPage({
     .from("inspections")
     .select(`
       id, local_id, address, postal_code, municipality, fastanumer,
-      customer_name, inspection_date, weather, attendees,
+      customer_name, inspection_date, weather, attendees, status, report_url,
       property_data, ai_report_data, ai_summary,
       ai_cost_usd, ai_model, report_generated_at,
       inspectors ( full_name, company_name, company_logo_url, company_terms_url, company_terms_text ),
@@ -217,8 +223,13 @@ export default async function ReportPage({
     ? query.or(`id.eq.${id},local_id.eq.${id}`)
     : query.eq("id", id);
 
-  const { data: inspection } = await query.maybeSingle();
+  const { data: inspection, error: inspectionError } = await query.maybeSingle();
 
+  // 22P02 = ógilt auðkenni í slóðinni → „finnst ekki“. Önnur villa (bilun í gagnagrunni) er
+  // villa, ekki 404 (error.tsx).
+  if (inspectionError && inspectionError.code !== "22P02") {
+    throw new Error(`report load failed: ${inspectionError.message}`);
+  }
   if (!inspection?.ai_report_data) {
     notFound();
   }
@@ -240,7 +251,22 @@ export default async function ReportPage({
   const sevColors = condition ? CONDITION_COLORS : nzTerms ? NZ_COLORS : SEV_COLORS;
   const sevIcon = condition ? CONDITION_ICON : nzTerms ? NZ_ICON : SEV_ICON;
   const roomRating = condition ? t.conditionRating : nzTerms ? t.nzRating : t.rating;
-  const ui = dashboardCopy(await getDashboardLocale());
+  const uiLocale = await getDashboardLocale();
+  const ui = dashboardCopy(uiLocale);
+  // Hnapparnir efst: „Sækja PDF“ aðeins þegar PDF er til í Storage; annars skilaboð eða framvinda.
+  const inspectionStatus = (inspection as { status?: string | null }).status ?? null;
+  const nav: NavState = {
+    locale: uiLocale,
+    hasStoredPdf: isStorageObjectPath((inspection as { report_url?: string | null }).report_url ?? null),
+    notice: pdfNotice,
+    pending:
+      pdfNotice === "pending" ||
+      inspectionStatus === "generating" ||
+      inspectionStatus === "rendering_pdf" ||
+      inspectionStatus === "queued",
+    // Framvindan spyr þjóninn með innskráningu notandans — ekki í worker-/Bearer-/PDF-útgáfunni.
+    interactive: !workerRequest && !authorization && !isPdfMode,
+  };
 
   type RawRoom = {
     id: string; name: string; slug: string; sort_order: number;
@@ -368,7 +394,7 @@ export default async function ReportPage({
     return (
       <div className="max-w-4xl mx-auto print:max-w-none">
         <style dangerouslySetInnerHTML={{ __html: reportPrintCss(isPdfMode) }} />
-        <ReportNav id={id} ui={ui} />
+        <ReportNav id={id} ui={ui} nav={nav} />
         <IsopReport
           report={isopReport}
           brand={brand}
@@ -415,7 +441,7 @@ export default async function ReportPage({
     return (
       <div className="max-w-4xl mx-auto print:max-w-none">
         <style dangerouslySetInnerHTML={{ __html: reportPrintCss(isPdfMode) }} />
-        <ReportNav id={id} ui={ui} />
+        <ReportNav id={id} ui={ui} nav={nav} />
         <Nzs4306Report
           report={report}
           brand={brand}
@@ -439,7 +465,7 @@ export default async function ReportPage({
       <style dangerouslySetInnerHTML={{ __html: reportPrintCss(isPdfMode) }} />
 
       {/* Navigation — hidden in print */}
-      <ReportNav id={id} ui={ui} />
+      <ReportNav id={id} ui={ui} nav={nav} />
 
       {/* lang = tungumál skýrslunnar (getur verið annað en stjórnborðsins/hýsilsins). */}
       <article lang={locale} className="bg-white rounded-xl border border-concrete overflow-hidden print:border-0 print:rounded-none print:shadow-none report-article">
@@ -917,6 +943,14 @@ export default async function ReportPage({
   );
 }
 
+interface NavState {
+  locale: DashboardLocale;
+  hasStoredPdf: boolean;
+  notice: "missing" | "pending" | "error" | null;
+  pending: boolean;
+  interactive: boolean;
+}
+
 // Réttindi skoðunarmanns (inspectors.qualifications) — sér fyrirspurn svo venjulega sniðið lesi aldrei nýja
 // dálkinn; bregst mjúklega ef hann er ekki til. Notað af isop-sniðinu (NZ-greinin hefur sitt eigið afrit).
 async function inspectorQualifications(
@@ -937,30 +971,38 @@ async function inspectorQualifications(
 }
 
 // Hnapparnir efst (stjórnborð), faldir í prentun. Sameiginlegt báðum sniðum.
-function ReportNav({ id, ui }: { id: string; ui: ReturnType<typeof dashboardCopy> }) {
+function ReportNav({ id, ui, nav }: { id: string; ui: ReturnType<typeof dashboardCopy>; nav: NavState }) {
+  const notice =
+    nav.notice === "missing" ? ui.reportActions.pdfMissing : nav.notice === "error" ? ui.reportActions.pdfError : null;
   return (
-    <div className="flex items-center justify-between mb-6 print:hidden">
-      <Link href={`/dashboard/${id}`} className="text-sm text-navy hover:underline">
-        {ui.common.backLink}
-      </Link>
-      {/* EIN aðgerð: server-PDF (áreiðanlegar spássíur + blaðsíðunúmer, óháð
-          prentglugga). GET á route handler sem skilar application/pdf. Gamli
-          "Prenta/Vista" (window.print) hnappurinn fjarlægður til að forðast
-          rugling — PrintButton-comp er áfram til ef við viljum varaleið síðar. */}
-      <div className="flex items-center gap-3">
-        <Link
-          href={`/dashboard/${id}/report/edit`}
-          className="rounded-lg border border-navy px-4 py-2 text-sm font-semibold text-navy hover:bg-navy/5 transition-colors"
-        >
-          {ui.reportActions.editText}
+    <div className="mb-6 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <Link href={`/dashboard/${id}`} className={`${tapLink} text-sm text-navy`}>
+          {ui.common.backLink}
         </Link>
-        <a
-          href={`/dashboard/${id}/report/pdf`}
-          className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors"
-        >
-          {ui.reportActions.downloadPdf}
-        </a>
+        {/* EIN aðgerð: server-PDF (áreiðanlegar spássíur + blaðsíðunúmer, óháð
+            prentglugga). GET á route handler sem skilar application/pdf. Gamli
+            "Prenta/Vista" (window.print) hnappurinn fjarlægður til að forðast
+            rugling — PrintButton-comp er áfram til ef við viljum varaleið síðar. */}
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href={`/dashboard/${id}/report/edit`} className={btn("secondary")}>
+            {ui.reportActions.editText}
+          </Link>
+          {nav.hasStoredPdf ? (
+            <a href={`/dashboard/${id}/report/pdf`} className={btn("primary")}>
+              {ui.reportActions.downloadPdf}
+            </a>
+          ) : null}
+        </div>
       </div>
+      {notice ? (
+        <p role="status" className="mt-3 rounded-lg border border-line-strong bg-surface px-4 py-3 text-sm text-ink">
+          {notice}
+        </p>
+      ) : null}
+      {nav.pending && nav.interactive ? (
+        <ReportProgress inspectionId={id} requestKey={1} locale={nav.locale} />
+      ) : null}
     </div>
   );
 }

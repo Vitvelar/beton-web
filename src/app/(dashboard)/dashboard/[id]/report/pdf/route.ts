@@ -22,17 +22,25 @@ import { reportLocaleOf } from "@/lib/report/i18n";
 //   - render failed (status=error/report_error) → 500 with the message.
 //   - still rendering (queued/rendering_pdf)    → 202 { status:"rendering_pdf" }.
 //   - no server PDF yet (legacy/local-only)     → 404 (regenerate to enqueue).
+//
+// Vafri (cookie, ekki Bearer, Accept: text/html — t.d. smellt á „Sækja PDF“) fær aldrei JSON
+// á skjáinn: í stað þess er hann sendur aftur á skýrslusíðuna með ?pdf=missing|pending|error,
+// þar sem skilaboð eða framvinda birtast á hans máli. Bearer-köll appsins fá nákvæmlega sömu
+// JSON-svör og áður.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SIGNED_TTL_SECONDS = 3600;
 const PENDING_STATUSES = new Set(["queued", "generating", "rendering_pdf"]);
 
+type PdfNotice = "missing" | "pending" | "error";
+
 export async function GET(
   request: NextRequest,
   ctx: { params: Promise<{ id: string }> }
 ) {
   const { id } = await ctx.params;
+  const isBrowser = (accept: string | null) => (accept ?? "").includes("text/html");
 
   // Stjórnborðið notar Supabase cookies + aðgangshliðið (src/lib/access.ts);
   // appið sendir Bearer access token
@@ -43,18 +51,23 @@ export async function GET(
   const supabase = bearerAuthorization
     ? createBearerClient(bearerAuthorization)
     : await createClient();
+  const browser = !bearerAuthorization && isBrowser(request.headers.get("accept"));
+  const backToReport = (notice: PdfNotice) =>
+    NextResponse.redirect(new URL(`/dashboard/${encodeURIComponent(id)}/report?pdf=${notice}`, request.url));
 
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser();
   if (userError || !user) {
+    if (browser) return NextResponse.redirect(new URL("/dashboard/login", request.url));
     return NextResponse.json({ error: "Óheimill aðgangur" }, { status: 401 });
   }
   if (
     !bearerAuthorization &&
     !(await checkDashboardAccess(supabase, user.email, await getRequestBrand())).allowed
   ) {
+    if (browser) return NextResponse.redirect(new URL("/dashboard/login", request.url));
     return NextResponse.json({ error: "Óheimill aðgangur" }, { status: 401 });
   }
 
@@ -68,6 +81,7 @@ export async function GET(
 
   const { data: inspection } = await inspectionQuery.maybeSingle();
   if (!inspection) {
+    if (browser) return backToReport("missing");
     return NextResponse.json({ error: "Skýrsla fannst ekki" }, { status: 404 });
   }
 
@@ -82,6 +96,7 @@ export async function GET(
       .from(REPORT_BUCKET)
       .createSignedUrl(inspection.report_url, SIGNED_TTL_SECONDS, { download });
     if (signErr || !signed?.signedUrl) {
+      if (browser) return backToReport("error");
       return NextResponse.json(
         { error: "Tókst ekki að búa til niðurhalsslóð." },
         { status: 500 }
@@ -92,6 +107,7 @@ export async function GET(
 
   // Render mistókst.
   if (inspection.status === "error" || inspection.report_error) {
+    if (browser) return backToReport("error");
     return NextResponse.json(
       { status: "error", error: inspection.report_error ?? "PDF-gerð mistókst." },
       { status: 500 }
@@ -100,10 +116,12 @@ export async function GET(
 
   // Enn í vinnslu.
   if (PENDING_STATUSES.has(inspection.status ?? "")) {
+    if (browser) return backToReport("pending");
     return NextResponse.json({ status: "rendering_pdf" }, { status: 202 });
   }
 
   // Engin server-skýrsla til (t.d. eldri/staðbundin) — þarf að endurgera.
+  if (browser) return backToReport("missing");
   return NextResponse.json(
     { status: "no_report", error: "Ekkert PDF í Storage — endurgerðu skýrsluna." },
     { status: 404 }

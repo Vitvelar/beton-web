@@ -49,6 +49,38 @@ const TABLE = [
 for (const [input, expected] of TABLE) same(r(input), expected);
 console.log('PASS defaults by country match the edge function; explicit values win; junk ignored (incl. NZ → nzs_4306/nz_terms/en)');
 
+// ── ISOP (Home inspection US/CA): skráð gildi vinna; ekkert land fær 'isop' sjálfkrafa (§3.5).
+const ISOP_TABLE = [
+  [{ country_code: 'US', report_standard: 'isop' }, { locale: 'en', scheme: 'isop_terms', standard: 'isop', englishVariant: 'en-US' }],
+  [{ country_code: 'CA', report_standard: 'isop', rating_scheme: 'standard' }, { locale: 'en', scheme: 'standard', standard: 'isop', englishVariant: 'en-CA' }],
+  [{ country_code: 'US', report_standard: 'isop', rating_scheme: 'isop_terms' }, { locale: 'en', scheme: 'isop_terms', standard: 'isop', englishVariant: 'en-US' }],
+  [{ country_code: 'US', report_standard: null, rating_scheme: null }, { locale: 'en', scheme: 'standard', standard: 'default', englishVariant: 'en-US' }],
+  [{ country_code: 'CA' }, { locale: 'en', scheme: 'standard', standard: 'default', englishVariant: 'en-CA' }],
+  [{ country_code: 'IS', report_standard: 'isop', report_locale: 'is' }, { locale: 'is', scheme: 'isop_terms', standard: 'isop' }],
+  [{ country_code: 'US', report_standard: 'ISOP' }, { locale: 'en', scheme: 'standard', standard: 'default', englishVariant: 'en-US' }],
+];
+for (const [input, expected] of ISOP_TABLE) same(r(input), expected);
+assert.equal(ratingSchemeOf({ rating_scheme: 'isop_terms' }), 'isop_terms');
+assert.equal(reportStandardOf({ report_standard: 'isop' }), 'isop');
+{
+  const isop = load('src/lib/report/isop.ts');
+  // Sjálfgefið óvirkt; aðeins ISOP_ENABLED=1 kveikir.
+  assert.equal(isop.isopEnabled({}), false);
+  assert.equal(isop.isopEnabled({ ISOP_ENABLED: '0' }), false);
+  assert.equal(isop.isopEnabled({ ISOP_ENABLED: 'true' }), false);
+  assert.equal(isop.isopEnabled({ ISOP_ENABLED: '1' }), true);
+  for (const c of ['US', 'CA', ' us ', 'ca']) { assert.equal(isop.isopOfferedTo(c, true), true, c); assert.equal(isop.isopOfferedTo(c, false), false, c); }
+  for (const c of ['IS', 'NZ', 'GB', 'AU', 'IE', '', null, undefined, 7, 'USA']) assert.equal(isop.isopOfferedTo(c, true), false, String(c));
+  const tx = isop.texasNotice;
+  for (const yes of [{ state: 'TX' }, { state: ' tx ' }, { postalCode: '75001' }, { postalCode: '88510' }, { postalCode: '73301' }, { postalCode: '79999-1234' }, { address: '1 Main St, Austin, Texas' }, { address: 'Dallas, TX' }])
+    assert.equal(tx(yes), true, JSON.stringify(yes));
+  for (const no of [{}, { state: 'OK' }, { state: 'NM' }, { postalCode: '74101' }, { postalCode: '80000' }, { postalCode: '88401' }, { address: '7600 Elm St, Tulsa, OK' }, { address: '76 Oak Ave, Boston, MA' }])
+    assert.equal(tx(no), false, JSON.stringify(no));
+}
+// Valkosturinn er aðeins sýndur þegar flaggið leyfir; Beton/IS sjá hann aldrei (page.tsx + actions.ts nota isopOfferedTo).
+for (const f of ['src/app/(dashboard)/dashboard/settings/page.tsx', 'src/app/(dashboard)/actions.ts']) assert.ok(fs.readFileSync(path.join(__dirname, '..', f), 'utf8').includes('isopOfferedTo'), f);
+console.log('PASS ISOP: stored isop/isop_terms resolve, no country defaults to isop, option gated by ISOP_ENABLED=1 + US/CA, Texas notice examples');
+
 // ── Enskt afbrigði (samningur ENSK-AFBRIGDI-HONNUN.md): land → afbrigði, stimpill → birting.
 const variant = load('src/lib/report/english-variant.ts');
 const VARIANT_CONTRACT = [

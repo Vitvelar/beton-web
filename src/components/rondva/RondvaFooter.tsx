@@ -1,43 +1,60 @@
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
 import { CookieChoicesButton } from "@/components/rondva/CookieChoicesButton";
+import { rvDarkLink } from "@/components/rondva/ui";
 
-// Dark footer for the Rondva landing page.
+// Dark footer for the Rondva marketing pages. Text is paper or on-inverse-muted only; links are
+// 44px tall on phones.
 export function RondvaFooter() {
   return (
-    <footer className="bg-ink text-paper">
-      <div className="mx-auto max-w-[1120px] px-6 py-16">
-        {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-        <img src="/rondva/logo-white.svg" alt="Rondva" width={137} height={39} className="h-auto w-[137px]" />
+    <footer className="rv-dark bg-ink text-paper">
+      <div className="px-6">
+        <div className="mx-auto max-w-[1180px] py-16">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
+          <img src="/rondva/logo-white.svg" alt="Rondva" width={137} height={39} className="h-auto w-[137px]" />
 
-        <p className="mt-6 text-sm text-paper/70">Rondva is built by Vitvélar.</p>
+          <p className="mt-6 text-sm text-on-inverse-muted">Rondva is built by Vitvélar.</p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-          <a href={BRANDS.rondva.appUrl} className="text-paper/80 transition-colors hover:text-paper">
-            Log in
-          </a>
-          <Link href="/support" className="text-paper/80 transition-colors hover:text-paper">
-            Support
-          </Link>
-          <Link href="/privacy" className="text-paper/80 transition-colors hover:text-paper">
-            Privacy
-          </Link>
-          <Link href="/terms" className="text-paper/80 transition-colors hover:text-paper">
-            Terms
-          </Link>
-          <Link href="/cookies" className="text-paper/80 transition-colors hover:text-paper">
-            Cookies
-          </Link>
-          <CookieChoicesButton className="text-paper/80 transition-colors hover:text-paper" />
-          <a
-            href={`mailto:${BRANDS.rondva.contactEmail}`}
-            className="text-paper/80 transition-colors hover:text-paper"
-          >
-            Contact
-          </a>
+          <nav aria-label="Footer" className="mt-6">
+            <ul className="flex flex-wrap items-center gap-x-6 text-sm">
+              <li>
+                <a href={BRANDS.rondva.appUrl} className={rvDarkLink}>
+                  Log in
+                </a>
+              </li>
+              <li>
+                <Link href="/support" className={rvDarkLink}>
+                  Support
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className={rvDarkLink}>
+                  Privacy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className={rvDarkLink}>
+                  Terms
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookies" className={rvDarkLink}>
+                  Cookies
+                </Link>
+              </li>
+              <li>
+                <CookieChoicesButton className={rvDarkLink} />
+              </li>
+              <li>
+                <a href={`mailto:${BRANDS.rondva.contactEmail}`} className={rvDarkLink}>
+                  Contact
+                </a>
+              </li>
+            </ul>
+          </nav>
+
+          <p className="mt-10 text-xs text-on-inverse-muted">&copy; {new Date().getFullYear()} Vitvélar ehf.</p>
         </div>
-
-        <p className="mt-10 text-xs text-paper/50">&copy; 2026 Vitvélar ehf.</p>
       </div>
     </footer>
   );

@@ -2,18 +2,26 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { contactSchema, type ContactFormData } from "@/lib/schemas";
+import { COMPANY } from "@/lib/constants";
+import { btn, field, fieldError, spinner } from "@/lib/ui";
+import { metaLabel } from "@/components/Editorial";
 
-const fieldClass =
-  "w-full px-0 py-3.5 text-base text-ink bg-transparent border-0 border-b border-concrete-dk focus:border-ink focus:outline-none focus:ring-0 placeholder:text-fog/70";
+const labelClass = `${metaLabel} mb-1 block`;
+const linkClass = "text-ink underline underline-offset-4 hover:text-navy";
 
-const labelClass =
-  "text-[11px] font-mono tracking-[0.1em] text-fog uppercase mb-1.5 block";
+// GTM er aðeins hlaðið á beton.is í framleiðslu; annars er dataLayer ekki til og
+// kallið gerir ekkert. Engar persónuupplýsingar fara í atburðinn.
+function trackSubmit() {
+  const w = window as unknown as { dataLayer?: unknown[] };
+  w.dataLayer?.push({ event: "contact_form_submit" });
+}
 
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const thanksRef = useRef<HTMLHeadingElement>(null);
 
   const {
     register,
@@ -23,34 +31,45 @@ export function ContactForm() {
     resolver: zodResolver(contactSchema),
   });
 
+  useEffect(() => {
+    if (submitted) thanksRef.current?.focus();
+  }, [submitted]);
+
   async function onSubmit(data: ContactFormData) {
     setError(null);
+    let res: Response;
     try {
-      const res = await fetch("/api/contact", {
+      res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!res.ok) {
-        const body = await res.json();
-        throw new Error(body.error || "Villa kom upp");
-      }
-      setSubmitted(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Villa kom upp við sendingu");
+    } catch {
+      setError("Ekki náðist samband við þjónustuna. Athugaðu nettenginguna og reyndu aftur.");
+      return;
     }
+    if (!res.ok) {
+      // Svarið getur verið HTML (t.d. villusíða); þá sýnum við almenn skilaboð.
+      const body: { error?: string } | null = await res.json().catch(() => null);
+      setError(body?.error || "Ekki tókst að senda skilaboðin.");
+      return;
+    }
+    trackSubmit();
+    setSubmitted(true);
   }
 
   if (submitted) {
     return (
-      <div className="text-center py-8">
-        <div className="font-mono text-[11px] tracking-[0.12em] text-copper uppercase mb-4">
-          Skilaboð móttekin
-        </div>
-        <h3 className="text-[28px] font-medium tracking-[-0.02em] text-ink mb-3">
+      <div role="status" className="py-8 text-center">
+        <div className={`${metaLabel} mb-4 text-navy`}>Skilaboð móttekin</div>
+        <h2
+          ref={thanksRef}
+          tabIndex={-1}
+          className="mb-3 text-h3 font-medium text-ink focus:outline-none"
+        >
           Takk fyrir!
-        </h3>
-        <p className="text-[15px] leading-[1.6] text-fog max-w-md mx-auto">
+        </h2>
+        <p className="mx-auto max-w-md text-base text-fog">
           Skilaboð þín hafa borist. Við svörum innan 24 klst. á virkum dögum.
         </p>
       </div>
@@ -73,7 +92,7 @@ export function ContactForm() {
         </label>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div>
           <label htmlFor="nafn" className={labelClass}>
             Nafn *
@@ -82,11 +101,17 @@ export function ContactForm() {
             type="text"
             id="nafn"
             placeholder="Fullt nafn"
-            className={fieldClass}
+            autoComplete="name"
+            aria-required="true"
+            aria-invalid={errors.nafn ? true : undefined}
+            aria-describedby={errors.nafn ? "nafn-error" : undefined}
+            className={field("line")}
             {...register("nafn")}
           />
           {errors.nafn && (
-            <p className="mt-1 text-xs text-sev-danger">{errors.nafn.message}</p>
+            <p id="nafn-error" className={fieldError}>
+              {errors.nafn.message}
+            </p>
           )}
         </div>
         <div>
@@ -97,11 +122,17 @@ export function ContactForm() {
             type="email"
             id="netfang"
             placeholder="nafn@netfang.is"
-            className={fieldClass}
+            autoComplete="email"
+            aria-required="true"
+            aria-invalid={errors.netfang ? true : undefined}
+            aria-describedby={errors.netfang ? "netfang-error" : undefined}
+            className={field("line")}
             {...register("netfang")}
           />
           {errors.netfang && (
-            <p className="mt-1 text-xs text-sev-danger">{errors.netfang.message}</p>
+            <p id="netfang-error" className={fieldError}>
+              {errors.netfang.message}
+            </p>
           )}
         </div>
       </div>
@@ -113,38 +144,51 @@ export function ContactForm() {
         <input
           type="tel"
           id="simanumer"
-          placeholder="+354 — — — — — — —"
-          className={fieldClass}
+          placeholder="Símanúmer"
+          autoComplete="tel"
+          aria-invalid={errors.simanumer ? true : undefined}
+          aria-describedby={errors.simanumer ? "simanumer-error" : undefined}
+          className={field("line")}
           {...register("simanumer")}
         />
+        {errors.simanumer && (
+          <p id="simanumer-error" className={fieldError}>
+            {errors.simanumer.message}
+          </p>
+        )}
       </div>
 
-      <div>
-        <label className={labelClass}>Samskipti</label>
-        <div className="flex gap-6 py-3">
-          <label className="flex items-center gap-2.5 cursor-pointer text-[15px] text-ink">
+      <fieldset
+        aria-describedby={errors.samskipti ? "samskipti-error" : undefined}
+        className="min-w-0 border-0 p-0"
+      >
+        <legend className={`${labelClass} p-0`}>Samskipti</legend>
+        <div className="flex flex-wrap gap-x-6">
+          <label className="flex min-h-11 items-center gap-3 text-base text-ink">
             <input
               type="radio"
               value="hringja"
-              className="accent-ink w-4 h-4"
+              className="size-5 accent-navy"
               {...register("samskipti")}
             />
             Hringja í mig
           </label>
-          <label className="flex items-center gap-2.5 cursor-pointer text-[15px] text-ink">
+          <label className="flex min-h-11 items-center gap-3 text-base text-ink">
             <input
               type="radio"
               value="tolvupostur"
-              className="accent-ink w-4 h-4"
+              className="size-5 accent-navy"
               {...register("samskipti")}
             />
             Tölvupóstur
           </label>
         </div>
         {errors.samskipti && (
-          <p className="mt-1 text-xs text-sev-danger">{errors.samskipti.message}</p>
+          <p id="samskipti-error" className={fieldError}>
+            {errors.samskipti.message}
+          </p>
         )}
-      </div>
+      </fieldset>
 
       <div>
         <label htmlFor="skilabod" className={labelClass}>
@@ -154,17 +198,33 @@ export function ContactForm() {
           id="skilabod"
           rows={5}
           placeholder="Segðu okkur frá verkefninu — stærð húss, staðsetning, tímarammi..."
-          className={`${fieldClass} resize-none`}
+          aria-required="true"
+          aria-invalid={errors.skilabod ? true : undefined}
+          aria-describedby={errors.skilabod ? "skilabod-error" : undefined}
+          className={`${field("line")} resize-none`}
           {...register("skilabod")}
         />
         {errors.skilabod && (
-          <p className="mt-1 text-xs text-sev-danger">{errors.skilabod.message}</p>
+          <p id="skilabod-error" className={fieldError}>
+            {errors.skilabod.message}
+          </p>
         )}
       </div>
 
       {error && (
-        <div className="bg-sev-danger/10 border-l-2 border-sev-danger px-4 py-3">
-          <p className="text-sm text-sev-danger">{error}</p>
+        <div role="alert" className="border-l-2 border-danger bg-danger-tint px-4 py-3 text-sm text-danger">
+          <p className="font-semibold">{error}</p>
+          <p className="mt-1 text-ink">
+            Þú getur sent okkur tölvupóst á{" "}
+            <a href={`mailto:${COMPANY.email}`} className={linkClass}>
+              {COMPANY.email}
+            </a>{" "}
+            eða hringt í{" "}
+            <a href={COMPANY.phoneHref} className={`${linkClass} whitespace-nowrap`}>
+              {COMPANY.phone}
+            </a>
+            .
+          </p>
         </div>
       )}
 
@@ -172,10 +232,19 @@ export function ContactForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center gap-2.5 px-7 py-3.5 bg-ink text-paper text-sm font-semibold rounded-[2px] hover:bg-navy-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-busy={isSubmitting}
+          className={btn("primary", "lg")}
         >
-          {isSubmitting ? "Sendir..." : "Senda skilaboð"}
-          <span className="opacity-70">→</span>
+          {isSubmitting ? (
+            <>
+              <span className={spinner} aria-hidden="true" />
+              Sendir...
+            </>
+          ) : (
+            <>
+              Senda skilaboð <span aria-hidden="true">→</span>
+            </>
+          )}
         </button>
       </div>
     </form>

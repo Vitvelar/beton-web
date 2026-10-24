@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
+import { betonPageMetadata } from "@/lib/beton-metadata";
+import { btn } from "@/lib/ui";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = betonPageMetadata({
   title: "Um okkur — Bragi Michaelsson, húsaskoðunarmaður",
   description:
     "Kynntu þér Beton ehf. og stofnanda fyrirtækisins, Braga Michaelsson. Húsasmíðameistari með áralanga reynslu í byggingageiranum á Íslandi og í Danmörku.",
-  alternates: { canonical: "https://beton.is/umokkur" },
-};
+  path: "/umokkur",
+});
 
 const educations = [
   { degree: "Húsasmíðameistari", school: "Iðnskólinn í Hafnarfirði" },
@@ -33,23 +36,21 @@ const courses = [
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[12px] tracking-[0.18em] uppercase font-semibold text-navy mb-7 pb-4 border-b border-concrete-dk">
+    <h2 className="mb-7 border-b border-concrete-dk pb-4 text-label font-semibold uppercase text-navy">
       {children}
-    </h3>
+    </h2>
   );
 }
 
 export default function UmOkkur() {
   return (
-    <section className="px-6 lg:px-14 pt-20 lg:pt-28 pb-20 lg:pb-28">
+    <section className="px-6 pt-20 pb-20 lg:px-14 lg:pt-28 lg:pb-28">
       <div className="mx-auto max-w-[1280px]">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_1fr] gap-14 lg:gap-20 items-start">
+        <div className="grid grid-cols-1 items-start gap-14 lg:grid-cols-[1.55fr_1fr] lg:gap-20">
           {/* Left: bio + Menntun + Námskeið */}
           <div>
-            <h1 className="text-[44px] lg:text-[64px] leading-[1.02] font-medium tracking-[-0.025em] text-ink mb-10">
-              Bragi Michaelsson
-            </h1>
-            <div className="text-[17.5px] leading-[1.7] text-ink/85 space-y-4 mb-16 max-w-[640px]">
+            <h1 className="mb-10 text-h1 font-medium text-ink">Bragi Michaelsson</h1>
+            <div className="mb-10 max-w-[640px] space-y-4 text-lead text-ink">
               <p>
                 Bragi Michaelsson er með áralanga reynslu úr byggingageiranum bæði á
                 Íslandi og í Danmörku.
@@ -59,6 +60,14 @@ export default function UmOkkur() {
                 byggingaverkefna, byggingaeftirliti, þakviðgerðum og smíðum.
               </p>
             </div>
+            <div className="mb-16 flex flex-wrap items-center gap-4">
+              <Link href="/samband" className={btn("primary", "lg")}>
+                Hafa samband <span aria-hidden="true">→</span>
+              </Link>
+              <Link href="/verdskra" className={btn("secondary", "lg")}>
+                Sjá verðskrá
+              </Link>
+            </div>
 
             {/* Menntun */}
             <div className="mb-16">
@@ -67,14 +76,14 @@ export default function UmOkkur() {
                 {educations.map((e, i) => (
                   <div
                     key={e.degree}
-                    className={`grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-2 md:gap-8 py-5 ${
+                    className={`grid grid-cols-1 gap-2 py-5 md:grid-cols-[1.2fr_1fr] md:gap-8 ${
                       i === 0 ? "" : "border-t border-concrete"
                     }`}
                   >
-                    <div className="text-[16.5px] font-medium text-ink leading-[1.4]">
+                    <div className="text-base font-medium leading-snug text-ink">
                       {e.degree}
                     </div>
-                    <div className="text-[14.5px] text-fog md:text-right leading-[1.4]">
+                    <div className="text-sm leading-snug text-fog md:text-right">
                       {e.school}
                     </div>
                   </div>
@@ -89,14 +98,14 @@ export default function UmOkkur() {
                 {courses.map((c, i) => (
                   <div
                     key={c.name}
-                    className={`grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-2 md:gap-8 py-5 ${
+                    className={`grid grid-cols-1 gap-2 py-5 md:grid-cols-[1.2fr_1fr] md:gap-8 ${
                       i === 0 ? "" : "border-t border-concrete"
                     }`}
                   >
-                    <div className="text-[16.5px] font-medium text-ink leading-[1.4]">
+                    <div className="text-base font-medium leading-snug text-ink">
                       {c.name}
                     </div>
-                    <div className="text-[14.5px] text-fog md:text-right leading-[1.4]">
+                    <div className="text-sm leading-snug text-fog md:text-right">
                       {c.school}
                     </div>
                   </div>
@@ -106,8 +115,8 @@ export default function UmOkkur() {
           </div>
 
           {/* Right: portrait — sticky on desktop, B&W */}
-          <div className="lg:sticky lg:top-32 self-start order-first lg:order-last">
-            <div className="relative aspect-[4/5] rounded-[2px] overflow-hidden bg-concrete shadow-[0_30px_60px_-30px_rgba(10,13,46,0.25)]">
+          <div className="order-first self-start lg:sticky lg:top-32 lg:order-last">
+            <div className="relative aspect-4/5 overflow-hidden rounded-sharp bg-concrete shadow-photo">
               <Image
                 src="/images/bragi.webp"
                 alt="Bragi Michaelsson, stofnandi Beton ehf."

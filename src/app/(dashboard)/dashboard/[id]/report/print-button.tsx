@@ -1,6 +1,10 @@
 "use client";
 
-export function PrintButton({ fileName }: { fileName?: string }) {
+import { btn } from "@/lib/ui";
+
+// Ónotaður varakostur (sjá ReportNav í page.tsx). Textinn kemur frá kallandanum úr
+// stjórnborðskatalógnum — ekkert harðkóðað hér.
+export function PrintButton({ fileName, label }: { fileName?: string; label: string }) {
   function handlePrint() {
     // Chrome notar document.title sem sjálfgefið skráarnafn í "Vista sem PDF".
     const previous = document.title;
@@ -13,11 +17,8 @@ export function PrintButton({ fileName }: { fileName?: string }) {
   }
 
   return (
-    <button
-      onClick={handlePrint}
-      className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-deep transition-colors print:hidden"
-    >
-      Prenta / Vista PDF
+    <button type="button" onClick={handlePrint} className={`${btn("primary")} print:hidden`}>
+      {label}
     </button>
   );
 }

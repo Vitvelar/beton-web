@@ -11,7 +11,6 @@ export const COMPANY = {
 export const NAV_LINKS = [
   { href: "/umokkur", label: "Um okkur" },
   { href: "/verdskra", label: "Verðskrá" },
-  { href: "/samband", label: "Hafa samband" },
   { href: "/skilmalar", label: "Skilmálar" },
 ] as const;
 

@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Eyebrow, NumberedDivider } from "@/components/Editorial";
+import { Eyebrow, NumberedDivider, metaLabel } from "@/components/Editorial";
+import { betonPageMetadata } from "@/lib/beton-metadata";
+import { btn } from "@/lib/ui";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = betonPageMetadata({
   title: "Verðskrá — ástandsskoðun frá 129.900 kr.",
   description:
     "Verðskrá Beton ehf. fyrir ástandsskoðun fasteigna á höfuðborgarsvæðinu. Gagnsæ verðlagning með virðisaukaskatti, akstur innifalinn.",
-  alternates: { canonical: "https://beton.is/verdskra" },
-};
+  path: "/verdskra",
+});
 
 const residential = [
   { size: "0–100 m²", price: "129.900", note: "Stúdíó, lítil íbúð" },
@@ -19,22 +21,19 @@ const residential = [
 
 function TilbodCard({ n, label, body }: { n: string; label: string; body: string }) {
   return (
-    <div className="bg-paper-alt border border-concrete-dk text-ink rounded-[2px] p-10 lg:p-12 flex flex-col justify-between min-h-[320px]">
+    <div className="flex min-h-80 flex-col justify-between rounded-sharp border border-concrete bg-paper-alt p-8 text-ink lg:p-12">
       <div>
-        <div className="flex justify-between items-baseline mb-8">
-          <div className="text-[11px] font-mono tracking-[0.12em] text-navy uppercase">
+        <div className="mb-8 flex items-baseline justify-between">
+          <div className="font-mono text-xs uppercase tracking-widest text-navy">
             {n} / {label}
           </div>
-          <div className="text-[32px] font-medium text-ink tracking-[-0.02em]">Tilboð</div>
+          <div className="text-h3 font-medium text-ink">Tilboð</div>
         </div>
-        <p className="text-base leading-[1.6] text-ink/75">{body}</p>
+        <p className="text-base leading-relaxed text-fog">{body}</p>
       </div>
-      <Link
-        href="/samband"
-        className="mt-8 px-6 py-4 bg-navy text-paper text-sm font-semibold flex justify-between items-center rounded-[2px] hover:bg-navy-deep transition-colors"
-      >
+      <Link href="/samband" className={btn("primary", "lg", "mt-8 w-full justify-between")}>
         <span>Óska eftir tilboði</span>
-        <span className="opacity-70">→</span>
+        <span aria-hidden="true">→</span>
       </Link>
     </div>
   );
@@ -44,17 +43,15 @@ export default function Verdskra() {
   return (
     <>
       {/* Intro */}
-      <section className="px-6 lg:px-14 pt-20 lg:pt-24 pb-16">
+      <section className="px-6 pt-20 pb-16 lg:px-14 lg:pt-24">
         <div className="mx-auto max-w-[1280px]">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-24">
+          <div className="grid grid-cols-1 gap-12 md:grid-cols-[1fr_2fr] md:gap-24">
             <div>
               <Eyebrow>Verðskrá</Eyebrow>
             </div>
             <div>
-              <h1 className="text-[44px] lg:text-[64px] leading-none font-medium tracking-[-0.03em] mb-8 text-balance">
-                Verðskrá
-              </h1>
-              <div className="text-[17.5px] leading-[1.55] text-fog max-w-[640px] space-y-4">
+              <h1 className="mb-8 text-h1 font-medium text-balance">Verðskrá</h1>
+              <div className="max-w-[640px] space-y-4 text-lead text-fog">
                 <p>
                   Verð er gefið fyrir ástandsskoðun með skýrslu. Innifalið í verði er
                   allt verkfæragjald sem og akstur innan höfuðborgarsvæðisins.
@@ -67,13 +64,13 @@ export default function Verdskra() {
       </section>
 
       {/* Residential table */}
-      <section className="px-6 lg:px-14 pb-20 lg:pb-24">
+      <section className="px-6 pb-20 lg:px-14 lg:pb-28">
         <div className="mx-auto max-w-[1280px]">
           <NumberedDivider n="01" label="Íbúðarhúsnæði" />
 
-          <div className="border border-concrete-dk bg-paper">
+          <div className="rounded-sharp border border-concrete bg-paper">
             {/* Header row */}
-            <div className="hidden md:grid grid-cols-[100px_1.5fr_1fr_1fr] px-8 py-5 bg-paper-alt border-b border-concrete-dk text-[12px] tracking-[0.1em] uppercase font-mono text-fog font-semibold">
+            <div className={`${metaLabel} hidden grid-cols-[100px_1.5fr_1fr_1fr] border-b border-concrete bg-paper-alt px-8 py-5 md:grid`}>
               <div>Þrep</div>
               <div>Stærð</div>
               <div className="text-right">Verð með VSK.</div>
@@ -82,28 +79,22 @@ export default function Verdskra() {
             {residential.map((r, i) => (
               <div
                 key={r.size}
-                className={`grid grid-cols-[60px_1fr] md:grid-cols-[100px_1.5fr_1fr_1fr] px-6 md:px-8 py-6 md:py-8 items-center gap-y-2 ${
+                className={`grid grid-cols-[3rem_1fr] items-center gap-y-2 px-6 py-6 md:grid-cols-[100px_1.5fr_1fr_1fr] md:px-8 md:py-8 ${
                   i === residential.length - 1 ? "" : "border-b border-concrete"
-                } ${i === 1 ? "bg-copper/[0.04]" : ""}`}
+                } ${i === 1 ? "bg-sev-calm-tint" : ""}`}
               >
-                <div className="font-mono text-[14px] text-copper tracking-[0.05em] font-medium">
-                  T{i + 1}
-                </div>
-                <div className="text-[22px] md:text-[26px] font-medium tracking-[-0.01em] text-ink">
-                  {r.size}
-                </div>
-                <div className="md:text-right flex items-baseline md:justify-end gap-1">
-                  <span className="text-[26px] md:text-[30px] font-medium text-ink tracking-[-0.02em]">
+                <div className="font-mono text-sm tracking-wide text-navy">T{i + 1}</div>
+                <div className="text-h4 font-medium text-ink md:text-h3">{r.size}</div>
+                <div className="col-start-2 flex items-baseline gap-1 md:col-start-auto md:justify-end">
+                  <span className="text-2xl font-medium tracking-tight text-ink md:text-3xl">
                     {r.price}
                   </span>
-                  {r.price !== "Tilboð" && <span className="text-[15px] text-fog">kr.</span>}
+                  {r.price !== "Tilboð" && <span className="text-base text-fog">kr.</span>}
                 </div>
-                <div className="md:text-right">
-                  <Link
-                    href="/samband"
-                    className="text-[13px] text-ink border-b border-ink pb-0.5"
-                  >
-                    Bóka →
+                <div className="col-start-2 md:col-start-auto md:text-right">
+                  <Link href="/samband" className={btn("quiet", "md", "-ml-2 md:-mr-2 md:ml-0")}>
+                    Bóka <span aria-hidden="true">→</span>
+                    <span className="sr-only"> {r.size}</span>
                   </Link>
                 </div>
               </div>
@@ -111,17 +102,15 @@ export default function Verdskra() {
           </div>
 
           {/* Notes */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
               ["VSK", "Innifalin í verði"],
               ["Akstur", "Höfuðborgarsvæðið innifalið"],
               ["Skýrsla", "Afhent innan 48 klst."],
             ].map(([k, v]) => (
-              <div key={k} className="px-6 py-5 bg-paper-alt border-l-2 border-copper">
-                <div className="text-[11px] text-fog tracking-[0.12em] uppercase font-mono mb-1.5">
-                  {k}
-                </div>
-                <div className="text-[15px] text-ink">{v}</div>
+              <div key={k} className="border-l-2 border-navy bg-paper-alt px-6 py-5">
+                <div className={`${metaLabel} mb-1.5`}>{k}</div>
+                <div className="text-base text-ink">{v}</div>
               </div>
             ))}
           </div>
@@ -129,8 +118,8 @@ export default function Verdskra() {
       </section>
 
       {/* Commercial + Housing */}
-      <section className="px-6 lg:px-14 pb-24 lg:pb-32">
-        <div className="mx-auto max-w-[1280px] grid grid-cols-1 md:grid-cols-2 gap-6">
+      <section className="px-6 pb-20 lg:px-14 lg:pb-28">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-6 md:grid-cols-2">
           <TilbodCard
             n="02"
             label="Atvinnuhúsnæði"
