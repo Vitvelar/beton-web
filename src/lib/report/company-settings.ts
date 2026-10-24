@@ -13,6 +13,8 @@ export interface CompanyReportSettings {
   settings: ReportSettings;
   /** Satt þegar companies.report_standard er til (NZS 4306-flutningurinn keyrður). */
   standardSupported: boolean;
+  /** companies.country_code, hreinsað (hástafir) — notað til að ákveða hvort ISOP-valið sést. */
+  country: string;
 }
 
 export async function fetchCompanyReportSettings(
@@ -33,5 +35,6 @@ export async function fetchCompanyReportSettings(
   const companies = (data as { companies?: unknown }).companies;
   const company = (Array.isArray(companies) ? companies[0] : companies) as Parameters<typeof resolveReportSettings>[0];
   if (!company) return null;
-  return { settings: resolveReportSettings(company), standardSupported };
+  const country = String((company as { country_code?: unknown }).country_code ?? "").trim().toUpperCase();
+  return { settings: resolveReportSettings(company), standardSupported, country };
 }

@@ -11,6 +11,7 @@ import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 import { shellCopy } from "@/lib/i18n/dashboard-shell";
 import { tapLink } from "@/lib/ui";
 import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
+import { isopOfferedTo, texasNotice } from "@/lib/report/isop";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: dashboardCopy(await getDashboardLocale()).settings.metaTitle };
@@ -102,12 +103,16 @@ export default async function SettingsPage() {
 async function ownerReportSettings(supabase: Awaited<ReturnType<typeof createClient>>) {
   const company = await fetchCompanyReportSettings(supabase, { ownerOnly: true });
   if (!company) return null;
-  const { settings, standardSupported } = company;
+  const { settings, standardSupported, country } = company;
   return {
     reportLocale: settings.locale,
     ratingScheme: settings.scheme,
     reportStandard: settings.standard,
     standardSupported,
+    // Home inspection (US/Kanada): sést aðeins fyrir US/CA þegar ISOP_ENABLED=1 (annars óbreytt).
+    isopAvailable: standardSupported && isopOfferedTo(country),
+    // Fyrirtæki hafa ekkert fylki í gagnagrunninum enn → borðinn birtist ekki fyrr en uppspretta er til.
+    texas: texasNotice({ state: null }),
   };
 }
 

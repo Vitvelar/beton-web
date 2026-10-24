@@ -19,7 +19,7 @@ export function ReportSettingsForm({
   initial,
 }: {
   locale: DashboardLocale;
-  initial: { reportLocale: ReportLocale; ratingScheme: RatingScheme; reportStandard: ReportStandard; standardSupported: boolean };
+  initial: { reportLocale: ReportLocale; ratingScheme: RatingScheme; reportStandard: ReportStandard; standardSupported: boolean; isopAvailable: boolean; texas: boolean };
 }) {
   const t = dashboardCopy(locale).reportSettings;
   const [saved, setSaved] = useState<Values>({
@@ -31,6 +31,7 @@ export function ReportSettingsForm({
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
   const showNz = initial.standardSupported || value.ratingScheme === "nz_terms";
+  const showIsop = initial.isopAvailable || value.reportStandard === "isop";
 
   function change(next: Values) {
     setValue(next);
@@ -64,7 +65,19 @@ export function ReportSettingsForm({
           setMessage({ kind: "error", text: result.error });
         } else {
           // Matskerfi án skráðs gildis fylgir sniðinu — sýna virku gildin eftir vistun.
-          const now = result.settings ?? next;
+          let now = result.settings ?? next;
+          // Home inspection fer með eigin matsorð; aðrir sniðvalkostir losa það aftur (aðeins ef skráð).
+          const wanted = reportStandard === "isop" ? "isop_terms" : saved.ratingScheme === "isop_terms" ? (reportStandard === "nzs_4306" ? "nz_terms" : "standard") : null;
+          if (wanted && now.ratingScheme !== wanted) {
+            const paired = await saveReportSettings(now.reportLocale, wanted);
+            if ("error" in paired) {
+              setMessage({ kind: "error", text: paired.error });
+              setSaved(now);
+              setValue(now);
+              return;
+            }
+            now = { ...now, ratingScheme: wanted };
+          }
           setSaved(now);
           setValue(now);
           setMessage({ kind: "ok", text: t.saved });
@@ -97,8 +110,14 @@ export function ReportSettingsForm({
           >
             <option value="default">{t.standardDefault}</option>
             <option value="nzs_4306">{t.standardNzs}</option>
+            {showIsop ? <option value="isop">{t.standardIsop}</option> : null}
           </select>
-          <p id="report_standard_hint" className={fieldHelp}>{t.standardHint}</p>
+          <p id="report_standard_hint" className={fieldHelp}>{value.reportStandard === "isop" ? t.isopHint : t.standardHint}</p>
+          {value.reportStandard === "isop" && initial.texas ? (
+            <p role="note" className="mt-2 rounded-md border border-concrete-dk bg-concrete px-3 py-2 text-xs text-ink">
+              {t.texasNotice}
+            </p>
+          ) : null}
         </div>
       ) : null}
       <div>
@@ -136,6 +155,7 @@ export function ReportSettingsForm({
           <option value="standard">{t.schemeStandard}</option>
           <option value="condition_1_3">{t.schemeCondition}</option>
           {showNz ? <option value="nz_terms">{t.schemeNz}</option> : null}
+          {showIsop ? <option value="isop_terms">{t.schemeIsop}</option> : null}
         </select>
         <p id="rating_scheme_hint" className={fieldHelp}>{t.schemeHint}</p>
       </div>
