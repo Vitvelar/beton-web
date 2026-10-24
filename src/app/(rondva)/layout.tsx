@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { inter, sourceSerif } from "@/lib/fonts/rondva";
 import { BRANDS } from "@/lib/brand";
+import { rondvaVerification } from "@/lib/rondva-seo";
 import { RONDVA_OFFER_LINE } from "@/lib/rondva-pricing";
 import { RondvaAnalytics } from "@/components/rondva/RondvaAnalytics";
 import { ConsentBanner } from "@/components/rondva/ConsentBanner";
@@ -60,6 +61,8 @@ export const metadata: Metadata = {
     apple: "/rondva/favicon-180.png",
   },
   robots: { index: true, follow: true },
+  // Aðeins ef gildi er sett í RONDVA_SEO (engin tóm meta-tög). Þessi layout þjónar aðeins rondva.com.
+  ...(rondvaVerification() ? { verification: rondvaVerification() } : {}),
 };
 
 export const viewport: Viewport = {
