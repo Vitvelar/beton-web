@@ -349,7 +349,14 @@ assert.equal(app.name, 'Rondva');
 assert.equal(app.operatingSystem, 'iOS');
 assert.equal(app.applicationCategory, 'BusinessApplication');
 assert.equal(app.installUrl, 'https://apps.apple.com/app/id6817769506');
-assert.deepEqual(app.offers.map((o) => [o.name, o.price, o.priceCurrency]), [['Free trial', '0', 'USD'], ['Rondva Solo', '49.99', 'USD'], ['Rondva Pro', '99.99', 'USD'], ['Rondva Report pack', '69.99', 'USD']]);
+assert.deepEqual(app.offers.map((o) => [o.name, o.price, o.priceCurrency]), [['First month free', '0', 'USD'], ['Rondva Solo', '49.99', 'USD'], ['Rondva Pro', '99.99', 'USD'], ['Rondva Report pack', '69.99', 'USD']]);
+assert.ok(!/free trial/i.test(JSON.stringify(app)), 'JSON-LD never says "free trial"');
+// Landssíður: tilboðin í mynt síðunnar (sama og sýnilegu verðin), ekki US$.
+{
+  const au = plain(seo.softwareApplicationLd({ currency: 'AUD', solo: '79.99', pro: '149.99', pack: '99.99' }));
+  assert.deepEqual(au.offers.map((o) => [o.price, o.priceCurrency]), [['0', 'AUD'], ['79.99', 'AUD'], ['149.99', 'AUD'], ['99.99', 'AUD']]);
+  assert.ok(au.offers.slice(1).every((o) => /App Store price in this country/.test(o.description)));
+}
 assert.ok(app.offers.slice(1).every((o) => /Price varies by storefront/.test(o.description)), '"price varies by storefront" on paid offers');
 const ldString = seo.jsonLdString([org, app, plain(seo.faqPageLd([{ q: 'A?', a: 'B <script>' }])), plain(seo.breadcrumbLd([{ name: 'Rondva', path: '/' }, { name: 'NZ', path: '/nz' }]))]);
 assert.ok(!/aggregateRating|"review"/.test(ldString), 'no aggregateRating or review');
@@ -470,7 +477,8 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
     assert.match(compSrc, /\{f\.q\}/);
     assert.match(compSrc, /\{f\.a\}/);
     assert.match(compSrc, /breadcrumbLd\(/);
-    for (const k of ['organizationLd()', 'softwareApplicationLd()']) assert.ok(compSrc.includes(k), `CountryPage uses ${k}`);
+    for (const k of ['organizationLd()', 'softwareApplicationLd({ currency: c.currencyCode, ...c.prices })']) assert.ok(compSrc.includes(k), `CountryPage uses ${k}`);
+    assert.deepEqual(COUNTRIES.map((c) => c.currencyCode), ['AUD', 'GBP', 'EUR', 'USD', 'CAD']);
     for (const k of ['RondvaHeader', 'RondvaFooter', 'RevealObserver', 'AppStoreBadge', 'AppStoreQr', 'WhereAiStops']) assert.ok(compSrc.includes(`<${k}`), `CountryPage renders <${k}`);
     for (const c of COUNTRIES) {
       const ld = plain(seo.faqPageLd(c.faq.map((f) => ({ q: f.q, a: f.a }))));

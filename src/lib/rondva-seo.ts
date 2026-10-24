@@ -40,8 +40,15 @@ export function organizationLd(): JsonLdNode {
   };
 }
 
-export function softwareApplicationLd(): JsonLdNode {
-  const priceNote = "Price varies by storefront; charged by Apple in your currency.";
+/** Verð landssíðu (App Store-verð í mynt landsins, ISO 4217) svo skemað stangist ekki á við síðuna. */
+export type LocalOffers = { currency: string; solo: string; pro: string; pack: string };
+
+export function softwareApplicationLd(local?: LocalOffers): JsonLdNode {
+  const priceNote = local
+    ? "App Store price in this country; charged by Apple."
+    : "Price varies by storefront; charged by Apple in your currency.";
+  const currency = local?.currency ?? "USD";
+  const planPrice = (id: "solo" | "pro", usdPrice: string) => (local ? local[id] : usdPrice);
   return {
     "@type": "SoftwareApplication",
     "@id": APPLICATION_ID,
@@ -59,23 +66,23 @@ export function softwareApplicationLd(): JsonLdNode {
     offers: [
       {
         "@type": "Offer",
-        name: "Free trial",
+        name: "First month free",
         price: "0",
-        priceCurrency: "USD",
+        priceCurrency: currency,
         description: RONDVA_OFFER_LINE,
       },
       ...RONDVA_PLANS.map((plan) => ({
         "@type": "Offer",
         name: `Rondva ${plan.name}`,
-        price: plan.price,
-        priceCurrency: "USD",
+        price: planPrice(plan.id, plan.price),
+        priceCurrency: currency,
         description: `Monthly subscription, ${plan.reports} AI-drafted reports a month. ${priceNote}`,
       })),
       {
         "@type": "Offer",
         name: `Rondva ${RONDVA_PACK.name}`,
-        price: RONDVA_PACK.price,
-        priceCurrency: "USD",
+        price: local ? local.pack : RONDVA_PACK.price,
+        priceCurrency: currency,
         description: `One-time purchase of ${RONDVA_PACK.reports} extra AI-drafted reports that never expire. Plans are cheaper per report. ${priceNote}`,
       },
     ],

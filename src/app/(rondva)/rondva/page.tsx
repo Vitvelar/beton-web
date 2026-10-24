@@ -151,7 +151,7 @@ export default function RondvaLandingPage() {
                 <AppStoreBadge />
                 {HAS_SAMPLE ? (
                   <a href={SAMPLE_REPORT_URL} className={rvBtn("inverse", "md")}>
-                    See a sample report
+                    See a sample NZS 4306 report
                   </a>
                 ) : null}
                 <a href="#how" className={rvBtn("inverse", "md")}>

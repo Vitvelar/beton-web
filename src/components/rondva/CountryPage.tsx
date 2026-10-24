@@ -53,7 +53,7 @@ export function CountryPage({ country }: { country: Country }) {
       <JsonLd
         nodes={[
           organizationLd(),
-          softwareApplicationLd(),
+          softwareApplicationLd({ currency: c.currencyCode, ...c.prices }),
           breadcrumbLd([
             { name: "Rondva", path: "/" },
             { name: c.name, path: c.path },

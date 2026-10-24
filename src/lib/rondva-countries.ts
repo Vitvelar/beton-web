@@ -66,6 +66,8 @@ export type Country = {
   /** Tákn gjaldmiðils eins og App Store sýnir það: A$, £, €, US$, CA$. */
   currency: string;
   currencyName: string;
+  /** ISO 4217 fyrir JSON-LD-tilboðin (softwareApplicationLd). */
+  currencyCode: string;
   prices: { solo: string; pro: string; pack: string };
   /** Skattur á verðunum: innifalinn (GST/VAT) eða bættur við af Apple. */
   taxLine: string;
@@ -317,6 +319,7 @@ export const AU = build({
   ogLocale: "en_AU",
   currency: "A$",
   currencyName: "Australian dollars",
+  currencyCode: "AUD",
   prices: { solo: "79.99", pro: "149.99", pack: "99.99" },
   taxLine: "Prices include GST.",
   title: "Building inspection reports for Australia, drafted on your iPhone | Rondva",
@@ -351,6 +354,7 @@ export const UK = build({
   ogLocale: "en_GB",
   currency: "£",
   currencyName: "pounds sterling",
+  currencyCode: "GBP",
   prices: { solo: "49.99", pro: "99.99", pack: "69.99" },
   taxLine: "Prices include VAT.",
   title: "Inspection reports with condition ratings 1, 2 and 3, drafted on your iPhone | Rondva",
@@ -384,6 +388,7 @@ export const IE = build({
   ogLocale: "en_IE",
   currency: "€",
   currencyName: "euros",
+  currencyCode: "EUR",
   prices: { solo: "59.99", pro: "99.99", pack: "79.99" },
   taxLine: "Prices include VAT.",
   title: "Inspection reports with condition ratings 1, 2 and 3 for Ireland, drafted on your iPhone | Rondva",
@@ -417,6 +422,7 @@ export const US = build({
   ogLocale: "en_US",
   currency: "US$",
   currencyName: "US dollars",
+  currencyCode: "USD",
   prices: { solo: "49.99", pro: "99.99", pack: "69.99" },
   taxLine: "App Store prices in the US exclude sales tax; Apple adds sales tax where it applies.",
   title: "Home inspection reports, drafted on your iPhone | Rondva",
@@ -445,6 +451,7 @@ export const CA = build({
   ogLocale: "en_CA",
   currency: "CA$",
   currencyName: "Canadian dollars",
+  currencyCode: "CAD",
   prices: { solo: "69.99", pro: "129.99", pack: "99.99" },
   taxLine: "Prices exclude tax; Apple adds GST/HST where it applies.",
   title: "Home inspection reports for Canada, drafted on your iPhone | Rondva",
