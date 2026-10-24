@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
+import { rondvaLanguages } from "@/lib/rondva-countries";
 import { HAS_SAMPLE, SAMPLE_REPORT_URL } from "@/lib/rondva-links";
 import {
   RONDVA_INCLUDED,
@@ -109,6 +111,11 @@ const whatYouGet = [
     body: "Record on site, even with no signal, then review and export from the same app.",
   },
 ];
+
+// hreflang aðeins á forsíðu og landasíðum (ekki /support, /privacy …); canonical er áfram forsíðan.
+export const metadata: Metadata = {
+  alternates: { canonical: BRANDS.rondva.marketingUrl, languages: rondvaLanguages() },
+};
 
 export default function RondvaLandingPage() {
   return (

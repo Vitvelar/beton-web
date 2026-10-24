@@ -10,7 +10,9 @@ export const APP_STORE_URL = "https://apps.apple.com/app/id6817769506";
  * er ekki AI-úttak og má aldrei birtast hér.
  */
 export const HAS_SAMPLE = false;
-export const SAMPLE_REPORT_URL = "/rondva/sample-nzs4306.pdf";
+// Hrein slóð: proxy.ts endurskrifar /sample-nzs4306.pdf á public/rondva/sample-nzs4306.pdf.
+// Sýnisskýrslur hinna landanna: SAMPLE_REPORTS í rondva-countries.ts.
+export const SAMPLE_REPORT_URL = "/sample-nzs4306.pdf";
 
 /** Fyrir fólk sem notar ekki iPhone. */
 export const NOT_ON_IPHONE_LINE = "Not on iPhone? Email rondva@rondva.com.";

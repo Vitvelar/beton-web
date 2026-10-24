@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
 import { HAS_SAMPLE, SAMPLE_REPORT_URL } from "@/lib/rondva-links";
+import { rondvaLanguages } from "@/lib/rondva-countries";
 import { RONDVA_NZ_SOLO, RONDVA_OFFER_LINE, RONDVA_PLANS } from "@/lib/rondva-pricing";
 import { breadcrumbLd, faqPageLd, organizationLd, softwareApplicationLd } from "@/lib/rondva-seo";
 import { rvBtn } from "@/components/rondva/ui";
@@ -28,7 +29,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
-  alternates: { canonical: PAGE_URL },
+  alternates: { canonical: PAGE_URL, languages: rondvaLanguages() },
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,

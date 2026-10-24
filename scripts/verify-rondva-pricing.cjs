@@ -6,6 +6,7 @@
 // prufa (RONDVA_TRIAL). Athugar líka að síðurnar noti tölurnar úr einni heimild, að appið sé kynnt sem
 // „on the App Store“ (engin biðlista- eða þróunarorð), að /nz, llms.txt, robots.txt, sitemap og JSON-LD
 // séu rétt, og að textinn haldi áfram að segja satt (ekkert er selt á vefnum).
+// §14 (2026-10-24): landasíður /au /uk /ie /us /ca (rondva-countries.ts + CountryPage.tsx), hreflang, sýnisskýrslurofar.
 // Keyrt með `node scripts/verify-rondva-pricing.cjs` — engin bygging, engin netköll.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -394,6 +395,226 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
   assert.match(emptyState, /<AppStoreBadge \/>/);
   assert.match(emptyState, /<AppStoreQr tone="light" \/>/);
   pass('dashboard empty state: three steps for Rondva (is/en catalog); Beton keeps its Icelandic empty text');
+
+  // 14. Landasíður /au /uk /ie /us /ca (src/lib/rondva-countries.ts + CountryPage.tsx): verð, JSON-LD, bannorð,
+  //     heiðarleiki um skýrslusniðið, hreflang, sitemap, llms.txt, fótur og sýnisskýrslur.
+  {
+    const cm = load('src/lib/rondva-countries.ts');
+    const COUNTRIES = plain(cm.COUNTRIES);
+    const byCode = Object.fromEntries(COUNTRIES.map((c) => [c.code, c]));
+    assert.deepEqual(COUNTRIES.map((c) => c.code), ['au', 'uk', 'ie', 'us', 'ca']);
+    const pageRel = (cc) => `src/app/(rondva)/rondva/${cc}/page.tsx`;
+    const dataSrc = read('src/lib/rondva-countries.ts');
+    const compSrc = read('src/components/rondva/CountryPage.tsx');
+    const pageSrcs = Object.fromEntries(['au', 'uk', 'ie', 'us', 'ca'].map((cc) => [cc, read(pageRel(cc))]));
+    const soloN = RONDVA_PLANS[0].reports;
+    const proN = RONDVA_PLANS[1].reports;
+
+    // a. Nákvæm verð landanna (App Store-verð, eigandi 2026-10-24) og skattalína.
+    const expected = {
+      au: [['solo', 'A$79.99'], ['pro', 'A$149.99'], ['pack', 'A$99.99'], 'Prices include GST.'],
+      uk: [['solo', '£49.99'], ['pro', '£99.99'], ['pack', '£69.99'], 'Prices include VAT.'],
+      ie: [['solo', '€59.99'], ['pro', '€99.99'], ['pack', '€79.99'], 'Prices include VAT.'],
+      us: [['solo', 'US$49.99'], ['pro', 'US$99.99'], ['pack', 'US$69.99'], 'App Store prices in the US exclude sales tax; Apple adds sales tax where it applies.'],
+      ca: [['solo', 'CA$69.99'], ['pro', 'CA$129.99'], ['pack', 'CA$99.99'], 'Prices exclude tax; Apple adds GST/HST where it applies.'],
+    };
+    for (const [cc, [solo, pro, pack, tax]] of Object.entries(expected)) {
+      const c = byCode[cc];
+      for (const [key, text] of [solo, pro, pack]) assert.equal(cm.money(c, key), text, `${cc} ${key} price`);
+      assert.equal(c.taxLine, tax, `${cc} tax line`);
+      const a = c.faq.find((f) => f.id === 'price').a;
+      assert.equal(
+        a,
+        `Solo is ${text(solo)} a month for ${soloN} AI-drafted reports, Pro is ${text(pro)} a month for ${proN}, and the Report pack is ${text(pack)} one-time for ${RONDVA_PACK.reports} reports that never expire. Plans are cheaper per report. ${tax} Charged by Apple. ${RONDVA_OFFER_LINE}`,
+        `${cc} price answer`,
+      );
+      assert.ok(c.description.includes(`Solo is ${text(solo)} a month. ${tax}`), `${cc} description has Solo price and tax line`);
+      assert.ok(!/\b\d{2,3}\.\d{2}\b/.test(stripComments(pageSrcs[cc])) && !/\b\d{2,3}\.\d{2}\b/.test(stripComments(compSrc)), `${cc}: prices live in the data module, not in JSX`);
+    }
+    function text(pair) { return pair[1]; }
+    // Hvert verð á síðu er eitt af þremur verðum landsins (engin tilbúin verð, ekkert verð á skýrslu, ekkert markaðsverð).
+    for (const c of COUNTRIES) {
+      const own = new Set(['solo', 'pro', 'pack'].map((k) => cm.money(c, k)));
+      const blob = JSON.stringify(c).replace(/Plans are cheaper per report\./g, '');
+      for (const m of blob.match(/(?:A|US|CA|NZ)\$\d+(?:\.\d+)?|[£€]\d+(?:\.\d+)?/g) || []) assert.ok(own.has(m), `${c.code}: unexpected amount ${m}`);
+      assert.ok(!/per report|\/report|each report|a report costs|market rate|free trial|unlimited/i.test(blob), `${c.code}: no per-report price, market rate, "free trial" or "unlimited"`);
+    }
+    assert.match(compSrc, /RONDVA_PACK\.blurb/, 'pack card uses RONDVA_PACK.blurb ("Plans are cheaper per report.")');
+    assert.match(compSrc, /\{RONDVA_OFFER_LINE\}/);
+    assert.equal(pricing.RONDVA_NZ_SOLO.price, '99.99', 'NZ stays Solo NZ$99.99 only');
+
+    // b. Hver síða: gagnaeining, eitt JSON-LD, FAQ = JSON-LD, metadata og útlit.
+    for (const [cc, src] of Object.entries(pageSrcs)) {
+      assert.match(src, /from "@\/lib\/rondva-countries"/, `${cc} page imports the data module`);
+      assert.match(src, new RegExp(`export const metadata = countryMetadata\\(${cc.toUpperCase()}\\)`), `${cc} exports its metadata`);
+      assert.match(src, new RegExp(`<CountryPage country=\\{${cc.toUpperCase()}\\} />`), `${cc} renders CountryPage`);
+      assert.equal((src.match(/<JsonLd\b/g) || []).length, 0, `${cc}: JSON-LD comes from CountryPage only`);
+    }
+    assert.equal((compSrc.match(/<JsonLd\b/g) || []).length, 1, 'CountryPage has exactly one JSON-LD script');
+    assert.match(compSrc, /faqPageLd\(c\.faq\.map\(\(f\) => \(\{ q: f\.q, a: f\.a \}\)\)\)/);
+    assert.match(compSrc, /\{f\.q\}/);
+    assert.match(compSrc, /\{f\.a\}/);
+    assert.match(compSrc, /breadcrumbLd\(/);
+    for (const k of ['organizationLd()', 'softwareApplicationLd()']) assert.ok(compSrc.includes(k), `CountryPage uses ${k}`);
+    for (const k of ['RondvaHeader', 'RondvaFooter', 'RevealObserver', 'AppStoreBadge', 'AppStoreQr', 'WhereAiStops']) assert.ok(compSrc.includes(`<${k}`), `CountryPage renders <${k}`);
+    for (const c of COUNTRIES) {
+      const ld = plain(seo.faqPageLd(c.faq.map((f) => ({ q: f.q, a: f.a }))));
+      assert.deepEqual(ld.mainEntity.map((e) => e.acceptedAnswer.text), c.faq.map((f) => f.a), `${c.code}: FAQ answers = JSON-LD answers`);
+      assert.equal(new Set(c.faq.map((f) => f.id)).size, c.faq.length, `${c.code}: unique FAQ ids`);
+      assert.ok(c.faq.find((f) => f.id === 'what').a === c.lead, `${c.code}: first FAQ answer is the definition paragraph`);
+      assert.ok(!/RICS/i.test(JSON.stringify(c)) || !['uk', 'ie'].includes(c.code), `${c.code}: RICS never mentioned`);
+      assert.ok(c.eyebrow.includes('iPhone app on the App Store'), `${c.code}: eyebrow`);
+      assert.ok(c.h1.em.length > 0 && c.title.endsWith('| Rondva'));
+    }
+
+    // c. Bannorð yfir allar landasíður, gagnaeininguna og CountryPage (athugasemdir fjarlægðar).
+    const banned = /compliant|complies|certified|approved|endorsed|accredited|meets the standard|in accordance with|the only|\bfirst\b|\bbest\b|unlimited|used by|aggregateRating|customer reviews?|star rating|\d(\.\d)?\s?stars?\b/i;
+    const orgs = /\b(RICS|InterNACHI|ASHI|NZIBI|CSA|TREC)\b/;
+    for (const [name, src] of [['data module', dataSrc], ['CountryPage', compSrc], ...Object.entries(pageSrcs).map(([cc, s]) => [`${cc} page`, s])]) {
+      const code = stripComments(src);
+      assert.ok(!banned.test(code), `${name} makes a banned claim: ${(code.match(banned) || [])[0]}`);
+      assert.ok(!orgs.test(code), `${name} names a professional body or standard owner: ${(code.match(orgs) || [])[0]}`);
+      assert.ok(!sweep.test(code), `${name} has launch-blocking wording`);
+    }
+
+    // d. AU: „not“ + „AS 4349.1“ í sömu setningu; engin setning um AS 4349.1 án „not“.
+    {
+      const au = byCode.au;
+      const texts = [au.lead, au.formatLine, au.format.note, ...au.format.items.map((i) => i.body), ...au.faq.map((f) => f.a)];
+      const sentences = texts.flatMap((t) => t.split(/(?<=[.?!])\s+/));
+      assert.ok(sentences.some((s) => /\bnot\b/.test(s) && s.includes('AS 4349.1')), 'AU: a sentence with "not" and "AS 4349.1"');
+      assert.ok(sentences.filter((s) => s.includes('AS 4349.1')).every((s) => /\bnot\b/.test(s)), 'AU: every sentence about AS 4349.1 says "not"');
+      assert.ok(au.formatLine.includes('It is not set out in the AS 4349.1 format yet.'), 'AU hero says it is not set out in the AS 4349.1 format yet');
+      assert.ok(!/AS 4349/.test(au.title + au.description + au.h1.before + au.h1.em), 'AU title/description/H1 do not mention AS 4349');
+      assert.ok(['Minor', 'Serious', 'Very serious'].every((w) => au.formatLine.includes(w) || au.format.items[0].body.includes(w)));
+      const en = read('src/lib/report/i18n.ts');
+      assert.ok(/rating: \{\s*ok: "Acceptable",\s*warn: "Minor",\s*danger: "Serious",\s*mjog_alvarleg: "Very serious"/.test(en), 'i18n English severity words are Minor / Serious / Very serious');
+      assert.ok(!/AS 4349/.test(JSON.stringify([byCode.uk, byCode.ie, byCode.us, byCode.ca])), 'only the AU page mentions AS 4349.1');
+    }
+
+    // e. UK og IE: matseinkunnir 1, 2 og 3 (conditionSeverity í i18n.ts), aldrei RICS.
+    for (const cc of ['uk', 'ie']) {
+      const c = byCode[cc];
+      const blob = JSON.stringify(c);
+      assert.ok(/condition ratings? of 1, 2 or 3/.test(c.lead) && /condition ratings 1, 2 and 3/i.test(c.format.items[0].title), `${cc}: condition ratings 1, 2 and 3`);
+      assert.ok(/Rating 1: no repair is needed at present/.test(c.format.items[0].body) && /Rating 2: a defect that needs repairing or replacing, but is not serious or urgent/.test(c.format.items[0].body) && /Rating 3: a serious defect/.test(c.format.items[0].body));
+      assert.ok(!/RICS|Minor, Serious|Very serious|deficienc/i.test(blob), `${cc}: no RICS, no Minor/Serious words, no isop wording`);
+      assert.ok(c.formatLine.includes('Rondva is not affiliated with any professional body.'));
+      assert.ok(c.format.items.length === 5 && c.format.items.every((i) => i.title && i.body));
+    }
+    const i18nSrc = read('src/lib/report/i18n.ts');
+    for (const s of ['No repair is needed at present.', 'A defect that needs repairing or replacing, but is not considered serious or urgent.', 'Condition rating 1', 'Condition rating 3']) assert.ok(i18nSrc.includes(s), `i18n.ts conditionSeverity: ${s}`);
+    {
+      const settings = read('src/lib/report/settings.ts');
+      assert.match(settings, /CONDITION_RATING_COUNTRIES = new Set\(\["GB", "IE"\]\)/);
+      // Sniðin sem UK/IE/AU-síðurnar lýsa eru aðeins til í sjálfgefna skýrslusmiðnum (page.tsx); engar NZ-/isop-greinar.
+      const rep = read('src/app/(dashboard)/dashboard/[id]/report/page.tsx');
+      for (const k of ['t.tocActionList', 't.actionList', 't.limitationsHeading', 't.conclusion', 't.roomNotes', 't.suggestion', 'brand.termsText', 'brand.termsUrl']) assert.ok(rep.includes(k), `report/page.tsx prints ${k}`);
+      assert.match(rep, /\.slice\(0, 10\)/, 'action list = 10 most serious');
+    }
+
+    // f. US og CA: tíu kerfi í réttri röð (isop-hönnun §2.1), staða á kerfi, deficiencies-tafla, ekkert „state form“-loforð.
+    {
+      const systems = ['Roof', 'Exterior', 'Basement, Foundation, Crawlspace & Structure', 'Heating', 'Cooling', 'Plumbing', 'Electrical', 'Fireplace', 'Attic, Insulation & Ventilation', 'Doors, Windows & Interior'];
+      assert.deepEqual(plain(cm.ISOP_SYSTEMS), systems);
+      const copy = plain(cm.ISOP_COPY);
+      assert.deepEqual(copy.systems, systems);
+      for (const cc of ['us', 'ca']) {
+        const c = byCode[cc];
+        assert.deepEqual(c.format.items, copy.items, `${cc} format items are the isop copy`);
+        const sysItem = c.format.items.find((i) => i.title === 'Ten systems, in a fixed order');
+        let at = -1;
+        for (const s of systems) {
+          const i = sysItem.body.indexOf(s, at + 1);
+          assert.ok(i > at, `${cc}: system "${s}" in order`);
+          at = i;
+        }
+        assert.ok(sysItem.body.includes('Additional items'));
+        const all = JSON.stringify(c);
+        for (const s of ['Summary of deficiencies', 'Inspected', 'Not inspected', 'Not present', 'Maintenance', 'Repair or replace', 'Major defect', 'not written by the AI', 'Use of AI in this report']) assert.ok(all.includes(s), `${cc} mentions ${s}`);
+        assert.ok(/does not replace any (state-required form|form your state or province requires)/.test(c.formatLine), `${cc}: does not replace a state-required form`);
+        assert.ok(!c.screen, `${cc}: no phone figure (the screenshots show NZ content)`);
+      }
+      assert.ok(byCode.ca.formatLine.includes('Reports are in English only.'), 'CA: English reports only');
+      assert.ok(!/Minor, Serious|Very serious|condition rating/i.test(JSON.stringify([byCode.us, byCode.ca])), 'US/CA use the isop rating words, not the AU/UK ones');
+      // ISOP-textinn er allur í einum hlut með íslenskri athugasemd um að hann bíði eftir að isop sé í loftinu.
+      assert.match(dataSrc, /\/\/ ATH: Allur US\/CA-sniðstextinn er í þessum eina hlut.*\n(?:\/\/.*\n)*export const ISOP_SYSTEMS/);
+      assert.equal((dataSrc.match(/export const ISOP_COPY/g) || []).length, 1);
+      {
+        const outside = dataSrc.slice(0, dataSrc.indexOf('export const ISOP_SYSTEMS')) + dataSrc.slice(dataSrc.indexOf('// ── Hjálparföll'));
+        for (const k of ['Summary of deficiencies', 'Repair or replace', 'Major defect', 'Not inspected']) assert.ok(!outside.includes(k), `"${k}" appears only in the ISOP object`);
+      }
+      for (const cc of ['au', 'uk', 'ie']) assert.ok(!/Summary of deficiencies|Not inspected|Repair or replace/.test(JSON.stringify(byCode[cc])), `${cc} has no isop wording`);
+    }
+
+    // g. Skjámyndir: aðeins þar sem innihaldið er satt fyrir landið (AU: athugasemdaskjár með Minor/Serious/Very serious).
+    for (const c of COUNTRIES) {
+      const blob = JSON.stringify(c);
+      assert.ok(!/offline-nz|overview-nz/.test(blob), `${c.code}: no NZ-only screenshot`);
+      if (c.code === 'au') assert.equal(c.screen.src, '/rondva/screens/observation-nz.webp');
+      else assert.equal(c.screen, undefined, `${c.code}: no phone figure`);
+      assert.ok(!/NZ|New Zealand|NZS|WME/.test(blob), `${c.code}: no NZ wording`);
+    }
+    assert.ok(/Minor, Serious or Very serious/.test(byCode.au.screen.alt), 'AU screenshot alt names the severity words');
+
+    // h. hreflang: einn smiður, sjö færslur, notaður á forsíðu og landasíðum en ekki í sameiginlegu útliti eða /support.
+    {
+      const langs = plain(cm.rondvaLanguages());
+      assert.deepEqual(langs, {
+        'en-NZ': 'https://rondva.com/nz', 'en-AU': 'https://rondva.com/au', 'en-GB': 'https://rondva.com/uk', 'en-IE': 'https://rondva.com/ie',
+        'en-US': 'https://rondva.com/us', 'en-CA': 'https://rondva.com/ca', 'x-default': 'https://rondva.com',
+      });
+      assert.equal(Object.keys(langs).length, 7);
+      for (const c of COUNTRIES) {
+        const md = plain(cm.countryMetadata(c));
+        assert.deepEqual(md.alternates.languages, langs, `${c.code} hreflang`);
+        assert.equal(md.alternates.canonical, `https://rondva.com${c.path}`, `${c.code} keeps its own canonical`);
+        assert.equal(md.openGraph.locale, { au: 'en_AU', uk: 'en_GB', ie: 'en_IE', us: 'en_US', ca: 'en_CA' }[c.code], `${c.code} og:locale`);
+        assert.equal(md.openGraph.url, `https://rondva.com${c.path}`);
+        assert.equal(md.title.absolute, c.title);
+      }
+      assert.match(landing, /alternates: \{ canonical: BRANDS\.rondva\.marketingUrl, languages: rondvaLanguages\(\) \}/, 'home page has hreflang');
+      assert.match(nz, /alternates: \{ canonical: PAGE_URL, languages: rondvaLanguages\(\) \}/, '/nz has hreflang and its own canonical');
+      assert.match(nz, /locale: "en_NZ"/);
+      for (const [name, src] of [['layout', layout], ['support', support], ['terms', terms], ['privacy', read('src/app/(rondva)/rondva/privacy/page.tsx')], ['cookies', read('src/app/(rondva)/rondva/cookies/page.tsx')]]) {
+        assert.ok(!/rondvaLanguages|en-AU|en-GB/.test(src), `${name} must not get the country hreflang set`);
+      }
+    }
+
+    // i. sitemap, llms.txt og fótur.
+    for (const cc of ['au', 'uk', 'ie', 'us', 'ca']) assert.ok(sitemap.includes(`https://rondva.com/${cc}</loc>`), `sitemap has /${cc}`);
+    for (const c of COUNTRIES) {
+      const line = llmsLines.find((l) => l.includes(`https://rondva.com${c.path})`));
+      assert.ok(line && line.includes(`Solo ${cm.money(c, 'solo')} a month`) && line.includes(c.taxLine), `llms.txt line for ${c.code}`);
+    }
+    assert.ok(llms.includes('- Countries: New Zealand (NZS 4306:2005 pre-purchase reports), Australia, the United Kingdom, Ireland, the United States and Canada'), 'llms.txt Countries line');
+    assert.ok(llmsLines.find((l) => l.includes('/au)')).includes('not set out in the AS 4349.1 format yet'), 'llms.txt AU line is honest');
+    const footer = read('src/components/rondva/RondvaFooter.tsx');
+    assert.match(footer, /aria-label="Rondva by country"/);
+    assert.match(footer, /COUNTRY_LINKS\.map/);
+    assert.deepEqual(plain(cm.COUNTRY_LINKS).map((c) => c.name), ['New Zealand', 'Australia', 'United Kingdom', 'Ireland', 'United States', 'Canada']);
+
+    // j. Sýnisskýrslur: rofi á hvert land; true ⇒ skráin í public/rondva/ er til, false ⇒ hún má ekki vera til.
+    {
+      assert.equal(links.SAMPLE_REPORT_URL, '/sample-nzs4306.pdf');
+      assert.equal(links.HAS_SAMPLE, false);
+      const S = plain(cm.SAMPLE_REPORTS);
+      assert.deepEqual(Object.fromEntries(Object.entries(S).map(([k, v]) => [k, v && v.url])), {
+        nz: '/sample-nzs4306.pdf', au: '/sample-report-au.pdf', uk: '/sample-condition-ratings.pdf', ie: '/sample-condition-ratings.pdf', us: null, ca: null,
+      });
+      assert.equal(S.nz.enabled, links.HAS_SAMPLE, 'NZ sample flag is HAS_SAMPLE');
+      for (const [cc, s] of Object.entries(S)) {
+        if (!s) continue;
+        const file = path.join(root, 'public/rondva', s.url);
+        assert.equal(typeof s.enabled, 'boolean');
+        if (s.enabled) assert.ok(fs.existsSync(file), `${cc}: sample flag is true so ${s.url} must exist in public/rondva/`);
+        else assert.ok(!fs.existsSync(file), `${cc}: sample flag is false so ${s.url} must not exist yet`);
+      }
+      assert.match(compSrc, /c\.sample\?\.enabled \?/);
+      assert.match(compSrc, /See a sample report \(PDF\)/);
+    }
+    pass('country pages /au /uk /ie /us /ca: exact local prices and tax lines, one JSON-LD per page with FAQ = visible answers, no banned claims or body names, AU "not … AS 4349.1", UK/IE condition ratings 1-2-3 and no RICS, US/CA ten systems in order, hreflang (7 entries) on home + country pages only, sitemap, llms.txt, footer links, sample flags');
+  }
 
   console.log(`${n} Rondva pricing checks passed; no network calls made.`);
 })().catch((e) => { console.error(e); process.exit(1); });

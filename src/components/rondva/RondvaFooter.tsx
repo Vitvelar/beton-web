@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
+import { COUNTRY_LINKS } from "@/lib/rondva-countries";
 import { CookieChoicesButton } from "@/components/rondva/CookieChoicesButton";
 import { rvDarkLink } from "@/components/rondva/ui";
 
@@ -50,6 +51,20 @@ export function RondvaFooter() {
                   Contact
                 </a>
               </li>
+            </ul>
+          </nav>
+
+          {/* Innri tenglar á landasíðurnar; hljóðlát lína, brotnar á mjóum skjá */}
+          <nav aria-label="Rondva by country" className="mt-6">
+            <p className="text-xs text-on-inverse-muted">Rondva by country</p>
+            <ul className="mt-1 flex flex-wrap items-center gap-x-6 text-sm">
+              {COUNTRY_LINKS.map((c) => (
+                <li key={c.code}>
+                  <Link href={c.path} className={rvDarkLink}>
+                    {c.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
 
