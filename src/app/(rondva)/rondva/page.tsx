@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { BRANDS } from "@/lib/brand";
+import { rondvaLanguages } from "@/lib/rondva-countries";
 import { HAS_SAMPLE, SAMPLE_REPORT_URL } from "@/lib/rondva-links";
 import {
   RONDVA_INCLUDED,
@@ -110,6 +112,11 @@ const whatYouGet = [
   },
 ];
 
+// hreflang aðeins á forsíðu og landasíðum (ekki /support, /privacy …); canonical er áfram forsíðan.
+export const metadata: Metadata = {
+  alternates: { canonical: BRANDS.rondva.marketingUrl, languages: rondvaLanguages() },
+};
+
 export default function RondvaLandingPage() {
   return (
     <>
@@ -144,7 +151,7 @@ export default function RondvaLandingPage() {
                 <AppStoreBadge />
                 {HAS_SAMPLE ? (
                   <a href={SAMPLE_REPORT_URL} className={rvBtn("inverse", "md")}>
-                    See a sample report
+                    See a sample NZS 4306 report
                   </a>
                 ) : null}
                 <a href="#how" className={rvBtn("inverse", "md")}>

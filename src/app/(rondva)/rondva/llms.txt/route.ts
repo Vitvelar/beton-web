@@ -1,4 +1,5 @@
 import { BRANDS } from "@/lib/brand";
+import { COUNTRIES, money } from "@/lib/rondva-countries";
 import { APP_STORE_URL } from "@/lib/rondva-links";
 import { RONDVA_NZ_SOLO, RONDVA_OFFER_LINE, RONDVA_PACK, RONDVA_PLANS, usd } from "@/lib/rondva-pricing";
 
@@ -20,14 +21,14 @@ export function GET() {
     "",
     "## Who it is for",
     "- Independent property inspectors and small inspection firms.",
-    "- Countries: New Zealand first (NZS 4306:2005 pre-purchase reports); Australia and Ireland are also priced in the App Store.",
+    "- Countries: New Zealand (NZS 4306:2005 pre-purchase reports), Australia, the United Kingdom, Ireland, the United States and Canada; each has its own page below.",
     "",
     "## What it does",
     "- Record the property, the areas you walk, a rating for each item, photos, thermal images and moisture readings on site.",
     "- Works with no signal: everything is saved on the phone first and syncs when back online.",
     "- Drafts the report text and summary with AI. Your severity ratings are locked; the AI cannot change them.",
     "- On NZS 4306 reports, any figure in a finding's write-up and every moisture reading must match a number the inspector entered, or Rondva falls back to the inspector's own words.",
-    "- The PDF carries the inspector's company name and logo and states that the text was drafted with AI assistance.",
+    "- The PDF carries the inspector's company name and logo. NZS 4306 reports also state that the text was drafted with AI assistance.",
     "- Data is stored in the EU (Ireland).",
     "",
     "## Availability and price",
@@ -38,6 +39,7 @@ export function GET() {
     "",
     "## Links",
     `- [NZS 4306 reports](${R.marketingUrl}/nz): what the report contains and pricing in NZ$`,
+    ...COUNTRIES.map((c) => `- [${c.name}](${R.marketingUrl}${c.path}): Solo ${money(c, "solo")} a month. ${c.taxLine} Report: ${c.llms}.`),
     `- [Support and FAQ](${R.marketingUrl}/support)`,
     `- [Privacy policy](${R.marketingUrl}/privacy)`,
     `- [Terms of use](${R.marketingUrl}/terms)`,

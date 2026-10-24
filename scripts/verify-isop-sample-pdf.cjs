@@ -60,13 +60,13 @@ const referencing = walk(path.join(root, 'src')).filter((f) => /\.(ts|tsx|js|jsx
 assert.deepEqual(referencing, [], 'no source file references the sample PDFs');
 for (const rel of ['src/app/sitemap.ts', 'src/app/(rondva)/rondva/sitemap.xml/route.ts']) {
   const src = fs.readFileSync(path.join(root, rel), 'utf8');
-  assert.ok(!/sample|\.pdf|isop|\/us\b/i.test(src), `${rel} does not list the sample`);
+  // /us og /ca eru landasíður (rondva-countries.ts) og mega vera í sitemap; sýnisskráin sjálf má það ekki.
+  assert.ok(!/sample|\.pdf|isop/i.test(src), `${rel} does not list the sample`);
 }
 for (const f of ['vercel.json', 'next.config.ts', 'next.config.js', 'next.config.mjs', 'middleware.ts', 'src/middleware.ts', 'src/proxy.ts', 'proxy.ts']) {
   const p = path.join(root, f);
   if (fs.existsSync(p)) assert.ok(!/sample-home-inspection/.test(fs.readFileSync(p, 'utf8')), `${f} does not mention the sample`);
 }
-assert.ok(!fs.existsSync(path.join(root, 'src/app/(rondva)/rondva/us')) && !fs.existsSync(path.join(root, 'src/app/(rondva)/us')), 'no /us landing page in this PR');
-pass('sample PDFs are not referenced from src/, not in either sitemap, and no /us route exists');
+pass('sample PDFs are not referenced from src/ and not listed in either sitemap (the /us and /ca country pages never link them)');
 
 console.log(`\n${checks} checks passed`);
