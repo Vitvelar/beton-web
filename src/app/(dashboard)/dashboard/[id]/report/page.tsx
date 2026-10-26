@@ -20,6 +20,7 @@ import { ReportProgress } from "@/components/dashboard/ReportProgress";
 import { btn, tapLink } from "@/lib/ui";
 import type { Severity } from "@/lib/supabase/types";
 import { resolveBranding } from "@/lib/report/branding";
+import { reportLocality } from "@/lib/report/address-line";
 import {
   ratingCategoryLabel,
   reportCategoryLabel,
@@ -358,6 +359,9 @@ export default async function ReportPage({
     .slice(0, 10);
 
   const propData = report.inspection.property_data ?? {};
+  // Rondva-lönd með stimplað afbrigði (US/CA/AU/GB/IE/NZ) fá staðsetningarlínu eftir landi;
+  // null (íslenska, „en“, eldri skýrslur, Beton) = núverandi lína óbreytt.
+  const locality = reportLocality(report.inspection, { locale, variant });
   // Fyrirtækjamerki/-nafn skoðunarmanns (white-label); Beton-sjálfgildi ef ekkert skráð.
   const inspectorRow = Array.isArray(inspection.inspectors)
     ? inspection.inspectors[0]
@@ -630,10 +634,14 @@ export default async function ReportPage({
           <table className="w-full text-sm mb-6">
             <tbody className="divide-y divide-concrete/50">
               <InfoTableRow label={t.address} value={report.inspection.address} />
-              <InfoTableRow
-                label={t.postcode}
-                value={`${report.inspection.postal_code}${report.inspection.municipality ? " " + report.inspection.municipality : ""}`}
-              />
+              {locality !== null ? (
+                <InfoTableRow label={t.location} value={locality} />
+              ) : (
+                <InfoTableRow
+                  label={t.postcode}
+                  value={`${report.inspection.postal_code}${report.inspection.municipality ? " " + report.inspection.municipality : ""}`}
+                />
+              )}
               {report.inspection.fastanumer && (
                 <InfoTableRow label={t.propertyId} value={report.inspection.fastanumer} />
               )}
