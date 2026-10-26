@@ -241,4 +241,5 @@ async function main() {
   console.log(`\nverify-rating-findings: ${checks} checks passed`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+module.exports = { ownerCaseRecord, stamp };
+if (require.main === module) main().catch((e) => { console.error(e); process.exit(1); });
