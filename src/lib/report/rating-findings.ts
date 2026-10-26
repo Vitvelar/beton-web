@@ -16,7 +16,7 @@
 import { REPORT_COPY } from "./i18n";
 import { isopRatingKeyLabel } from "./isop";
 import { NZ_RATING_LABELS } from "./nz-elements";
-import { APP_IS_RATING_LABELS, APP_ISOP_RATING_LABELS } from "./app-rating-labels";
+import { APP_EN_RATING_LABELS, APP_IS_RATING_LABELS, APP_ISOP_RATING_LABELS } from "./app-rating-labels";
 
 export const FINDINGS_BASIS = "observations_and_ratings";
 
@@ -112,44 +112,43 @@ function containsWords(text: string[], part: string[]): boolean {
 
 /**
  * Öll heiti matsþáttarins sem titill athugasemdar gæti byrjað á: lykillinn, heitið sem skýrslan birtir, ensku
- * heitin (vefur), NZ-heitin, isop-heiti vefsins OG appsins (appið geymir sín heiti í titlinum) og íslensk heiti
- * appsins (titlar þegar skýrslutungumálið var óþekkt). Sem stofnaðar orðarunur, án tvítekninga.
+ * heitin (vefur og app), NZ-heitin, isop-heiti vefsins OG appsins (appið geymir sín heiti í titlinum) og íslensk
+ * heiti appsins (titlar þegar skýrslutungumálið var óþekkt).
  */
-function candidateNames(key: string, displayLabel?: string): string[][] {
-  const names = [
+function candidateNames(key: string, displayLabel: string): string[] {
+  return [
     displayLabel,
     key,
     REPORT_COPY.en.ratingCategories[key],
+    APP_EN_RATING_LABELS[key],
     NZ_RATING_LABELS[key],
     isopRatingKeyLabel(key),
     APP_ISOP_RATING_LABELS[key],
     ...(APP_IS_RATING_LABELS[key] ?? []),
-  ];
-  const out: string[][] = [];
+  ].filter((n): n is string => typeof n === "string" && n.trim() !== "");
+}
+
+/** Lengd (orð) lengsta heitis sem titill athugasemdar BYRJAR á (óstofnuð orð) eða flokkur hennar er; 0 ef ekkert. */
+function prefixMatch(obs: ObservationLike, names: readonly string[]): number {
+  const title = words(obs.title);
+  const category = words(obs.category).join(" ");
+  let best = 0;
   for (const name of names) {
-    const w = stems(name);
-    if (w.length > 0 && !out.some((o) => o.join(" ") === w.join(" "))) out.push(w);
+    const n = words(name);
+    if (n.length === 0) continue;
+    if (startsWithWords(title, n) || (category !== "" && category === n.join(" "))) best = Math.max(best, n.length);
   }
-  return out;
+  return best;
 }
 
-/**
- * Fjallar athugasemd í rýminu um matsþáttinn? Flýtiblaðið býr til titilinn „<heiti> — <alvarleiki>“
- * (app lib/i18n/titles.ts), svo athugasemd telst fjalla um þáttinn ef titill hennar byrjar á heiti hans (heilum
- * orðum, stofnað) eða flokkur hennar er sama heiti. Alvarleiki skiptir ekki máli: breyti skoðunarmaður alvarleika
- * athugasemdarinnar gildir hún, og einkunnin er ekki talin aftur.
- */
-function covers(obs: ObservationLike, names: string[][]): boolean {
-  const title = stems(obs.title);
-  const category = stems(obs.category).join(" ");
-  return names.some((n) => startsWithWords(title, n) || (category !== "" && category === n.join(" ")));
-}
-
-/** Nefnir titill/flokkur athugasemdar heiti þáttar einhvers staðar (ekki aðeins fremst)? */
-function mentions(obs: ObservationLike, names: string[][]): boolean {
+/** Nefnir titill/flokkur athugasemdar heiti þáttar einhvers staðar (stofnuð orð: deck/decking, pile/piles)? */
+function mentions(obs: ObservationLike, names: readonly string[]): boolean {
   const title = stems(obs.title);
   const category = stems(obs.category);
-  return names.some((n) => containsWords(title, n) || containsWords(category, n));
+  return names.some((name) => {
+    const n = stems(name);
+    return containsWords(title, n) || containsWords(category, n);
+  });
 }
 
 export interface RatingFinding {
@@ -163,40 +162,45 @@ export interface RatingFinding {
 /**
  * Einkunnir rýmis sem eru ekki í lagi og engin athugasemd rýmisins fjallar um, í röð einkunnanna.
  *
- * 1. Athugasemd sem fjallar um matsþáttinn (titill/flokkur, sjá covers) þekur einkunnina, hver sem alvarleikinn er.
- * 2. Athugasemd rýmisins sem þekur enga einkunn, hefur SAMA alvarleika og NEFNIR þáttinn einhvers staðar í titli
- *    eða flokki er talin skrif einkunnarinnar (skoðunarmaður breytti titlinum, t.d. „Leaning piles …“ fyrir
- *    Piles = Significant defect); ein athugasemd þekur eina einkunn, í röð. Athugasemd sem nefnir ekki þáttinn
- *    þekur hann aldrei („Rotten deck boards“ felur ekki Cracks = Very serious): betra er að einkunn birtist auk
- *    athugasemdar en að alvarleg einkunn hverfi úr tölunum.
+ * 1. Eigandi athugasemdar: sá matsþáttur rýmisins (hvaða einkunn sem er, líka „í lagi“) sem titill hennar BYRJAR á
+ *    (heil, óstofnuð orð; „&“, „/“, „and“ falla út) eða flokkur hennar er; lengsta heitið vinnur („Floor drain — …“
+ *    á Floor drain, aldrei Flooring). Athugasemdin þekur aðeins eiganda sinn, hver sem alvarleikinn er.
+ * 2. Athugasemd án eiganda, með SAMA alvarleika og sem NEFNIR þáttinn (stofnuð orð) einhvers staðar í titli eða
+ *    flokki, er talin skrif óþakinnar einkunnar (skoðunarmaður breytti titlinum, t.d. „Leaning piles …“ fyrir
+ *    Piles = Significant defect); ein á móti einni, í röð. Athugasemd sem nefnir ekki þáttinn þekur hann aldrei
+ *    („Rotten deck boards“ felur ekki Cracks = Very serious): betra er að einkunn birtist auk athugasemdar en
+ *    að alvarleg einkunn hverfi úr tölunum.
  * Það sem eftir stendur eru einkunnir án athugasemdar („Skip“ á flýtiblaðinu).
  */
 export function ratingFindingsOf(room: RoomLike, displayLabel: (key: string) => string): RatingFinding[] {
   const observations = (room.observations ?? []).filter((o) => !isRatingFindingId(o.id));
-  const pending: Array<{ finding: RatingFinding; names: string[][] }> = [];
-  const used = new Set<ObservationLike>();
-  for (const [key, rating] of Object.entries(room.ratings ?? {})) {
-    const severity = typeof rating === "string" ? RATING_TO_SEVERITY[rating] : undefined;
-    if (!severity) continue;
-    const label = displayLabel(key);
-    const names = candidateNames(key, label);
-    const match = observations.filter((o) => covers(o, names));
-    if (match.length > 0) {
-      for (const o of match) used.add(o);
-      continue;
+  const entries = Object.entries(room.ratings ?? {});
+  const names = new Map(entries.map(([key]) => [key, candidateNames(key, displayLabel(key))] as const));
+
+  const covered = new Set<string>();
+  const owned = new Set<ObservationLike>();
+  for (const o of observations) {
+    let owner: string | null = null;
+    let best = 0;
+    for (const [key] of entries) {
+      const len = prefixMatch(o, names.get(key) ?? []);
+      if (len > best) { best = len; owner = key; }
     }
-    const title = label.charAt(0).toUpperCase() + label.slice(1);
-    pending.push({ finding: { id: `${RATING_FINDING_ID_PREFIX}${room.slug}:${key}`, key, rating, severity, title }, names });
+    if (owner !== null) { covered.add(owner); owned.add(o); }
   }
-  const spare = observations.filter((o) => !used.has(o));
+
+  const spare = observations.filter((o) => !owned.has(o));
   const out: RatingFinding[] = [];
-  for (const { finding, names } of pending) {
-    const pick = spare.find((o) => o.severity === finding.severity && mentions(o, names));
+  for (const [key, rating] of entries) {
+    const severity = typeof rating === "string" ? RATING_TO_SEVERITY[rating] : undefined;
+    if (!severity || covered.has(key)) continue;
+    const pick = spare.find((o) => o.severity === severity && mentions(o, names.get(key) ?? []));
     if (pick) {
       spare.splice(spare.indexOf(pick), 1);
       continue;
     }
-    out.push(finding);
+    const label = displayLabel(key);
+    out.push({ id: `${RATING_FINDING_ID_PREFIX}${room.slug}:${key}`, key, rating, severity, title: label.charAt(0).toUpperCase() + label.slice(1) });
   }
   return out;
 }

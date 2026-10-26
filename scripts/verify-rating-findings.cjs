@@ -86,7 +86,7 @@ async function main() {
     assert.ok(covered('Doors sticking in frame'));
     assert.ok(covered('Hurðir — Alvarleg athugasemd'), 'Icelandic auto-title folds to the key');
     assert.ok(covered('Something else', 'Hurðir'), 'observation category = rating key');
-    assert.ok(covered('Door handle loose'), 'singular/plural stem: door = doors');
+    assert.ok(!covered('Door handle loose'), 'prefix matching is unstemmed: door is not doors');
     assert.ok(!covered('Doorbell broken'), 'different word is not the element');
     assert.ok(!covered('Loftræsting — Minor', null, 'loft', 'Ceiling'), 'Loft is not a prefix word of Loftræsting');
     assert.ok(covered('Retaining walls — Defect', null, 'retaining', 'Retaining walls'));
@@ -128,6 +128,20 @@ async function main() {
       }
     }
     assert.ok(covered('Baðkar / sturta — Alvarleg athugasemd', null, 'badker_sturta', 'Bath / shower'), 'Icelandic title in an English report (5e001382)');
+    // HIGH (judge #63, 5895ea2): forskeyti á ÓSTOFNUÐUM orðum; titill annars þáttar felur aldrei einkunn.
+    const en = (k) => ({ golfefni: 'Flooring', nidurfall: 'Floor drain', veggir: 'Walls', malning: 'Paint', mulning: 'Render', sprungur: 'Cracks' }[k] ?? k);
+    for (const slug of ['badherbergi-1', 'badherbergi-2', 'thvottahus']) {
+      const r = rf.ratingFindingsOf({ slug, ratings: { golfefni: 'mjog_alvarleg', nidurfall: 'danger' }, observations: [{ id: 'f', title: 'Floor drain — Serious', severity: 'alvarleg' }] }, en);
+      assert.deepEqual(clone(r.map((f) => f.key)), ['golfefni'], `${slug}: "Floor drain — Serious" covers Floor drain, never Flooring = Very serious`);
+      const r2 = rf.ratingFindingsOf({ slug, ratings: { golfefni: 'mjog_alvarleg' }, observations: [{ id: 'f', title: 'Floor drain — Serious', severity: 'alvarleg' }] }, en);
+      assert.deepEqual(clone(r2.map((f) => f.key)), ['golfefni'], `${slug}: unrated Floor drain still does not hide Flooring`);
+    }
+    assert.deepEqual(clone(rf.ratingFindingsOf({ slug: 'stofa', ratings: { veggir: 'danger' }, observations: [{ id: 'w', title: 'Wall socket loose', severity: 'athugasemd' }] }, en).map((f) => f.key)), ['veggir'], '"Wall socket loose" does not hide Walls = Serious');
+    assert.deepEqual(clone(rf.ratingFindingsOf({ slug: 'utanhuss', ratings: { malning: 'mjog_alvarleg' }, observations: [{ id: 'p', title: 'Painted render cracked', severity: 'alvarleg' }] }, en).map((f) => f.key)), ['malning'], '"Painted render cracked" does not hide Paint = Very serious');
+    // Lengsta heitið vinnur: „Roof flashings — Defect“ á Roof flashings, ekki Flashings.
+    const nzL = (k) => ({ roof_flashings: 'Roof flashings', flashings: 'Flashings', roof_covering: 'Roof covering' }[k]);
+    assert.deepEqual(clone(rf.ratingFindingsOf({ slug: 'x', ratings: { flashings: 'danger', roof_flashings: 'danger' }, observations: [{ id: 'r', title: 'Roof flashings — Defect', severity: 'alvarleg' }] }, nzL).map((f) => f.key)), ['flashings'], 'longest name owns the observation');
+    assert.deepEqual(clone(rf.ratingFindingsOf({ slug: 'x', ratings: { flashings: 'danger', roof_flashings: 'danger' }, observations: [{ id: 'r', title: 'Flashings — Defect', severity: 'alvarleg' }] }, nzL).map((f) => f.key)), ['roof_flashings']);
     assert.ok(covered('Gutters & downspouts sagging', null, 'gutters_downspouts', 'Gutters and downspouts'), '& folds to and');
     assert.ok(covered('Bath and shower — Minor', null, 'badker_sturta', 'Bath / shower'), '/ folds to and');
     const titled = rf.ratingFindingsOf({ slug: 'x', ratings: { hurdir: 'warn', loft: 'warn' },
@@ -144,6 +158,34 @@ async function main() {
     assert.equal(report.rooms[0].observations.length, 1, 'input not mutated');
     assert.ok(rf.isRatingFindingId('rating:a:b') && !rf.isRatingFindingId('3f2a-uuid'));
     pass(`(a) unit: warn/danger/very serious → Minor/Serious/Very serious; covered by title prefix (app isop labels, ${isLabels} Icelandic app labels, &,/,and folded) or category, else paired 1:1 only with a same-severity observation that names the element; unstamped = same object`);
+  }
+
+  // (a2) Öll sniðmát appsins: flýtititill hvers þáttar (öll tungumál/heiti appsins) þekur AÐEINS sinn þátt í sínu rými.
+  {
+    const appLabels = load('src/lib/report/app-rating-labels.ts');
+    const nzEl = load('src/lib/report/nz-elements.ts');
+    const isopLab = load('src/lib/report/isop.ts').isopRatingKeyLabel;
+    const i18n = load('src/lib/report/i18n.ts');
+    const rooms = JSON.parse(require('node:fs').readFileSync(path.join(__dirname, 'app-room-elements.json'), 'utf8'));
+    const display = (slug) => (k) => slug.startsWith('isop-') ? isopLab(k) : slug.startsWith('nz-') ? nzEl.NZ_RATING_LABELS[k] ?? i18n.ratingCategoryLabel(i18n.REPORT_COPY.en, k) : i18n.ratingCategoryLabel(i18n.REPORT_COPY.en, k);
+    let titles = 0;
+    for (const [slug, list] of Object.entries(rooms)) {
+      const keys = [...new Set(list)];
+      for (const key of keys) {
+        const forms = new Set([appLabels.APP_EN_RATING_LABELS[key], ...(appLabels.APP_IS_RATING_LABELS[key] ?? []),
+          slug.startsWith('nz-') ? nzEl.NZ_RATING_LABELS[key] ?? key.replace(/_/g, ' ') : undefined,
+          slug.startsWith('isop-') ? appLabels.APP_ISOP_RATING_LABELS[key] ?? key.replace(/_/g, ' ') : undefined].filter(Boolean));
+        for (const form of forms) {
+          for (const sev of ['Serious', 'Alvarleg athugasemd', 'Repair or replace', 'Defect']) {
+            const ratings = Object.fromEntries(keys.map((k) => [k, 'mjog_alvarleg']));
+            const found = rf.ratingFindingsOf({ slug, ratings, observations: [{ id: 'q', title: `${form} — ${sev}`, severity: 'alvarleg' }] }, display(slug.replace('*', 'custom')));
+            assert.deepEqual(clone(found.map((f) => f.key)).sort(), keys.filter((k) => k !== key).sort(), `${slug}: "${form} — ${sev}" must cover ${key} and nothing else`);
+            titles++;
+          }
+        }
+      }
+    }
+    pass(`(a2) all ${Object.keys(rooms).length} app room templates: each element's quick-add title (${titles} title/severity forms) covers exactly its own element`);
   }
 
   // (b) Tilfelli eigandans: óstimpluð = eins og áður, stimpluð = tölur og texti saman
@@ -247,26 +289,16 @@ async function main() {
     pass(`(e) isop: rating-only "Major defect" (${isopLabel(target.key)}) counted and in the deficiency table; explanatory copy says observations and checklist ratings`);
   }
 
-  // (g) APP_REPO=<beton-app> → app-rating-labels.ts samræmist app-skránum (isop-heiti og íslensk heiti).
+  // (g) APP_REPO=<beton-app> → app-rating-labels.ts og app-room-elements.json eru nákvæm afrit appsins.
   if (process.env.APP_REPO) {
-    const ts = require('typescript');
+    const sync = require('./app-rating-labels-sync.cjs');
     const fs = require('node:fs');
-    const loadApp = (f, extra = '') => {
-      const m = { exports: {} };
-      const out = ts.transpileModule(fs.readFileSync(path.join(process.env.APP_REPO, f), 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-      new Function('module', 'exports', 'require', out)(m, m.exports, () => ({}));
-      return m.exports;
-    };
-    const appLabels = load('src/lib/report/app-rating-labels.ts');
-    assert.deepEqual(clone(appLabels.APP_ISOP_RATING_LABELS), clone(loadApp('lib/report/isop-elements.ts').ISOP_RATING_LABELS), 'isop labels == app');
-    const c = loadApp('lib/utils/constants.ts', '\nexport const __OVR = ROOM_RATING_OVERRIDES;');
-    const is = {};
-    for (const list of [...Object.values(c.__OVR), c.getRatingCategoriesForRoom('__unknown__')]) for (const r of list) { is[r.key] ??= []; if (!is[r.key].includes(r.label)) is[r.key].push(r.label); }
-    const norm = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, [...v].sort()]).sort(([a], [b]) => a.localeCompare(b)));
-    assert.deepEqual(norm(clone(appLabels.APP_IS_RATING_LABELS)), norm(is), 'Icelandic labels == app');
-    pass(`(g) app-rating-labels.ts matches ${process.env.APP_REPO} (isop + Icelandic labels)`);
+    const data = sync.extractAppLabels(path.resolve(process.env.APP_REPO));
+    assert.equal(fs.readFileSync(sync.TS_FILE, 'utf8'), sync.renderTs(data), 'app-rating-labels.ts stale — APP_REPO=… node scripts/app-rating-labels-sync.cjs --write');
+    assert.equal(fs.readFileSync(sync.ROOMS_FILE, 'utf8'), sync.renderRooms(data), 'app-room-elements.json stale — APP_REPO=… node scripts/app-rating-labels-sync.cjs --write');
+    pass(`(g) app-rating-labels.ts + app-room-elements.json match ${process.env.APP_REPO} (isop, English, Icelandic labels; room templates)`);
   } else {
-    console.log('SKIP (g) app label parity (set APP_REPO=<beton-app checkout>)');
+    console.warn('\n' + '!'.repeat(78) + '\n!! WARNING: (g) SKIPPED — app label parity NOT checked. Set APP_REPO=<beton-app checkout>.\n!! src/lib/report/app-rating-labels.ts must equal the app labels (beton-app verify-report-label-fingerprint.cjs).\n' + '!'.repeat(78) + '\n');
   }
 
   // (f) Bæti-eins og grunntré (origin/main) fyrir óstimplaðar skýrslur og íslenska skýrslu með stimpli
