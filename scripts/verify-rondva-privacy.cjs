@@ -186,7 +186,7 @@ assert.ok(section('who').includes('business contacts we write to'), 'who-is-resp
 assert.ok(!/we do not use the list for/i.test(biz) && !/guarantee|verified|reviewed/i.test(biz), 'no overclaiming in the new section');
 pass('business contacts: who we are, public-register source (NZIBI), up to three emails without tracking, art. 6(1)(f), 12 months + email-only suppression list, unsubscribe/object/access, Persónuvernd + NZ Privacy Commissioner, #business-contacts anchor');
 
-// 12. Heimilisfangaleit (LANDAVAL §3): Google Places API (Google Maps Platform) er nefnt sem vinnsluaðili, texti
+// 12. Heimilisfangaleit (LANDAVAL §3): Google Places API (Google Maps Platform) er nefnt í vinnsluaðilatöflunni en er sjálfstæður ábyrgðaraðili (Maps Platform controller terms), texti
 //     heimilisfangsreitsins og valið staðarauðkenni eru það sem fer, ekkert annað, og tengill á persónuverndarstefnu Google.
 assert.ok(ids.includes('address-search'), 'new #address-search section');
 const addr = section('address-search');
@@ -197,10 +197,15 @@ for (const s of [
   'Google Privacy Policy', 'ignore the suggestions and type the whole address',
 ]) assert.ok(addr.includes(s), `address-search section says: ${s}`);
 assert.match(code, /https:\/\/policies\.google\.com\/privacy/);
-assert.ok(plain.includes('Google (Google Maps Platform, Places API)'), 'processor table lists Google Maps Platform');
+assert.ok(plain.includes('Google (Google Maps Platform, Places API)'), 'provider table lists Google Maps Platform');
+const processorsSection = section('processors');
+assert.ok(processorsSection.includes('Google Maps Platform for the address search, which acts as an independent controller'), 'processors: Google Maps Platform is an exception to the processor sentence');
+assert.ok(processorsSection.includes("Google's Maps Platform controller terms"), 'processors: names the controller terms');
+assert.match(code, /https:\/\/business\.safety\.google\/mapscontrollerterms-20181019/);
+assert.match(source, /EKKI\) þarf að uppfæra þennan texta/, 'code comment: update the privacy text if coordinates are ever stored');
 assert.ok(section('legal-bases').includes('the address search'), 'legal-bases covers the address search');
 assert.ok(section('transfers').includes('text you type in the address field to Google'), 'transfers covers the address search');
 assert.ok(!plain.includes('OpenStreetMap Nominatim for the address'), 'no Nominatim claim');
-pass('address search: Google Maps Platform (Places API) named as processor, what is sent and what is not, Google privacy policy link, legal basis + transfers');
+pass('address search: Google Maps Platform (Places API) listed with the controller-terms exception, what is sent and what is not, Google privacy policy link, legal basis + transfers');
 
 console.log(`${n} Rondva privacy checks passed; no network calls made.`);

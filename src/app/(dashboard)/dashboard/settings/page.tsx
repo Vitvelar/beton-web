@@ -80,6 +80,7 @@ export default async function SettingsPage() {
           locale={locale}
           country={reportSettings.country}
           reportStandard={reportSettings.reportStandard}
+          reportStandardSet={reportSettings.reportStandardSet}
           countries={countryOptions(locale)}
         />
       ) : null}
@@ -126,6 +127,7 @@ async function ownerReportSettings(supabase: Awaited<ReturnType<typeof createCli
   return {
     country,
     companyId: company.companyId,
+    reportStandardSet: company.reportStandardSet,
     reportLocale: settings.locale,
     ratingScheme: settings.scheme,
     reportStandard: settings.standard,

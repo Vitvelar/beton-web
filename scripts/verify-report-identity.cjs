@@ -238,10 +238,10 @@ function expectedVariantMarkup(golden, variant) {
     return parts.join(to);
   };
   let out = swap(golden, '>21.09.2026</p>', `>${inspected}</p>`, 1);          // forsíða
-  // 2026-10-26 (LANDAVAL §7): stimpluð afbrigði fá staðsetningarlínu eftir landi („Location“; US/CA/AU „Town, ST zip“,
-  // önnur „Town zip“) í stað „Postcode: <zip> <town>“. Fixtúran hefur ekkert fylki. „en“ og íslenska snerta þetta ekki.
+  // 2026-10-26 (LANDAVAL §7): stimpluð afbrigði fá staðsetningarlínu eftir landi („Location“; US/CA með fylki „Town, ST zip“,
+  // annars „Town zip“; AU „Town ST zip“) í stað „Postcode: <zip> <town>“. Fixtúran hefur ekkert fylki. „en“ og íslenska snerta þetta ekki.
   out = swap(out, '>Postcode</td>', '>Location</td>', 1);
-  out = swap(out, '>101 Testville</td>', ['en-US', 'en-CA', 'en-AU'].includes(variant) ? '>Testville, 101</td>' : '>Testville 101</td>', 1);
+  out = swap(out, '>101 Testville</td>', '>Testville 101</td>', 1);
   out = swap(out, '>21.09.2026</td>', `>${inspected}</td>`, 1);              // eignatafla
   out = swap(out, 'Report created 22.09.2026<', `Report created ${created}<`, 1);
   if (variant === 'en-US') {

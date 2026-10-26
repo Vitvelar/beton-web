@@ -17,6 +17,8 @@ export interface CompanyReportSettings {
   country: string;
   /** companies.id — stillingasíðan felur landaval Beton-fyrirtækisins (læst í gagnagrunninum). */
   companyId: string | null;
+  /** Satt þegar companies.report_standard er skráð gildi (ekki null). Null + NZ gefur nzs_4306 sjálfkrafa. */
+  reportStandardSet: boolean;
 }
 
 export async function fetchCompanyReportSettings(
@@ -39,5 +41,6 @@ export async function fetchCompanyReportSettings(
   if (!company) return null;
   const country = String((company as { country_code?: unknown }).country_code ?? "").trim().toUpperCase();
   const rawId = (company as { id?: unknown }).id;
-  return { settings: resolveReportSettings(company), standardSupported, country, companyId: typeof rawId === "string" ? rawId : null };
+  return { settings: resolveReportSettings(company), standardSupported, country, companyId: typeof rawId === "string" ? rawId : null,
+    reportStandardSet: standardSupported && (company as { report_standard?: unknown }).report_standard != null };
 }

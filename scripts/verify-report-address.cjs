@@ -25,10 +25,20 @@ assert.equal(loc(denver, { locale: 'en', variant: 'en-US' }), 'Denver, CO 80202'
 assert.equal(loc({ ...denver, property_data: { isop: { state: 'TX' } } }, { locale: 'en', variant: 'en-US' }), 'Denver, TX 80202');
 assert.equal(loc({ ...denver, property_data: { state: 'CO', isop: { state: 'TX' } } }, { locale: 'en', variant: 'en-US' }), 'Denver, CO 80202', 'state wins over isop.state');
 assert.equal(loc({ postal_code: 'M5V 2T6', municipality: 'Toronto', property_data: { state: 'ON' } }, { locale: 'en', variant: 'en-CA' }), 'Toronto, ON M5V 2T6');
-assert.equal(loc({ postal_code: '2000', municipality: 'Sydney', property_data: { state: 'NSW' } }, { locale: 'en', variant: 'en-AU' }), 'Sydney, NSW 2000');
-pass('US / CA / AU: Town, ST postcode (state from property_data.state ?? isop.state)');
+assert.equal(loc({ postal_code: '2000', municipality: 'Sydney', property_data: { state: 'NSW' } }, { locale: 'en', variant: 'en-AU' }), 'Sydney NSW 2000');
+assert.equal(loc({ postal_code: '4060', municipality: 'Ashgrove', property_data: { state: 'QLD' } }, { locale: 'en', variant: 'en-AU' }), 'Ashgrove QLD 4060', 'Australia Post: no comma');
+pass('US / CA: Town, ST postcode; AU: Town ST postcode without a comma (state from property_data.state ?? isop.state)');
 
-assert.equal(loc({ postal_code: '12345', municipality: 'Denver', property_data: {} }, { locale: 'en', variant: 'en-US' }), 'Denver, 12345');
+// Bær sem endar þegar á fylkinu fær það ekki tvisvar; án fylkis: „Town ZIP“.
+assert.equal(loc({ postal_code: '4060', municipality: 'Ashgrove QLD', property_data: { state: 'QLD' } }, { locale: 'en', variant: 'en-AU' }), 'Ashgrove QLD 4060');
+assert.equal(loc({ postal_code: '4060', municipality: 'Ashgrove, qld', property_data: { state: 'QLD' } }, { locale: 'en', variant: 'en-AU' }), 'Ashgrove, qld 4060');
+assert.equal(loc({ postal_code: '80202', municipality: 'Denver, CO', property_data: { state: 'CO' } }, { locale: 'en', variant: 'en-US' }), 'Denver, CO 80202');
+assert.equal(loc({ postal_code: '4060', municipality: 'Ashgrove', property_data: {} }, { locale: 'en', variant: 'en-AU' }), 'Ashgrove 4060');
+assert.equal(loc({ postal_code: '4060', municipality: 'WA Town', property_data: { state: 'WA' } }, { locale: 'en', variant: 'en-AU' }), 'WA Town WA 4060', 'a leading state-like word is not "ending with"');
+assert.equal(loc({ postal_code: '80202', municipality: 'Denver', property_data: {} }, { locale: 'en', variant: 'en-US' }), 'Denver 80202');
+pass('no region -> "Town ZIP"; a town that already ends with the state code does not repeat it');
+
+assert.equal(loc({ postal_code: '12345', municipality: 'Denver', property_data: {} }, { locale: 'en', variant: 'en-US' }), 'Denver 12345');
 assert.equal(loc({ postal_code: '', municipality: 'Denver', property_data: { state: 'CO' } }, { locale: 'en', variant: 'en-US' }), 'Denver, CO');
 assert.equal(loc({ postal_code: '80202', municipality: '', property_data: { state: 'CO' } }, { locale: 'en', variant: 'en-US' }), 'CO 80202');
 assert.equal(loc({ postal_code: null, municipality: '  Denver ', property_data: null }, { locale: 'en', variant: 'en-US' }), 'Denver');

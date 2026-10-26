@@ -60,3 +60,19 @@ export function standardClearedBy(reportStandard: string | null | undefined, new
   if (reportStandard === "isop" && newCountry !== "US" && newCountry !== "CA") return "isop";
   return null;
 }
+
+/**
+ * Land sem fyrirtæki má velja í stillingum: Ísland aðeins fyrir fyrirtæki sem er þegar á Íslandi (Beton/samstarfsaðilar;
+ * set_company_country hafnar IS fyrir aðra með country_not_allowed). Núverandi land er alltaf í listanum.
+ */
+export function selectableCountries<T extends { code: string }>(options: readonly T[], current: string): T[] {
+  return options.filter((option) => option.code !== "IS" || current === "IS");
+}
+
+/**
+ * Nýtt land NZ án skráðs skýrslusniðs (companies.report_standard = null) gerir sniðið NZS 4306 sjálfkrafa
+ * (resolveReportSettings) — staðfestingin segir það fyrirfram. Skráð snið (líka „default“) heldur sér.
+ */
+export function nzsBecomesDefault(newCountry: string, reportStandardSet: boolean): boolean {
+  return newCountry === "NZ" && !reportStandardSet;
+}

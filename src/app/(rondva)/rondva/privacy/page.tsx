@@ -75,6 +75,8 @@ const processors: Processor[] = [
     where: "Norway",
   },
   {
+    // Ef hnit (lat/lng) úr Places-svarinu verða einhvern tíma vistuð með skoðun (í dag skilar edge-fallið þeim til
+    // appsins en appið vistar þau EKKI) þarf að uppfæra þennan texta, kaflann #address-search og persónuverndarsvörin.
     name: "Google (Google Maps Platform, Places API)",
     role: "Suggests addresses while you type in an inspection's address field, only when you use the address search. Receives the text you typed and, when you pick a suggestion, the place it refers to.",
     where: "United States and a global network",
@@ -581,8 +583,13 @@ const sections: LegalSection[] = [
         <ProcessorTable />
         <p>
           Each of these acts as a processor under a data-processing agreement, except Apple
-          and Google for sign-in and payment, and MET Norway for the weather auto-fill, which is
-          a public service that acts under its own terms of use. We don&apos;t sell personal data and don&apos;t share it with anyone else,
+          and Google for sign-in and payment, MET Norway for the weather auto-fill, which is
+          a public service that acts under its own terms of use, and Google Maps Platform for
+          the address search, which acts as an independent controller under{" "}
+          <LegalLink href="https://business.safety.google/mapscontrollerterms-20181019">
+            Google&apos;s Maps Platform controller terms
+          </LegalLink>
+          . We don&apos;t sell personal data and don&apos;t share it with anyone else,
           unless the law requires us to.
         </p>
       </>

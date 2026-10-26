@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { saveCompanyCountry } from "@/app/(dashboard)/actions";
 import { ConfirmDialog } from "@/components/dashboard/ConfirmDialog";
-import { standardClearedBy } from "@/lib/company-country";
+import { nzsBecomesDefault, selectableCountries, standardClearedBy } from "@/lib/company-country";
 import { dashboardCopy, format, type DashboardLocale } from "@/lib/i18n/dashboard";
 import type { CountryOption } from "@/lib/onboarding";
 import { field, fieldHelp, fieldLabel } from "@/lib/ui";
@@ -15,11 +15,14 @@ export function CompanyCountryForm({
   locale,
   country,
   reportStandard,
+  reportStandardSet,
   countries,
 }: {
   locale: DashboardLocale;
   country: string;
   reportStandard: string;
+  /** companies.report_standard er skráð gildi (ekki null). */
+  reportStandardSet: boolean;
   countries: CountryOption[];
 }) {
   const t = dashboardCopy(locale).companyCountry;
@@ -69,7 +72,7 @@ export function CompanyCountryForm({
         className={field("box", "max-w-xs")}
       >
         {saved ? null : <option value="" disabled />}
-        {countries.map((option) => (
+        {selectableCountries(countries, saved).map((option) => (
           <option key={option.code} value={option.code}>
             {option.name}
           </option>
@@ -99,6 +102,7 @@ export function CompanyCountryForm({
       >
         <p>{format(t.confirmBody, { country: pending ? nameOf(pending) : "" })}</p>
         {cleared ? <p>{cleared === "nzs_4306" ? t.clearedNzs : t.clearedIsop}</p> : null}
+        {pending && nzsBecomesDefault(pending, reportStandardSet) ? <p>{t.becomesNzs}</p> : null}
       </ConfirmDialog>
     </div>
   );
