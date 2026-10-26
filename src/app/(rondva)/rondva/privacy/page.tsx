@@ -586,8 +586,8 @@ const sections: LegalSection[] = [
           and Google for sign-in and payment, MET Norway for the weather auto-fill, which is
           a public service that acts under its own terms of use, and Google Maps Platform for
           the address search, which acts as an independent controller under{" "}
-          <LegalLink href="https://business.safety.google/mapscontrollerterms-20181019">
-            Google&apos;s Maps Platform controller terms
+          <LegalLink href="https://business.safety.google/controllerterms/">
+            Google&apos;s controller-controller data protection terms
           </LegalLink>
           . We don&apos;t sell personal data and don&apos;t share it with anyone else,
           unless the law requires us to.
