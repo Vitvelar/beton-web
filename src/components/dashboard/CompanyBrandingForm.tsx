@@ -21,13 +21,15 @@ interface Props {
   /** Réttindi skoðunarmanns (inspectors.qualifications) — aðeins á app.rondva.com og
    *  aðeins þegar NZS 4306-flutningurinn er kominn (annars er dálkurinn ekki til). */
   showQualifications?: boolean;
+  /** Skýrslusnið fyrirtækisins ræður orðalagi réttindareitsins: isop → leyfi á forsíðu; annars NZS 4306-orðalagið. */
+  reportStandard?: string | null;
 }
 
 const ACCEPT = "image/png,image/jpeg,image/webp,image/svg+xml";
 const ACCEPTED_TYPES = ACCEPT.split(",");
 const MAX_BYTES = 2 * 1024 * 1024;
 
-export function CompanyBrandingForm({ userId, initial, locale, showTermsText = false, showQualifications = false }: Props) {
+export function CompanyBrandingForm({ userId, initial, locale, showTermsText = false, showQualifications = false, reportStandard = null }: Props) {
   const t = dashboardCopy(locale).branding;
   const uid = useId();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -153,6 +155,11 @@ export function CompanyBrandingForm({ userId, initial, locale, showTermsText = f
     }
   }
 
+  const isopQualifications = reportStandard === "isop";
+  const qualificationsLabel = isopQualifications ? t.qualificationsIsop : t.qualifications;
+  const qualificationsPlaceholder = isopQualifications ? t.qualificationsIsopPlaceholder : t.qualificationsPlaceholder;
+  const qualificationsHint = isopQualifications ? t.qualificationsIsopHint : t.qualificationsHint;
+
   const preview = previewUrl ?? (logoUrl || null);
 
   return (
@@ -222,18 +229,18 @@ export function CompanyBrandingForm({ userId, initial, locale, showTermsText = f
       {showQualifications ? (
         <div>
           <label htmlFor={`${uid}-qualifications`} className={fieldLabel}>
-            {t.qualifications}
+            {qualificationsLabel}
           </label>
           <input
             id={`${uid}-qualifications`}
             value={qualifications}
             onChange={(e) => setQualifications(e.target.value)}
-            placeholder={t.qualificationsPlaceholder}
+            placeholder={qualificationsPlaceholder}
             maxLength={300}
             aria-describedby={`${uid}-qualifications-hint`}
             className={field()}
           />
-          <p id={`${uid}-qualifications-hint`} className={fieldHelp}>{t.qualificationsHint}</p>
+          <p id={`${uid}-qualifications-hint`} className={fieldHelp}>{qualificationsHint}</p>
         </div>
       ) : null}
 

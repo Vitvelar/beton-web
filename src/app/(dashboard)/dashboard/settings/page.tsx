@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { CompanyCountryForm } from "@/components/dashboard/CompanyCountryForm";
 import { CompanyBrandingForm } from "@/components/dashboard/CompanyBrandingForm";
 import { LanguageSetting } from "@/components/dashboard/LanguageSetting";
 import { ReportSettingsForm } from "@/components/dashboard/ReportSettingsForm";
@@ -12,6 +13,8 @@ import { shellCopy } from "@/lib/i18n/dashboard-shell";
 import { tapLink } from "@/lib/ui";
 import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
 import { isopOfferedTo, texasNotice } from "@/lib/report/isop";
+import { countryOptions } from "@/lib/onboarding";
+import { BETON_COMPANY_ID } from "@/lib/beton-drive";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: dashboardCopy(await getDashboardLocale()).settings.metaTitle };
@@ -42,6 +45,11 @@ export default async function SettingsPage() {
   const reportSettings = brand === "rondva" ? await ownerReportSettings(supabase) : null;
   const qualifications = brand === "rondva" && inspector ? await inspectorQualifications(supabase, user.id) : null;
 
+  // Skýrslusnið fyrirtækisins (hvaða meðlimur sem er) ræður réttindareitnum: nzs_4306 óbreytt, isop með eigin orðalagi,
+  // staðlaða sniðið prentar hann ekki (reiturinn felst, vistuð gögn haldast). Óþekkt snið = núverandi hegðun.
+  const memberStandard =
+    brand === "rondva" && qualifications ? (await fetchCompanyReportSettings(supabase, { ownerOnly: false }).catch(() => null))?.settings.standard ?? null : null;
+
   const autoSaves = brand === "rondva";
 
   return (
@@ -65,7 +73,17 @@ export default async function SettingsPage() {
           <LanguageSetting locale={locale} />
         </section>
       ) : null}
-      {reportSettings ? <ReportSettingsForm locale={locale} initial={reportSettings} /> : null}
+      {/* Land fyrirtækis: aðeins eigandi á app.rondva.com, aldrei Beton-fyrirtækið. Skýrslustillingarnar
+          endurhlaðast með nýju landi (snið/matskerfi geta hafa hreinsast), en ekki við eigin vistun þeirra. */}
+      {reportSettings && reportSettings.country && reportSettings.companyId !== BETON_COMPANY_ID ? (
+        <CompanyCountryForm
+          locale={locale}
+          country={reportSettings.country}
+          reportStandard={reportSettings.reportStandard}
+          countries={countryOptions(locale)}
+        />
+      ) : null}
+      {reportSettings ? <ReportSettingsForm key={reportSettings.country} locale={locale} initial={reportSettings} /> : null}
 
       {inspector ? (
         <section aria-labelledby="settings-company">
@@ -83,7 +101,8 @@ export default async function SettingsPage() {
             }}
             locale={locale}
             showTermsText={brand === "rondva" && inspector.company_name?.trim() !== "Beton ehf."}
-            showQualifications={qualifications !== null}
+            showQualifications={qualifications !== null && memberStandard !== "default"}
+            reportStandard={memberStandard}
           />
         </section>
       ) : (
@@ -105,6 +124,8 @@ async function ownerReportSettings(supabase: Awaited<ReturnType<typeof createCli
   if (!company) return null;
   const { settings, standardSupported, country } = company;
   return {
+    country,
+    companyId: company.companyId,
     reportLocale: settings.locale,
     ratingScheme: settings.scheme,
     reportStandard: settings.standard,

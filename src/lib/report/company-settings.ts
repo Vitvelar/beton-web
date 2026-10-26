@@ -7,7 +7,7 @@ import { resolveReportSettings, type ReportSettings } from "./settings";
 // (nákvæmlega eins og áður) og `standardSupported` = false svo viðmótið feli sniðvalið og
 // NZ-matsorðin. Vefurinn má því fara út á undan gagnagrunnsbreytingunni.
 
-const BASE_COLUMNS = "report_locale, rating_scheme, country_code";
+const BASE_COLUMNS = "id, report_locale, rating_scheme, country_code";
 
 export interface CompanyReportSettings {
   settings: ReportSettings;
@@ -15,6 +15,8 @@ export interface CompanyReportSettings {
   standardSupported: boolean;
   /** companies.country_code, hreinsað (hástafir) — notað til að ákveða hvort ISOP-valið sést. */
   country: string;
+  /** companies.id — stillingasíðan felur landaval Beton-fyrirtækisins (læst í gagnagrunninum). */
+  companyId: string | null;
 }
 
 export async function fetchCompanyReportSettings(
@@ -36,5 +38,6 @@ export async function fetchCompanyReportSettings(
   const company = (Array.isArray(companies) ? companies[0] : companies) as Parameters<typeof resolveReportSettings>[0];
   if (!company) return null;
   const country = String((company as { country_code?: unknown }).country_code ?? "").trim().toUpperCase();
-  return { settings: resolveReportSettings(company), standardSupported, country };
+  const rawId = (company as { id?: unknown }).id;
+  return { settings: resolveReportSettings(company), standardSupported, country, companyId: typeof rawId === "string" ? rawId : null };
 }
