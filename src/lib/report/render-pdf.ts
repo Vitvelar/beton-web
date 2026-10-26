@@ -17,6 +17,13 @@ import { randomUUID } from "node:crypto";
 
 // Generous: networkidle2 must wait for all report images to load (up to ~100).
 const NAVIGATION_TIMEOUT_MS = 60_000;
+// networkidle2 leyfir allt að 2 opnar beiðnir í 500 ms — í skýrslu með fáar myndir geta
+// ÞÆR verið einmitt myndirnar, svo goto skilaði áður en þær hlóðust og page.pdf prentaði
+// grátt bakgrunnsbox í stað forsíðumyndar (Rondva US-prófun 2026-10-26, 2 myndir). Því er
+// beðið eftir að hver <img> sé „complete“ (hlaðin eða brotin) áður en prentað er, upp að
+// þessu þaki; eftir það er prentað það sem komið er og skráð í log (engin ný villuleið).
+const IMAGE_SETTLE_TIMEOUT_MS = 20_000;
+const IMAGE_POLL_MS = 150;
 
 // Ghostscript er AÐEINS öryggisnet fyrir of stór PDF. Eftir að myndir fóru að
 // minnka við upphal (long edge ≤ 1600px JPEG) er hrátt Chromium-PDF venjulega
@@ -71,6 +78,32 @@ async function compressPdf(input: Uint8Array): Promise<Uint8Array> {
   } finally {
     await unlink(inPath).catch(() => {});
     await unlink(outPath).catch(() => {});
+  }
+}
+
+type ImageState = { total: number; pending: number; broken: number; waitedMs: number };
+
+/** Bíður (pólun úr Node, engin síðu-JS: JS er óvirkt og setTimeout/load-hlustarar keyra því
+ *  ekki í síðunni) þar til allar <img> eru complete eða þakið næst. Skilar stöðunni. */
+async function waitForImages(
+  page: { evaluate: <T>(fn: () => T) => Promise<T> },
+  timeoutMs: number,
+): Promise<ImageState> {
+  const start = Date.now();
+  for (;;) {
+    const s = await page.evaluate(() => {
+      let pending = 0;
+      let broken = 0;
+      const imgs = Array.from(document.images).filter((img) => !!img.getAttribute("src"));
+      for (const img of imgs) {
+        if (!img.complete) pending++;
+        else if (img.naturalWidth === 0) broken++;
+      }
+      return { total: imgs.length, pending, broken };
+    });
+    const waitedMs = Date.now() - start;
+    if (s.pending === 0 || waitedMs >= timeoutMs) return { ...s, waitedMs };
+    await new Promise((resolve) => setTimeout(resolve, IMAGE_POLL_MS));
   }
 }
 
@@ -185,6 +218,15 @@ export async function renderReportPdf(
 
     // NAUÐSYNLEGT: öll síðuskipti/spássíu-stílun lifir undir @media print.
     await page.emulateMediaType("print");
+
+    // Myndir: networkidle2 tryggir það EKKI (sjá IMAGE_SETTLE_TIMEOUT_MS).
+    const images = await waitForImages(page, opts.imageSettleTimeoutMs ?? IMAGE_SETTLE_TIMEOUT_MS);
+    if (images.pending > 0 || images.broken > 0) {
+      console.warn(
+        `renderReportPdf: myndir ${images.total}, óhlaðnar ${images.pending}, brotnar ${images.broken} ` +
+          `eftir ${images.waitedMs}ms`
+      );
+    }
 
     // Printing must never silently substitute a missing font for Icelandic glyphs.
     // CDP evaluation works even though page scripts/hydration are disabled above.
