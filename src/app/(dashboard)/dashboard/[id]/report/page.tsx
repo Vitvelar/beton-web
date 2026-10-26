@@ -32,6 +32,7 @@ import { IsopReport, type IsopReportInput, type IsopReportPhoto } from "@/compon
 import { fill, format } from "@/lib/i18n/format";
 import { dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
 import { getDashboardLocale } from "@/lib/request-brand";
+import { pickCoverPhoto } from "@/lib/report/cover";
 import type { Metadata } from "next";
 
 interface ReportData {
@@ -328,8 +329,6 @@ export default async function ReportPage({
     .filter((p) => signedUrls.has(p.id))
     .map((p) => ({ ...p, storage_path: p.storage_path!, url: signedUrls.get(p.id)! }));
 
-  const coverPhoto = photosWithUrls.find((p) => p.is_cover) ?? photosWithUrls[0] ?? null;
-
   function roomPhotos(roomId: string): PhotoWithUrl[] {
     return photosWithUrls
       .filter((p) => p.room_id === roomId && !p.observation_id)
@@ -363,6 +362,8 @@ export default async function ReportPage({
     ? inspection.inspectors[0]
     : inspection.inspectors;
   const brand = resolveBranding(inspectorRow ?? null, propData.inspectorName);
+  // Forsíðumynd: merkt mynd, annars (Rondva) fyrsta rýmismynd → fyrsta athugasemdamynd; Beton óbreytt.
+  const coverPhoto = pickCoverPhoto(photosWithUrls, dbRooms, brand.isBeton);
   const inspectorName = brand.inspectorName;
   const logoSrc = brand.logoUrl;
   // Skilmálar (ákvörðun eiganda 2026-09-27): Beton á íslensku fær sína eigin fullu
