@@ -8,8 +8,11 @@ import { getDashboardLocale } from "@/lib/request-brand";
 import { dashboardCopy, isDashboardLocale, USER_LOCALE_KEY } from "@/lib/i18n/dashboard";
 import { isReportLocale } from "@/lib/report/i18n";
 import { isRatingScheme, isReportStandard } from "@/lib/report/settings";
-import { isopOfferedTo } from "@/lib/report/isop";
+import { isopSelectableTo } from "@/lib/report/isop";
 import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
+import { countryChangeOutcome, normalizeCountryChoice } from "@/lib/company-country";
+import { BETON_COMPANY_ID } from "@/lib/beton-drive";
+import { getRequestBrand } from "@/lib/request-brand";
 
 export async function signOut() {
   const supabase = await createClient();
@@ -88,12 +91,12 @@ export async function saveReportStandard(
   if (!isReportStandard(reportStandard)) return failed();
 
   const supabase = await createClient();
-  // 'isop' (US/Kanada): aðeins þegar kveikt er á (ISOP_ENABLED=1) og fyrirtækið er í US/CA, og
+  // 'isop' (US/Kanada): aðeins fyrir fyrirtæki í US/CA (óháð ISOP_ENABLED, sjá isopSelectableTo), og
   // kurteis villa ef gagnagrunnurinn hafnar gildinu (flutningurinn ekki keyrður).
   const unavailable = async () => ({ error: dashboardCopy(await getDashboardLocale()).reportSettings.isopUnavailable });
   if (reportStandard === "isop") {
     const current = await fetchCompanyReportSettings(supabase, { ownerOnly: true }).catch(() => null);
-    if (!current || !isopOfferedTo(current.country)) return unavailable();
+    if (!current || !isopSelectableTo(current.country)) return unavailable();
   }
   const { error } = await supabase.rpc("set_company_report_standard", {
     p_report_standard: reportStandard,
@@ -114,4 +117,43 @@ export async function saveReportStandard(
         }
       : null,
   };
+}
+
+// Land fyrirtækis (stillingar á app.rondva.com, aðeins eigandi). set_company_country() (security definer,
+// beton-app flutningur) er hliðið: hafnar öðrum en eiganda og læsir Beton; hér er aðeins aukavörn (Beton-vörumerkið og
+// Beton-fyrirtækið fá aldrei þessa aðgerð) og þýðing villna. Ef fallið er ekki til enn í framleiðslu birtist róleg
+// villa og engu er breytt. Gildin sem hreinsast (skýrslusnið/matskerfi bundið gamla landinu) skilar fallið sjálft.
+export async function saveCompanyCountry(
+  country: string
+): Promise<{ ok: true; country: string } | { error: string }> {
+  const t = dashboardCopy(await getDashboardLocale()).companyCountry;
+  const code = normalizeCountryChoice(country);
+  if (!code) return { error: t.failed };
+  if ((await getRequestBrand()) !== "rondva") return { error: t.notOwner };
+
+  const supabase = await createClient();
+  const current = await fetchCompanyReportSettings(supabase, { ownerOnly: true }).catch(() => null);
+  if (!current) return { error: t.notOwner };
+  if (current.companyId === BETON_COMPANY_ID) return { error: t.notOwner };
+
+  const { error } = await supabase.rpc("set_company_country", { p_country: code });
+  const outcome = countryChangeOutcome(error);
+  if (outcome !== "ok") {
+    console.error("saveCompanyCountry failed:", outcome, error?.message);
+    switch (outcome) {
+      case "not_owner":
+      case "locked":
+      case "not_authenticated":
+        return { error: t.notOwner };
+      case "not_allowed":
+        return { error: t.notAllowed };
+      case "unavailable":
+        return { error: t.unavailable };
+      default:
+        return { error: t.failed };
+    }
+  }
+  // Skýrslustillingar (snið/matskerfi) geta hafa hreinsast; kortið og tengd spjöld lesa aftur.
+  revalidatePath("/dashboard/settings");
+  return { ok: true, country: code };
 }

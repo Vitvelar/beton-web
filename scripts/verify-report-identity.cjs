@@ -238,6 +238,10 @@ function expectedVariantMarkup(golden, variant) {
     return parts.join(to);
   };
   let out = swap(golden, '>21.09.2026</p>', `>${inspected}</p>`, 1);          // forsíða
+  // 2026-10-26 (LANDAVAL §7): stimpluð afbrigði fá staðsetningarlínu eftir landi („Location“; US/CA með fylki „Town, ST zip“,
+  // annars „Town zip“; AU „Town ST zip“) í stað „Postcode: <zip> <town>“. Fixtúran hefur ekkert fylki. „en“ og íslenska snerta þetta ekki.
+  out = swap(out, '>Postcode</td>', '>Location</td>', 1);
+  out = swap(out, '>101 Testville</td>', '>Testville 101</td>', 1);
   out = swap(out, '>21.09.2026</td>', `>${inspected}</td>`, 1);              // eignatafla
   out = swap(out, 'Report created 22.09.2026<', `Report created ${created}<`, 1);
   if (variant === 'en-US') {
@@ -271,6 +275,16 @@ async function englishVariants(all, output) {
       checks++;
     }
   }
+  // Staðsetningarlína með fylki (property_data.state): „Denver, CO 80202“ (en-US) — og hún sést ekki í íslenskri skýrslu.
+  {
+    const us = withStamp('en-standard', 'en-US');
+    for (const part of [us.ai_report_data.inspection, us]) { part.postal_code = '80202'; part.municipality = 'Denver'; }
+    us.ai_report_data.inspection.property_data = { ...us.ai_report_data.inspection.property_data, state: 'CO' };
+    const html = await renderReportMarkup(us, { pdf: true });
+    assert.ok(html.includes('>Location</td><td class="py-1.5 text-ink">Denver, CO 80202</td>'), 'en-US shows Town, ST ZIP under Location');
+    assert.ok(!html.includes('>Postcode</td>'), 'en-US no longer shows the Postcode row');
+    checks++;
+  }
   const dir = path.join(output, 'variants'); fs.mkdirSync(dir, { recursive: true });
   for (const variant of Object.keys(VARIANT_DATES)) for (const name of ['en-standard', 'en-condition_1_3']) for (const pdf of [true, false]) {
     const key = `${name}:${pdf ? 'pdf' : 'web'}`;
@@ -280,7 +294,7 @@ async function englishVariants(all, output) {
     assert.ok(html.includes('The inspection took place on 21.09.2026.'), 'AI text untouched');
     checks++;
   }
-  console.log(`PASS English variant: no/invalid/'en' stamp and stamped Icelandic reports == golden; NZS 4306 unchanged by the stamp; en-NZ/AU/GB/IE/US/CA differ only in dates, en-US size (ft²) and spelling (${checks} renders)`);
+  console.log(`PASS English variant: no/invalid/'en' stamp and stamped Icelandic reports == golden; NZS 4306 unchanged by the stamp; en-NZ/AU/GB/IE/US/CA differ only in dates, en-US size (ft²), spelling and the per-country Location line (${checks} renders)`);
 }
 
 async function pixels(all, output) {
