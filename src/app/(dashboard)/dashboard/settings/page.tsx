@@ -12,7 +12,7 @@ import { dashboardCopy, fill } from "@/lib/i18n/dashboard";
 import { shellCopy } from "@/lib/i18n/dashboard-shell";
 import { tapLink } from "@/lib/ui";
 import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
-import { isopOfferedTo, texasNotice } from "@/lib/report/isop";
+import { isopSelectableTo, texasNotice } from "@/lib/report/isop";
 import { countryOptions } from "@/lib/onboarding";
 import { BETON_COMPANY_ID } from "@/lib/beton-drive";
 
@@ -79,8 +79,6 @@ export default async function SettingsPage() {
         <CompanyCountryForm
           locale={locale}
           country={reportSettings.country}
-          reportStandard={reportSettings.reportStandard}
-          reportStandardSet={reportSettings.reportStandardSet}
           countries={countryOptions(locale)}
         />
       ) : null}
@@ -127,13 +125,13 @@ async function ownerReportSettings(supabase: Awaited<ReturnType<typeof createCli
   return {
     country,
     companyId: company.companyId,
-    reportStandardSet: company.reportStandardSet,
     reportLocale: settings.locale,
     ratingScheme: settings.scheme,
     reportStandard: settings.standard,
     standardSupported,
-    // Home inspection (US/Kanada): sést aðeins fyrir US/CA þegar ISOP_ENABLED=1 (annars óbreytt).
-    isopAvailable: standardSupported && isopOfferedTo(country),
+    // Home inspection (US/Kanada): sést og er valanlegt fyrir öll US/CA-fyrirtæki, óháð ISOP_ENABLED (landið ræður
+    // vistuðu sniði). Vistað isop sést alltaf í ReportSettingsForm hvort sem er.
+    isopAvailable: standardSupported && isopSelectableTo(country),
     // Fyrirtæki hafa ekkert fylki í gagnagrunninum enn → borðinn birtist ekki fyrr en uppspretta er til.
     texas: texasNotice({ state: null }),
   };

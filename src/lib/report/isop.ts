@@ -182,6 +182,15 @@ export function isopOfferedTo(country: unknown, enabled: boolean = isopEnabled()
 }
 
 /**
+ * Stillingasíðan og server action: Home inspection er valkostur fyrir ÖLL US/CA-fyrirtæki, óháð ISOP_ENABLED.
+ * Landið ræður nú vistuðu sniði (beton-app #68: US/CA fá isop sjálfkrafa), svo vistað isop verður að sjást og vera
+ * valanlegt; fáninn stýrir aðeins texta /us og /ca á markaðssíðunum (isopEnabled → rondva-countries.ts).
+ */
+export function isopSelectableTo(country: unknown): boolean {
+  return typeof country === "string" && ISOP_COUNTRIES.has(country.trim().toUpperCase());
+}
+
+/**
  * Texas-viðvörun (hönnun §6.4): satt fyrir state 'TX', ZIP 733xx/75xxx–79xxx/885xx eða heimilisfang
  * sem endar á „, TX“/„Texas“. Aldrei læsing. Fyrirtæki hafa ekkert fylki í gagnagrunninum í dag,
  * svo stillingasíðan sendir null þar til slík uppspretta er til.

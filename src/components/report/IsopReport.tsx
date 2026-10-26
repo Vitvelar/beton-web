@@ -427,6 +427,13 @@ export function IsopReport({
       {chapters.map(({ system, rooms: groupRooms }) => {
         const row = overview.find((o) => o.key === system.key);
         const entry = systemsData.items[system.key];
+        // Rými án einkunna, athugasemda, minnispunkta og mynda fær enga undirfyrirsögn (t.d. „Water heater“ tómt undir
+        // Plumbing); ef ekkert rými á kerfinu hefur efni kemur ein lína fyrir allt kerfið.
+        const contentRooms = groupRooms
+          .map((room) => ({ room, photos: roomPhotos[room.slug] ?? [], ratings: orderedRatings(system, room.ratings) }))
+          .filter(({ room, photos, ratings }) =>
+            photos.length > 0 || ratings.length > 0 || !!room.notes?.trim() || (room.observations ?? []).length > 0,
+          );
         const hasContent = groupRooms.some((r) => (r.observations ?? []).length > 0 || (roomPhotos[r.slug] ?? []).length > 0);
         return (
           <section key={system.key} className={hasContent ? SECTION : SECTION_FLOW}>
@@ -438,14 +445,16 @@ export function IsopReport({
                 <strong className="text-navy">Limitations:</strong> {entry.limitations.trim()}
               </p>
             ) : null}
-            {groupRooms.length === 0 ? (
-              row?.status === "not_present" || row?.status === "not_inspected" ? null : (
+            {contentRooms.length === 0 ? (
+              row?.status === "not_present" || row?.status === "not_inspected" ? (
+                // Tómt rými (án undirfyrirsagnar) skilur eftir sama tóma umbúðakassa og áður: hann ræður síðuskilum á undan
+                // næsta kafla, svo kerfi sem eru „Not present/Not inspected“ prentast nákvæmlega eins og fyrr.
+                groupRooms.length > 0 ? <div className="mb-8 last:mb-0" /> : null
+              ) : (
                 <p className="text-sm text-fog italic">No observations were recorded for this system.</p>
               )
             ) : (
-              groupRooms.map((room) => {
-                const photos = roomPhotos[room.slug] ?? [];
-                const ratings = orderedRatings(system, room.ratings);
+              contentRooms.map(({ room, photos, ratings }) => {
                 const showRoomTitle = groupRooms.length > 1 || roomTitle(room) !== system.label;
                 return (
                   <div key={room.slug} className="mb-8 last:mb-0">

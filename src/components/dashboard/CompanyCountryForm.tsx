@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { saveCompanyCountry } from "@/app/(dashboard)/actions";
 import { ConfirmDialog } from "@/components/dashboard/ConfirmDialog";
-import { nzsBecomesDefault, selectableCountries, standardClearedBy } from "@/lib/company-country";
+import { reportFormatAfterCountry, selectableCountries } from "@/lib/company-country";
 import { dashboardCopy, format, type DashboardLocale } from "@/lib/i18n/dashboard";
 import type { CountryOption } from "@/lib/onboarding";
 import { field, fieldHelp, fieldLabel } from "@/lib/ui";
@@ -14,15 +14,10 @@ import { field, fieldHelp, fieldLabel } from "@/lib/ui";
 export function CompanyCountryForm({
   locale,
   country,
-  reportStandard,
-  reportStandardSet,
   countries,
 }: {
   locale: DashboardLocale;
   country: string;
-  reportStandard: string;
-  /** companies.report_standard er skráð gildi (ekki null). */
-  reportStandardSet: boolean;
   countries: CountryOption[];
 }) {
   const t = dashboardCopy(locale).companyCountry;
@@ -53,7 +48,7 @@ export function CompanyCountryForm({
     });
   }
 
-  const cleared = pending ? standardClearedBy(reportStandard, pending) : null;
+  const after = pending ? reportFormatAfterCountry(pending) : null;
 
   return (
     <div className="mb-6 rounded-xl border border-concrete bg-surface p-6">
@@ -101,8 +96,13 @@ export function CompanyCountryForm({
         busy={isPending}
       >
         <p>{format(t.confirmBody, { country: pending ? nameOf(pending) : "" })}</p>
-        {cleared ? <p>{cleared === "nzs_4306" ? t.clearedNzs : t.clearedIsop}</p> : null}
-        {pending && nzsBecomesDefault(pending, reportStandardSet) ? <p>{t.becomesNzs}</p> : null}
+        {after ? (
+          <p>
+            {format(t.formatAfter, {
+              format: after === "isop" ? t.formatIsop : after === "nzs_4306" ? t.formatNzs : t.formatStandard,
+            })}
+          </p>
+        ) : null}
       </ConfirmDialog>
     </div>
   );

@@ -77,9 +77,20 @@ assert.equal(reportStandardOf({ report_standard: 'isop' }), 'isop');
   for (const no of [{}, { state: 'OK' }, { state: 'NM' }, { postalCode: '74101' }, { postalCode: '80000' }, { postalCode: '88401' }, { address: '7600 Elm St, Tulsa, OK' }, { address: '76 Oak Ave, Boston, MA' }])
     assert.equal(tx(no), false, JSON.stringify(no));
 }
-// Valkosturinn er aðeins sýndur þegar flaggið leyfir; Beton/IS sjá hann aldrei (page.tsx + actions.ts nota isopOfferedTo).
-for (const f of ['src/app/(dashboard)/dashboard/settings/page.tsx', 'src/app/(dashboard)/actions.ts']) assert.ok(fs.readFileSync(path.join(__dirname, '..', f), 'utf8').includes('isopOfferedTo'), f);
-console.log('PASS ISOP: stored isop/isop_terms resolve, no country defaults to isop, option gated by ISOP_ENABLED=1 + US/CA, Texas notice examples');
+// 2026-10-26 (beton-app #68): landið ræður vistuðu sniði, svo stillingasíðan og server action bjóða isop öllum US/CA
+// óháð ISOP_ENABLED (isopSelectableTo); fáninn stýrir aðeins markaðstexta /us og /ca. Beton/IS sjá valkostinn aldrei.
+{
+  const isop = load('src/lib/report/isop.ts');
+  for (const c of ['US', 'CA', ' us ', 'ca']) assert.equal(isop.isopSelectableTo(c), true, c);
+  for (const c of ['IS', 'NZ', 'GB', 'AU', 'IE', '', null, undefined, 7, 'USA']) assert.equal(isop.isopSelectableTo(c), false, String(c));
+}
+for (const f of ['src/app/(dashboard)/dashboard/settings/page.tsx', 'src/app/(dashboard)/actions.ts']) {
+  const src = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
+  assert.ok(src.includes('isopSelectableTo') && !src.includes('isopOfferedTo'), f);
+}
+// Vistað isop sést og er valið í ReportSettingsForm hvort sem er (aldrei þögul vistun á öðru gildi).
+assert.match(fs.readFileSync(path.join(__dirname, '..', 'src/components/dashboard/ReportSettingsForm.tsx'), 'utf8'), /showIsop = initial\.isopAvailable \|\| value\.reportStandard === "isop"/);
+console.log('PASS ISOP: stored isop/isop_terms resolve, no country defaults to isop client-side, option offered to every US/CA company regardless of ISOP_ENABLED, Texas notice examples');
 
 // ── Enskt afbrigði (samningur ENSK-AFBRIGDI-HONNUN.md): land → afbrigði, stimpill → birting.
 const variant = load('src/lib/report/english-variant.ts');

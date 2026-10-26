@@ -16,7 +16,7 @@ function load(rel) {
   vm.runInNewContext(ts.transpileModule(read(rel), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText, context);
   return context.module.exports;
 }
-const { countryChangeOutcome: out, normalizeCountryChoice: norm, standardClearedBy: cleared, selectableCountries: pick, nzsBecomesDefault: nzsDefault } = load('src/lib/company-country.ts');
+const { countryChangeOutcome: out, normalizeCountryChoice: norm, reportFormatAfterCountry: after, selectableCountries: pick } = load('src/lib/company-country.ts');
 let n = 0;
 const pass = (name) => { n++; console.log(`PASS ${name}`); };
 
@@ -36,21 +36,19 @@ pass('RPC errors map to calm outcomes; a missing function is "unavailable", not 
 assert.equal(norm('us'), 'US'); assert.equal(norm(' nz '), 'NZ'); assert.equal(norm('XX'), null); assert.equal(norm(''), null); assert.equal(norm(5), null);
 pass('country choice is trimmed, upper-cased and must be an ISO country');
 
-// 3. Hvað hreinsast (sama og RPC): nzs_4306 → utan NZ, isop → utan US/CA.
-assert.equal(cleared('nzs_4306', 'US'), 'nzs_4306'); assert.equal(cleared('nzs_4306', 'NZ'), null);
-assert.equal(cleared('isop', 'GB'), 'isop'); assert.equal(cleared('isop', 'CA'), null); assert.equal(cleared('isop', 'US'), null);
-assert.equal(cleared('default', 'US'), null); assert.equal(cleared(null, 'US'), null);
-pass('confirmation warns about exactly the report formats the RPC clears');
+// 3. Sniðið sem nýja landið gefur (beton-app #68): US/CA → isop, NZ → nzs_4306, annað → staðlað.
+for (const [c, f] of [['US', 'isop'], ['CA', 'isop'], [' us ', 'isop'], ['NZ', 'nzs_4306'], ['GB', 'default'], ['AU', 'default'], ['IE', 'default'], ['DE', 'default'], ['IS', 'default']]) assert.equal(after(c), f, c);
+pass('confirmation names the report format the new country sets (Home inspection / NZS 4306 / Standard)');
 
 // 3b. Landalisti: IS aðeins fyrir fyrirtæki sem er þegar á Íslandi; NZS 4306 verður sjálfgefið við NZ án skráðs sniðs.
 const list = [{ code: 'IS' }, { code: 'NZ' }, { code: 'US' }];
 assert.deepEqual(pick(list, 'US').map((o) => o.code), ['NZ', 'US']);
 assert.deepEqual(pick(list, 'IS').map((o) => o.code), ['IS', 'NZ', 'US']);
-assert.equal(nzsDefault('NZ', false), true); assert.equal(nzsDefault('NZ', true), false); assert.equal(nzsDefault('US', false), false);
 const formSrc = read('src/components/dashboard/CompanyCountryForm.tsx');
 assert.match(formSrc, /selectableCountries\(countries, saved\)/);
-assert.match(formSrc, /nzsBecomesDefault\(pending, reportStandardSet\)/);
-pass('country list hides Iceland for non-Icelandic companies; NZ without a stored format announces the NZS 4306 default');
+assert.match(formSrc, /reportFormatAfterCountry\(pending\)/);
+assert.ok(!formSrc.includes('standardClearedBy'));
+pass('country list hides Iceland for non-Icelandic companies');
 
 // 4. Server action: aðeins Rondva, aðeins eigandi, aldrei Beton-fyrirtækið; kallar RPC; endurhleður stillingar.
 const actions = read('src/app/(dashboard)/actions.ts');

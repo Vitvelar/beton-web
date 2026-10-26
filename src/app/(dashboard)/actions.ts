@@ -8,7 +8,7 @@ import { getDashboardLocale } from "@/lib/request-brand";
 import { dashboardCopy, isDashboardLocale, USER_LOCALE_KEY } from "@/lib/i18n/dashboard";
 import { isReportLocale } from "@/lib/report/i18n";
 import { isRatingScheme, isReportStandard } from "@/lib/report/settings";
-import { isopOfferedTo } from "@/lib/report/isop";
+import { isopSelectableTo } from "@/lib/report/isop";
 import { fetchCompanyReportSettings } from "@/lib/report/company-settings";
 import { countryChangeOutcome, normalizeCountryChoice } from "@/lib/company-country";
 import { BETON_COMPANY_ID } from "@/lib/beton-drive";
@@ -91,12 +91,12 @@ export async function saveReportStandard(
   if (!isReportStandard(reportStandard)) return failed();
 
   const supabase = await createClient();
-  // 'isop' (US/Kanada): aðeins þegar kveikt er á (ISOP_ENABLED=1) og fyrirtækið er í US/CA, og
+  // 'isop' (US/Kanada): aðeins fyrir fyrirtæki í US/CA (óháð ISOP_ENABLED, sjá isopSelectableTo), og
   // kurteis villa ef gagnagrunnurinn hafnar gildinu (flutningurinn ekki keyrður).
   const unavailable = async () => ({ error: dashboardCopy(await getDashboardLocale()).reportSettings.isopUnavailable });
   if (reportStandard === "isop") {
     const current = await fetchCompanyReportSettings(supabase, { ownerOnly: true }).catch(() => null);
-    if (!current || !isopOfferedTo(current.country)) return unavailable();
+    if (!current || !isopSelectableTo(current.country)) return unavailable();
   }
   const { error } = await supabase.rpc("set_company_report_standard", {
     p_report_standard: reportStandard,

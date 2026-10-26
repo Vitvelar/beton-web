@@ -52,13 +52,17 @@ export function normalizeCountryChoice(raw: unknown): string | null {
 }
 
 /**
- * Hvaða skýrslusnið hreinsast við landaskipti (sama regla og set_company_country): nzs_4306 er bundið við NZ,
- * isop við US/CA. Skráð snið `null` fylgir landinu sjálfu og er því ekki hér.
+ * Skýrslusniðið sem nýtt land gefur (beton-app #68: landið ræður vistuðu sniði): US/CA → Home inspection (isop +
+ * isop_terms), NZ → NZS 4306, öll önnur → staðlað (null). set_company_country SETUR þetta við hver landaskipti, og
+ * staðfestingin segir það fyrirfram.
  */
-export function standardClearedBy(reportStandard: string | null | undefined, newCountry: string): "nzs_4306" | "isop" | null {
-  if (reportStandard === "nzs_4306" && newCountry !== "NZ") return "nzs_4306";
-  if (reportStandard === "isop" && newCountry !== "US" && newCountry !== "CA") return "isop";
-  return null;
+export type CountryReportFormat = "isop" | "nzs_4306" | "default";
+
+export function reportFormatAfterCountry(newCountry: string): CountryReportFormat {
+  const country = newCountry.trim().toUpperCase();
+  if (country === "US" || country === "CA") return "isop";
+  if (country === "NZ") return "nzs_4306";
+  return "default";
 }
 
 /**
@@ -67,12 +71,4 @@ export function standardClearedBy(reportStandard: string | null | undefined, new
  */
 export function selectableCountries<T extends { code: string }>(options: readonly T[], current: string): T[] {
   return options.filter((option) => option.code !== "IS" || current === "IS");
-}
-
-/**
- * Nýtt land NZ án skráðs skýrslusniðs (companies.report_standard = null) gerir sniðið NZS 4306 sjálfkrafa
- * (resolveReportSettings) — staðfestingin segir það fyrirfram. Skráð snið (líka „default“) heldur sér.
- */
-export function nzsBecomesDefault(newCountry: string, reportStandardSet: boolean): boolean {
-  return newCountry === "NZ" && !reportStandardSet;
 }

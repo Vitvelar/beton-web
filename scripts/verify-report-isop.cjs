@@ -157,6 +157,22 @@ async function main() {
   for (const marker of defaultMarkers) assert.ok(!unknownHtml.includes(marker), `unknown stamp → default renderer (${marker})`);
   pass('isop stamp without an isop block, and unknown stamps, fall back to the default renderer');
 
+  // (h1) Tómt undirrými fær enga undirfyrirsögn (vettvangsgalli 2026-10-26: „Water heater“ tómt undir Plumbing).
+  const h3s = (markup) => [...article(markup).matchAll(/<h3[^>]*>([\s\S]*?)<\/h3>/g)].map((m) => decode(m[1].replace(/<[^>]+>/g, '')).trim());
+  assert.ok(h3s(html).includes('Water heater'), 'baseline: Water heater has content and its sub-heading');
+  const emptyWh = clone(base);
+  for (const r of [...emptyWh.rooms, ...emptyWh.ai_report_data.rooms]) if (r.slug === 'isop-water-heater') { r.ratings = {}; r.notes = ''; r.observations = []; r.photos = []; }
+  const emptyWhHtml = await renderReportMarkup(emptyWh, OPTS);
+  assert.ok(!h3s(emptyWhHtml).includes('Water heater'), 'empty Water heater: no sub-heading');
+  assert.ok(h3s(emptyWhHtml).length === h3s(html).length - 1, 'only the empty sub-heading disappears');
+  // Allir undirflokkar tómir (kerfi „Inspected“ án efnis): ein lína fyrir kerfið, engin undirfyrirsögn.
+  const allEmpty = clone(emptyWh);
+  for (const r of [...allEmpty.rooms, ...allEmpty.ai_report_data.rooms]) if (r.slug === 'isop-plumbing') { r.ratings = {}; r.notes = ''; r.observations = []; r.photos = []; }
+  const allEmptyHtml = await renderReportMarkup(allEmpty, OPTS);
+  assert.ok(!h3s(allEmptyHtml).includes('Water heater') && !h3s(allEmptyHtml).includes('Plumbing'), 'no empty sub-headings at all');
+  assert.ok(textOf(article(allEmptyHtml)).includes('No observations were recorded for this system.'), 'one system-level line when nothing was recorded');
+  pass('empty sub-room (Water heater) renders no heading; a system with every room empty shows one system-level line');
+
   // (h2) Sérsniðið rými: ai_report_data.rooms hefur ekkert id (edge report-data.ts læst) → id úr rýmum skoðunarinnar
   //      eftir slug, svo room_map[<id>] varpi því á kerfi; óvarpað sérsniðið rými fer í Additional items.
   const custom = clone(base);
