@@ -48,6 +48,7 @@ import {
   type IsopReportData,
 } from "@/lib/report/isop";
 import { furnishedLabel, occupancyLabel, yearBuiltOf } from "@/lib/report/nzs4306";
+import { countsRatingFindings } from "@/lib/report/rating-findings";
 
 export interface IsopReportPhoto {
   id: string;
@@ -56,6 +57,9 @@ export interface IsopReportPhoto {
 }
 
 export interface IsopReportInput {
+  /** Stimpill edge (src/lib/report/rating-findings.ts): einkunnir án athugasemdar teljast með; vantar = eins og áður. */
+  findings_basis?: string;
+  report_locale?: string;
   inspection: {
     address: string;
     postal_code: string;
@@ -134,6 +138,8 @@ export function IsopReport({
   const inspectionDate = formatDate(insp.inspection_date);
   const yearBuilt = yearBuiltOf(propData);
   const sizeLine = isopSizeLine(conditions, propData, v);
+  // Stimpluð skýrsla: einkunnir án athugasemdar eru í tölunum (page.tsx withRatingFindings) og textinn segir það.
+  const withRatings = countsRatingFindings(report);
 
   // ── Gögn kerfa (inntak skoðunarmanns) og athugasemdir ─────────────────────────────────────────────────────
   const systemsData = systemsDataFrom({ systems: isop.systems ?? propData.systems });
@@ -266,9 +272,19 @@ export function IsopReport({
           <Term term={SYSTEM_STATUS_LABELS.not_inspected}>The inspector did not inspect this system. The reason is given.</Term>
           <Term term={SYSTEM_STATUS_LABELS.not_present}>The home does not have this system.</Term>
           <Term term={ISOP_TERMS.deficiency}>
-            A system shows a deficiency count when the inspector recorded at least one safety hazard, major defect or
-            repair-or-replace item for it. The count is calculated from the inspector&apos;s observations. It is not a
-            separate judgment.
+            {withRatings ? (
+              <>
+                A system shows a deficiency count when the inspector recorded at least one safety hazard, major defect or
+                repair-or-replace item for it. The count is calculated from the inspector&apos;s observations and checklist
+                ratings. It is not a separate judgment.
+              </>
+            ) : (
+              <>
+                A system shows a deficiency count when the inspector recorded at least one safety hazard, major defect or
+                repair-or-replace item for it. The count is calculated from the inspector&apos;s observations. It is not a
+                separate judgment.
+              </>
+            )}
           </Term>
         </dl>
         <h3 className="text-sm font-semibold text-navy mb-2">Categories</h3>
@@ -419,7 +435,11 @@ export function IsopReport({
           </tbody>
         </table>
         <p className="text-xs text-fog leading-relaxed">
-          The deficiency count is calculated from the inspector&apos;s observations in each system.
+          {withRatings ? (
+            <>The deficiency count is calculated from the inspector&apos;s observations and checklist ratings in each system.</>
+          ) : (
+            <>The deficiency count is calculated from the inspector&apos;s observations in each system.</>
+          )}
         </p>
       </section>
 

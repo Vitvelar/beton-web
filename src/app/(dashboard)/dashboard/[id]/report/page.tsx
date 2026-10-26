@@ -22,10 +22,14 @@ import type { Severity } from "@/lib/supabase/types";
 import { resolveBranding } from "@/lib/report/branding";
 import {
   ratingCategoryLabel,
+  REPORT_COPY,
   reportCategoryLabel,
   reportCopy,
   reportLocaleOf,
 } from "@/lib/report/i18n";
+import { isRatingFindingId, withRatingFindings } from "@/lib/report/rating-findings";
+import { isopRatingKeyLabel } from "@/lib/report/isop";
+import { NZ_RATING_LABELS } from "@/lib/report/nz-elements";
 import { ratingSchemeOf, reportStandardOf, type RatingScheme } from "@/lib/report/settings";
 import { Nzs4306Report, type NzReportData, type NzReportPhoto } from "@/components/report/Nzs4306Report";
 import { IsopReport, type IsopReportInput, type IsopReportPhoto } from "@/components/report/IsopReport";
@@ -47,6 +51,11 @@ interface ReportData {
   nzs4306?: NzReportData["nzs4306"];
   /** isop-hluti (aðeins þegar report_standard = isop) — sjá src/lib/report/isop.ts. */
   isop?: IsopReportInput["isop"];
+  /**
+   * "observations_and_ratings" (stimplað af edge, aðeins ensk skýrsla): einkunnir án athugasemdar teljast með
+   * (src/lib/report/rating-findings.ts). Vantar = aðeins athugasemdir, eins og áður.
+   */
+  findings_basis?: string;
   inspection: {
     address: string;
     postal_code: string;
@@ -234,15 +243,28 @@ export default async function ReportPage({
     notFound();
   }
 
-  const report = inspection.ai_report_data as ReportData;
+  const storedReport = inspection.ai_report_data as ReportData;
   // Skýrslumálið (stimplað í skýrsluna) ræður efninu; hnapparnir efst eru hluti
   // af stjórnborðinu og fylgja viðmótsmáli notandans.
-  const locale = reportLocaleOf(report);
+  const locale = reportLocaleOf(storedReport);
   // Enskt afbrigði (stimplað): dagsetningar, stærð (en-US) og stafsetning fastra texta (en-US).
   // Enginn stimpill (íslenska, almenn enska, eldri skýrslur) = 'en' = nákvæmlega eins og áður.
-  const variant = englishVariantOf(report);
+  const variant = englishVariantOf(storedReport);
   const formatDate = (value: string | null | undefined) => formatReportDateFor(value, variant);
   const t = reportCopy(locale, variant);
+  // Stimpluð ensk skýrsla (findings_basis): einkunn sem er ekki í lagi og engin athugasemd rýmisins fjallar um
+  // verður niðurstaða í rýminu, svo tölur, töflur og listar allra sniða telja hana eins og AI-textinn gerir.
+  // Óstimpluð skýrsla (Beton, íslenska, eldri skýrslur) = sami hlutur, bæti fyrir bæti eins og áður.
+  const storedStandard = reportStandardOf(storedReport);
+  const isopFormat =
+    storedStandard === "isop" && !!storedReport.isop && typeof storedReport.isop === "object" && !Array.isArray(storedReport.isop);
+  const report = withRatingFindings(storedReport, (key) =>
+    isopFormat
+      ? isopRatingKeyLabel(key)
+      : storedStandard === "nzs_4306"
+        ? NZ_RATING_LABELS[key] ?? ratingCategoryLabel(REPORT_COPY.en, key)
+        : ratingCategoryLabel(t, key),
+  );
   // Matskerfið (stimplað) ræður heitum, skýringum, litum og táknum alvarleika.
   const scheme = ratingSchemeOf(report);
   const condition = scheme === "condition_1_3";
@@ -350,7 +372,10 @@ export default async function ReportPage({
       }
     }
   }
-  const totalObs = sevCounts.athugasemd + sevCounts.alvarleg + sevCounts.mjog_alvarleg;
+  // „Observations“ telur raunverulegar athugasemdir; einkunnir án athugasemdar eru aðeins í alvarleikatölunum.
+  const totalObs = report === storedReport
+    ? sevCounts.athugasemd + sevCounts.alvarleg + sevCounts.mjog_alvarleg
+    : report.rooms.reduce((n, r) => n + r.observations.filter((o) => !isRatingFindingId(o.id)).length, 0);
 
   const rankedObs = report.rooms
     .flatMap((r) => r.observations.map((obs) => ({ obs, roomName: r.name })))
