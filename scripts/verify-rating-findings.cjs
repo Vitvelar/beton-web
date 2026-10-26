@@ -86,18 +86,50 @@ async function main() {
     assert.ok(covered('Doors sticking in frame'));
     assert.ok(covered('Hurðir — Alvarleg athugasemd'), 'Icelandic auto-title folds to the key');
     assert.ok(covered('Something else', 'Hurðir'), 'observation category = rating key');
-    assert.ok(!covered('Door handle loose'), 'different word is not the element');
+    assert.ok(covered('Door handle loose'), 'singular/plural stem: door = doors');
+    assert.ok(!covered('Doorbell broken'), 'different word is not the element');
     assert.ok(!covered('Loftræsting — Minor', null, 'loft', 'Ceiling'), 'Loft is not a prefix word of Loftræsting');
     assert.ok(covered('Retaining walls — Defect', null, 'retaining', 'Retaining walls'));
     assert.ok(covered('Retaining — Defect', null, 'retaining', 'Retaining walls'), 'key words also count');
-    // Pörun: athugasemd með breyttum titli og sama alvarleika er skrif einkunnarinnar (ein á móti einni, í röð).
+    // Pörun: athugasemd með breyttum titli, sama alvarleika og sem NEFNIR þáttinn er skrif einkunnarinnar (1:1, í röð).
     const nzLab = (k) => ({ piles: 'Piles', bearers_joists: 'Bearers and joists', ground_cover: 'Ground cover' }[k]);
     const sub = rf.ratingFindingsOf({ slug: 'nz-subfloor', ratings: { piles: 'mjog_alvarleg', bearers_joists: 'danger', ground_cover: 'warn' },
       observations: [{ id: 'a', title: 'Leaning piles and dropped bearer', severity: 'mjog_alvarleg' }, { id: 'b', title: 'No ground cover below the bathroom', severity: 'athugasemd' }] }, nzLab);
-    assert.deepEqual(clone(sub.map((f) => f.key)), ['bearers_joists'], 'piles paired by severity, ground cover by severity, bearers left over');
-    const twoForOne = rf.ratingFindingsOf({ slug: 'b', ratings: { linings: 'mjog_alvarleg', wet_area_linings: 'mjog_alvarleg' },
-      observations: [{ id: 'm', title: 'Elevated moisture at the base of the shower wall', severity: 'mjog_alvarleg' }] }, (k) => k);
-    assert.deepEqual(clone(twoForOne.map((f) => f.key)), ['wet_area_linings'], 'one observation covers one rating');
+    assert.deepEqual(clone(sub.map((f) => f.key)), ['bearers_joists'], 'piles and ground cover paired (same severity, element named), bearers left over');
+    // Ein athugasemd þekur eina einkunn: „Peeling paint on cladding“ (nefnir bæði) þekur fyrri einkunnina.
+    const oneForOne = rf.ratingFindingsOf({ slug: 'nz-exterior', ratings: { cladding: 'warn', paint: 'warn' },
+      observations: [{ id: 'p', title: 'Peeling paint on cladding', severity: 'athugasemd' }] }, (k) => ({ cladding: 'Cladding', paint: 'Paint' }[k]));
+    assert.deepEqual(clone(oneForOne.map((f) => f.key)), ['paint'], 'one observation covers one rating');
+    // Athugasemd sem nefnir ekki þáttinn þekur hann aldrei (MEDIUM, judge #63): engin falin alvarleg einkunn.
+    const deck = rf.ratingFindingsOf({ slug: 'utanhuss', ratings: { sprungur: 'mjog_alvarleg' },
+      observations: [{ id: 'd', title: 'Rotten deck boards', severity: 'mjog_alvarleg' }] }, () => 'Cracks');
+    assert.deepEqual(clone(deck.map((f) => f.key)), ['sprungur'], '"Rotten deck boards" does not hide Cracks = Very serious');
+    const moisture = rf.ratingFindingsOf({ slug: 'nz-bathroom', ratings: { linings: 'mjog_alvarleg', wet_area_linings: 'mjog_alvarleg' },
+      observations: [{ id: 'm', title: 'Elevated moisture at the base of the shower wall', severity: 'mjog_alvarleg' }] }, (k) => ({ linings: 'Wall linings', wet_area_linings: 'Wet area linings' }[k]));
+    assert.deepEqual(clone(moisture.map((f) => f.key)), ['linings', 'wet_area_linings'], 'an observation naming neither element covers neither (shown, not hidden)');
+    // isop (HIGH, judge #63): appið geymir „Gutters and downspouts — …“, vefurinn birtir „Gutters & downspouts“.
+    const isopLab = load('src/lib/report/isop.ts').isopRatingKeyLabel;
+    const gutters = (severity) => rf.ratingFindingsOf({ slug: 'isop-roof', ratings: { penetrations_skylights: 'danger', gutters_downspouts: 'danger' },
+      observations: [{ id: 'g', title: 'Gutters and downspouts — Repair or replace', severity }] }, isopLab);
+    assert.deepEqual(clone(gutters('alvarleg').map((f) => f.key)), ['penetrations_skylights'], 'Penetrations skipped, Gutters observed → Penetrations is the rating-only finding');
+    assert.deepEqual(clone(gutters('mjog_alvarleg').map((f) => f.key)), ['penetrations_skylights'], 'after a severity change the Gutters observation still covers Gutters');
+    assert.deepEqual(clone(gutters('athugasemd').map((f) => f.key)), ['penetrations_skylights']);
+    // Öll app-heiti (isop og íslensk) þekja sinn lykil í titli flýtiblaðsins.
+    const appLabels = load('src/lib/report/app-rating-labels.ts');
+    for (const [key, appLabel] of Object.entries(appLabels.APP_ISOP_RATING_LABELS)) {
+      assert.equal(rf.ratingFindingsOf({ slug: 'isop-x', ratings: { [key]: 'danger' }, observations: [{ id: 'o', title: `${appLabel} — Repair or replace`, severity: 'alvarleg' }] }, isopLab).length, 0, `isop ${key}: ${appLabel}`);
+      assert.equal(rf.ratingFindingsOf({ slug: 'isop-x', ratings: { [key]: 'danger' }, observations: [{ id: 'o', title: `${isopLab(key)} — Repair or replace`, severity: 'alvarleg' }] }, isopLab).length, 0, `isop web label ${key}`);
+    }
+    let isLabels = 0;
+    for (const [key, list] of Object.entries(appLabels.APP_IS_RATING_LABELS)) {
+      for (const isLabel of list) {
+        assert.equal(rf.ratingFindingsOf({ slug: 'eldhus', ratings: { [key]: 'warn' }, observations: [{ id: 'o', title: `${isLabel} — Athugasemd`, severity: 'mjog_alvarleg' }] }, (k) => k).length, 0, `Icelandic ${key}: ${isLabel}`);
+        isLabels++;
+      }
+    }
+    assert.ok(covered('Baðkar / sturta — Alvarleg athugasemd', null, 'badker_sturta', 'Bath / shower'), 'Icelandic title in an English report (5e001382)');
+    assert.ok(covered('Gutters & downspouts sagging', null, 'gutters_downspouts', 'Gutters and downspouts'), '& folds to and');
+    assert.ok(covered('Bath and shower — Minor', null, 'badker_sturta', 'Bath / shower'), '/ folds to and');
     const titled = rf.ratingFindingsOf({ slug: 'x', ratings: { hurdir: 'warn', loft: 'warn' },
       observations: [{ id: 'd', title: 'Doors — Serious', severity: 'alvarleg' }] }, (k) => ({ hurdir: 'Doors', loft: 'Ceiling' }[k]));
     assert.deepEqual(clone(titled.map((f) => f.key)), ['loft'], 'an observation matched by title is not paired again');
@@ -111,7 +143,7 @@ async function main() {
     assert.deepEqual(clone(out.rooms[0].observations[3]), { id: 'rating:utanhuss:sprungur', number: null, category: '', title: 'Cracks', description: rf.RATING_FINDING_NOTE, suggestion: '', severity: 'mjog_alvarleg' });
     assert.equal(report.rooms[0].observations.length, 1, 'input not mutated');
     assert.ok(rf.isRatingFindingId('rating:a:b') && !rf.isRatingFindingId('3f2a-uuid'));
-    pass('(a) unit: warn/danger/very serious → Minor/Serious/Very serious; covered by title prefix or category, else paired 1:1 with a same-severity observation; unstamped = same object');
+    pass(`(a) unit: warn/danger/very serious → Minor/Serious/Very serious; covered by title prefix (app isop labels, ${isLabels} Icelandic app labels, &,/,and folded) or category, else paired 1:1 only with a same-severity observation that names the element; unstamped = same object`);
   }
 
   // (b) Tilfelli eigandans: óstimpluð = eins og áður, stimpluð = tölur og texti saman
@@ -176,6 +208,9 @@ async function main() {
     const nextHead = lines.indexOf('Defects', sig + 1);
     assert.ok(lines.slice(sig, nextHead).includes(nzLabel(target.key)), 'rating-only significant defect listed in the significant defects table');
     assert.ok(!lines.slice(sig, nextHead).includes('No significant defects were recorded.'));
+    const row = lines.slice(sig, nextHead).indexOf(nzLabel(target.key));
+    assert.equal(lines.slice(sig, nextHead)[row + 1], rf.RATING_FINDING_SIGNIFICANT_ACTION, 'rating-only significant defect: fixed recommended action');
+    assert.ok(!plainHtml.includes(rf.RATING_FINDING_SIGNIFICANT_ACTION), 'unstamped: never the fixed text');
     pass(`(d) NZS 4306: rating-only "Significant defect" (${nzLabel(target.key)}) counted and listed under Significant defects; unstamped unchanged`);
   }
 
@@ -206,8 +241,32 @@ async function main() {
     assert.ok(lines.slice(table, maint).includes(isopLabel(target.key)), 'rating-only major defect in the deficiency table');
     assert.ok(html.includes('calculated from the inspector&#x27;s observations and checklist ratings. It is not a separate judgment.'));
     assert.ok(html.includes('calculated from the inspector&#x27;s observations and checklist ratings in each system.'));
+    assert.ok(html.includes('overview are calculated from the inspector&#x27;s observations and checklist ratings, not written by AI.'), 'Use of AI wording');
+    assert.ok(plainHtml.includes('overview are calculated from the inspector&#x27;s observations, not written by AI.'), 'unstamped Use of AI wording unchanged');
     for (const re of [/\bonly\b/i, /no defects/i, /guarantee/i, /\baccurate/i]) assert.ok(!re.test(rf.RATING_FINDING_NOTE), `note avoids ${re}`);
     pass(`(e) isop: rating-only "Major defect" (${isopLabel(target.key)}) counted and in the deficiency table; explanatory copy says observations and checklist ratings`);
+  }
+
+  // (g) APP_REPO=<beton-app> → app-rating-labels.ts samræmist app-skránum (isop-heiti og íslensk heiti).
+  if (process.env.APP_REPO) {
+    const ts = require('typescript');
+    const fs = require('node:fs');
+    const loadApp = (f, extra = '') => {
+      const m = { exports: {} };
+      const out = ts.transpileModule(fs.readFileSync(path.join(process.env.APP_REPO, f), 'utf8') + extra, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+      new Function('module', 'exports', 'require', out)(m, m.exports, () => ({}));
+      return m.exports;
+    };
+    const appLabels = load('src/lib/report/app-rating-labels.ts');
+    assert.deepEqual(clone(appLabels.APP_ISOP_RATING_LABELS), clone(loadApp('lib/report/isop-elements.ts').ISOP_RATING_LABELS), 'isop labels == app');
+    const c = loadApp('lib/utils/constants.ts', '\nexport const __OVR = ROOM_RATING_OVERRIDES;');
+    const is = {};
+    for (const list of [...Object.values(c.__OVR), c.getRatingCategoriesForRoom('__unknown__')]) for (const r of list) { is[r.key] ??= []; if (!is[r.key].includes(r.label)) is[r.key].push(r.label); }
+    const norm = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, [...v].sort()]).sort(([a], [b]) => a.localeCompare(b)));
+    assert.deepEqual(norm(clone(appLabels.APP_IS_RATING_LABELS)), norm(is), 'Icelandic labels == app');
+    pass(`(g) app-rating-labels.ts matches ${process.env.APP_REPO} (isop + Icelandic labels)`);
+  } else {
+    console.log('SKIP (g) app label parity (set APP_REPO=<beton-app checkout>)');
   }
 
   // (f) Bæti-eins og grunntré (origin/main) fyrir óstimplaðar skýrslur og íslenska skýrslu með stimpli

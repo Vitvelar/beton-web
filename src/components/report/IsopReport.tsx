@@ -636,9 +636,19 @@ export function IsopReport({
             {`Observations and ratings by ${disclosureInspector}, ${disclosureCompany}. Text drafted with AI assistance${draftedOn ? ` (${draftedOn})` : ""}. Not yet reviewed or issued.`}
           </p>
           <p className="text-xs text-fog leading-relaxed mt-2">
-            System statuses, reasons for not inspecting, descriptions, tags and the inspector&apos;s limitations are the
-            inspector&apos;s own entries and are reproduced as entered. The deficiency summary table and the systems
-            overview are calculated from the inspector&apos;s observations, not written by AI.
+            {withRatings ? (
+              <>
+                System statuses, reasons for not inspecting, descriptions, tags and the inspector&apos;s limitations are the
+                inspector&apos;s own entries and are reproduced as entered. The deficiency summary table and the systems
+                overview are calculated from the inspector&apos;s observations and checklist ratings, not written by AI.
+              </>
+            ) : (
+              <>
+                System statuses, reasons for not inspecting, descriptions, tags and the inspector&apos;s limitations are the
+                inspector&apos;s own entries and are reproduced as entered. The deficiency summary table and the systems
+                overview are calculated from the inspector&apos;s observations, not written by AI.
+              </>
+            )}
           </p>
         </div>
         {!hasTerms && brand.logoUrl ? (

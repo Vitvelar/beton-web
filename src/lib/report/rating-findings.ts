@@ -16,6 +16,7 @@
 import { REPORT_COPY } from "./i18n";
 import { isopRatingKeyLabel } from "./isop";
 import { NZ_RATING_LABELS } from "./nz-elements";
+import { APP_IS_RATING_LABELS, APP_ISOP_RATING_LABELS } from "./app-rating-labels";
 
 export const FINDINGS_BASIS = "observations_and_ratings";
 
@@ -24,6 +25,12 @@ export const RATING_FINDING_ID_PREFIX = "rating:";
 
 /** Texti niðurstöðu sem er aðeins einkunn (enskar skýrslur; AI skrifaði enga lýsingu fyrir hana). */
 export const RATING_FINDING_NOTE = "Rated by the inspector on the checklist for this area. No further details were recorded.";
+
+/**
+ * „Recommended action“ í töflu verulegra galla (NZS 4306) fyrir einkunn án athugasemdar — ákvörðun eiganda
+ * 2026-10-26; aðrar töflur sýna „—“ eins og áður.
+ */
+export const RATING_FINDING_SIGNIFICANT_ACTION = "Ask the inspector for details before purchase.";
 
 type FindingSeverity = "athugasemd" | "alvarleg" | "mjog_alvarleg";
 
@@ -56,7 +63,10 @@ export function isRatingFindingId(id: string): boolean {
   return id.startsWith(RATING_FINDING_ID_PREFIX);
 }
 
-/** Orð í lágstöfum án kommu/broddstafa (íslensk heiti „Lóð“, „Hurðir“ → „lod“, „hurdir“ = lyklarnir). */
+/**
+ * Orð í lágstöfum án broddstafa (íslensk heiti „Lóð“, „Hurðir“ → „lod“, „hurdir“ = lyklarnir). „&“, „/“ og „and“ eru
+ * tengiorð og falla út, svo „Gutters & downspouts“, „Gutters and downspouts“ og lykillinn gutters_downspouts verða eins.
+ */
 function words(value: string | null | undefined): string[] {
   return (value ?? "")
     .toLowerCase()
@@ -65,27 +75,59 @@ function words(value: string | null | undefined): string[] {
     .replace(/æ/g, "ae")
     .replace(/[öø]/g, "o")
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .split(/[^a-z0-9]+/)
-    .filter(Boolean);
+    .filter((w) => w !== "" && w !== "and");
+}
+
+/** Einfaldur stofn (enska), endurtekinn: decking/decks → deck, cracked/cracks → crack, flashings/flashing → flash. Stutt orð óbreytt. */
+function stem(word: string): string {
+  let out = word;
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const suffix of ["ing", "ed", "s"]) {
+      if (out.length - suffix.length >= 3 && out.endsWith(suffix)) {
+        out = out.slice(0, -suffix.length);
+        changed = true;
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+function stems(value: string | null | undefined): string[] {
+  return words(value).map(stem);
 }
 
 function startsWithWords(text: string[], prefix: string[]): boolean {
   return prefix.length > 0 && prefix.length <= text.length && prefix.every((w, i) => text[i] === w);
 }
 
-/** Öll heiti matsþáttarins sem titill athugasemdar gæti byrjað á (lykill, ensk/NZ/isop-heiti). */
-function candidateNames(key: string, displayLabel: string): string[][] {
+function containsWords(text: string[], part: string[]): boolean {
+  if (part.length === 0) return false;
+  for (let i = 0; i + part.length <= text.length; i++) if (part.every((w, j) => text[i + j] === w)) return true;
+  return false;
+}
+
+/**
+ * Öll heiti matsþáttarins sem titill athugasemdar gæti byrjað á: lykillinn, heitið sem skýrslan birtir, ensku
+ * heitin (vefur), NZ-heitin, isop-heiti vefsins OG appsins (appið geymir sín heiti í titlinum) og íslensk heiti
+ * appsins (titlar þegar skýrslutungumálið var óþekkt). Sem stofnaðar orðarunur, án tvítekninga.
+ */
+function candidateNames(key: string, displayLabel?: string): string[][] {
   const names = [
     displayLabel,
     key,
     REPORT_COPY.en.ratingCategories[key],
     NZ_RATING_LABELS[key],
     isopRatingKeyLabel(key),
+    APP_ISOP_RATING_LABELS[key],
+    ...(APP_IS_RATING_LABELS[key] ?? []),
   ];
   const out: string[][] = [];
   for (const name of names) {
-    const w = words(name);
+    const w = stems(name);
     if (w.length > 0 && !out.some((o) => o.join(" ") === w.join(" "))) out.push(w);
   }
   return out;
@@ -94,13 +136,20 @@ function candidateNames(key: string, displayLabel: string): string[][] {
 /**
  * Fjallar athugasemd í rýminu um matsþáttinn? Flýtiblaðið býr til titilinn „<heiti> — <alvarleiki>“
  * (app lib/i18n/titles.ts), svo athugasemd telst fjalla um þáttinn ef titill hennar byrjar á heiti hans (heilum
- * orðum) eða flokkur hennar er sama heiti. Alvarleiki skiptir ekki máli: breyti skoðunarmaður alvarleika
+ * orðum, stofnað) eða flokkur hennar er sama heiti. Alvarleiki skiptir ekki máli: breyti skoðunarmaður alvarleika
  * athugasemdarinnar gildir hún, og einkunnin er ekki talin aftur.
  */
 function covers(obs: ObservationLike, names: string[][]): boolean {
-  const title = words(obs.title);
-  const category = words(obs.category).join(" ");
+  const title = stems(obs.title);
+  const category = stems(obs.category).join(" ");
   return names.some((n) => startsWithWords(title, n) || (category !== "" && category === n.join(" ")));
+}
+
+/** Nefnir titill/flokkur athugasemdar heiti þáttar einhvers staðar (ekki aðeins fremst)? */
+function mentions(obs: ObservationLike, names: string[][]): boolean {
+  const title = stems(obs.title);
+  const category = stems(obs.category);
+  return names.some((n) => containsWords(title, n) || containsWords(category, n));
 }
 
 export interface RatingFinding {
@@ -115,14 +164,16 @@ export interface RatingFinding {
  * Einkunnir rýmis sem eru ekki í lagi og engin athugasemd rýmisins fjallar um, í röð einkunnanna.
  *
  * 1. Athugasemd sem fjallar um matsþáttinn (titill/flokkur, sjá covers) þekur einkunnina, hver sem alvarleikinn er.
- * 2. Athugasemd rýmisins sem þekur enga einkunn en hefur SAMA alvarleika og óþakin einkunn er talin skrif þeirrar
- *    einkunnar (skoðunarmaður breytti titlinum, t.d. „Leaning piles …“ fyrir Piles = Significant defect); ein
- *    athugasemd þekur eina einkunn, í röð. Þannig telst sami galli aldrei tvisvar.
+ * 2. Athugasemd rýmisins sem þekur enga einkunn, hefur SAMA alvarleika og NEFNIR þáttinn einhvers staðar í titli
+ *    eða flokki er talin skrif einkunnarinnar (skoðunarmaður breytti titlinum, t.d. „Leaning piles …“ fyrir
+ *    Piles = Significant defect); ein athugasemd þekur eina einkunn, í röð. Athugasemd sem nefnir ekki þáttinn
+ *    þekur hann aldrei („Rotten deck boards“ felur ekki Cracks = Very serious): betra er að einkunn birtist auk
+ *    athugasemdar en að alvarleg einkunn hverfi úr tölunum.
  * Það sem eftir stendur eru einkunnir án athugasemdar („Skip“ á flýtiblaðinu).
  */
 export function ratingFindingsOf(room: RoomLike, displayLabel: (key: string) => string): RatingFinding[] {
   const observations = (room.observations ?? []).filter((o) => !isRatingFindingId(o.id));
-  const pending: RatingFinding[] = [];
+  const pending: Array<{ finding: RatingFinding; names: string[][] }> = [];
   const used = new Set<ObservationLike>();
   for (const [key, rating] of Object.entries(room.ratings ?? {})) {
     const severity = typeof rating === "string" ? RATING_TO_SEVERITY[rating] : undefined;
@@ -135,14 +186,14 @@ export function ratingFindingsOf(room: RoomLike, displayLabel: (key: string) => 
       continue;
     }
     const title = label.charAt(0).toUpperCase() + label.slice(1);
-    pending.push({ id: `${RATING_FINDING_ID_PREFIX}${room.slug}:${key}`, key, rating, severity, title });
+    pending.push({ finding: { id: `${RATING_FINDING_ID_PREFIX}${room.slug}:${key}`, key, rating, severity, title }, names });
   }
   const spare = observations.filter((o) => !used.has(o));
   const out: RatingFinding[] = [];
-  for (const finding of pending) {
-    const i = spare.findIndex((o) => o.severity === finding.severity);
-    if (i >= 0) {
-      spare.splice(i, 1);
+  for (const { finding, names } of pending) {
+    const pick = spare.find((o) => o.severity === finding.severity && mentions(o, names));
+    if (pick) {
+      spare.splice(spare.indexOf(pick), 1);
       continue;
     }
     out.push(finding);
