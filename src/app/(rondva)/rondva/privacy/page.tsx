@@ -8,6 +8,10 @@ import { rondvaPageMetadata } from "@/components/rondva/page-meta";
 // sannreynt í kóða) og samræmd við App Privacy-svör Rondva. Engar fastar
 // geymslutímalengdir nema þær sem eru ákveðnar (biðlisti 24 mán., bókhald 7 ár).
 // Akkerin (#processors o.fl.) eru notuð af /terms og appinu: ekki endurnefna.
+// 2026-10-26 (LANDAVAL-SKODUNARFLAEDI §3): heimilisfangaleit í appinu notar Google Places API (Google Maps
+// Platform) gegnum edge-fallið address-autocomplete — nýr kafli „Address search“ (#address-search) og lína í
+// vinnsluaðilatöflunni. Aðeins texti heimilisfangsreitsins, landakóði fyrirtækisins (síar uppástungur), handahófskenndur
+// lotukóði og valið staðarauðkenni fara til Google; til yfirferðar lögfræðings (hlutverk Google: vinnsluaðili vs. ábyrgðaraðili).
 // 2026-10-09: nýr kafli „Business contacts we write to“ (#business-contacts) — GDPR art. 14 fyrir sölupóst á
 // skoðunarmenn sem birta vinnunetfang í opinberum skrám (t.d. NZIBI). Texti úr plan/rondva/NZ-SOLUPOSTAR-UTGAFA.md
 // §1.4–1.5 (hagsmunamat, 12 mán. geymsla, útilokunarlisti). Póstfóturinn vísar á rondva.com/privacy#business-contacts:
@@ -69,6 +73,11 @@ const processors: Processor[] = [
     name: "MET Norway (Norwegian Meteorological Institute)",
     role: "Gives the weather forecast for the inspection's location. Receives only coordinates rounded to about 100 metres.",
     where: "Norway",
+  },
+  {
+    name: "Google (Google Maps Platform, Places API)",
+    role: "Suggests addresses while you type in an inspection's address field, only when you use the address search. Receives the text you typed and, when you pick a suggestion, the place it refers to.",
+    where: "United States and a global network",
   },
   {
     name: "Resend",
@@ -297,6 +306,44 @@ const sections: LegalSection[] = [
     ),
   },
   {
+    id: "address-search",
+    title: "Address search",
+    body: (
+      <>
+        <p>
+          In the Rondva app the address field of an inspection can suggest addresses as you type.
+          This only happens when you use that search: after you have typed a few characters of
+          the address. You can ignore the suggestions and type the whole address
+          yourself, and if the search isn&apos;t available the field simply works as a plain text
+          field.
+        </p>
+        <p>The app asks our server, and our server then asks <strong>Google</strong> (Google Maps Platform, Places API), which:</p>
+        <ul className={list}>
+          <li>
+            receives the text you typed in the address field, while you type, and returns up to
+            five matching addresses. Along with the text go your company&apos;s country (so the
+            suggestions are from the right country), the language of the app and a random code
+            that ties the suggestions of one search together. The code is not linked to you;
+          </li>
+          <li>
+            receives the place you picked from the suggestions (Google&apos;s identifier for that
+            place) and returns its address parts (street, town, state or region, postcode) which
+            the app puts into the inspection&apos;s address fields.
+          </li>
+        </ul>
+        <p>
+          Nothing else is sent: not your name, email address or account details, not the
+          client&apos;s name, and no notes or photos. The request comes from our server, so Google
+          sees our server&apos;s IP address and not your phone&apos;s. The address you type is not
+          written to our logs, and the app does not use your phone&apos;s location for this.
+          What Google does with the search text is described in the{" "}
+          <LegalLink href="https://policies.google.com/privacy">Google Privacy Policy</LegalLink>.
+          Suggestions are shown with Google&apos;s attribution, as its terms require.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "dashboard",
     title: "The web dashboard",
     body: (
@@ -492,7 +539,7 @@ const sections: LegalSection[] = [
             legitimate interest in keeping accounts safe (art. 6(1)(f)).
           </li>
           <li>
-            <strong>Inspections, photos, reports, AI drafting and the weather auto-fill:</strong>{" "}
+            <strong>Inspections, photos, reports, AI drafting, the weather auto-fill and the address search:</strong>{" "}
             for these we act for your inspection company as its processor. The company decides
             why it records the data and on what basis, usually its agreement with its own
             client. Sending anything to the AI service also needs your explicit confirmation
@@ -558,6 +605,12 @@ const sections: LegalSection[] = [
           The weather service is the exception: MET Norway is a public service we have no
           contract with. It receives only coordinates rounded to about 100 metres, never an
           address, a name or account details, and it is bound only by its own terms of use.
+        </p>
+        <p>
+          The address search sends the text you type in the address field to Google in the United
+          States (see <LegalLink href="#address-search">Address search</LegalLink>). Where that text
+          contains personal data, the transfer rests on the provider&apos;s standard contractual
+          clauses.
         </p>
         <p>
           <strong>If you are in New Zealand:</strong> your information is held by Vitvélar in
@@ -759,13 +812,14 @@ export default function RondvaPrivacyPage() {
           Short version: you sign in with Apple or Google, and your inspections are stored on
           your phone and in your account. Nothing goes to the AI service unless you confirm it
           for that report. The weather field can fill itself in from the town and postcode you entered,
-          and only coordinates rounded to about 100 metres go to a public weather service. Payments go
+          and only coordinates rounded to about 100 metres go to a public weather service. If you use the address
+          search, the text you type in the address field goes to Google. Payments go
           through Apple. The app has no advertising or tracking, we don&apos;t sell data, and
           you can delete your account in the app.
         </p>
       }
       sections={sections}
-      revised="20 October 2026"
+      revised="26 October 2026"
       toc
     />
   );
