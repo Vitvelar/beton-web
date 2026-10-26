@@ -20,6 +20,7 @@
 import type { ReactNode } from "react";
 import { formatReportDateNz } from "@/lib/report/date";
 import { REPORT_COPY, ratingCategoryLabel, reportCategoryLabel } from "@/lib/report/i18n";
+import { isRatingFindingId, RATING_FINDING_SIGNIFICANT_ACTION } from "@/lib/report/rating-findings";
 import type { ReportBranding } from "@/lib/report/branding";
 import {
   NZ_ROOMS,
@@ -229,7 +230,8 @@ export function Nzs4306Report({
                 ref: obsRef.get(o.id) ?? "",
                 location: obsLocation.get(o.id) ?? "",
                 item: o.title,
-                action: o.suggestion,
+                // Einkunn án athugasemdar (aðeins í stimpluðum skýrslum, src/lib/report/rating-findings.ts): fastur texti.
+                action: isRatingFindingId(o.id) ? RATING_FINDING_SIGNIFICANT_ACTION : o.suggestion,
               }))}
               actionHeading="Recommended action"
             />
