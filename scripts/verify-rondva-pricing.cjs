@@ -596,16 +596,17 @@ pass('JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList) has n
           at = i;
         }
         assert.ok(sysItem.body.includes('Additional items'));
-        assert.ok(c.formatLine.startsWith('Choose the Home inspection format in Settings and the report has ten systems in a fixed order, a status for each system, and a summary of deficiencies at the front, built from your ratings.'), `${cc}: isop is a choice`);
+        assert.ok(c.formatLine.startsWith('US and Canadian companies get the ten-system Home inspection format by default (you can change it in Settings). The report has ten systems in a fixed order, a status for each system, and a summary of deficiencies at the front, built from your ratings.'), `${cc}: isop is the default and can be changed`);
         assert.ok(/does not replace any (state-required form|form your province requires)/.test(c.formatLine), `${cc}: does not replace a state-required form`);
-        assert.ok(c.faq.find((f) => f.id === 'format').a.startsWith('If you choose the Home inspection format in Settings, it has ten systems'), `${cc}: FAQ says it is a choice`);
+        assert.ok(c.faq.find((f) => f.id === 'format').a.startsWith('US and Canadian companies get the Home inspection format by default (you can change it in Settings). It has ten systems'), `${cc}: FAQ says it is the default and can be changed`);
         const all = JSON.stringify(c);
-        for (const w of ['Summary of deficiencies', 'Inspected', 'Not inspected', 'Not present', 'Maintenance', 'Repair or replace', 'Major defect', 'not written by the AI', 'Use of AI in this report', 'Choose the Home inspection format in Settings']) assert.ok(all.includes(w), `${cc} (ISOP_ENABLED=1) mentions ${w}`);
+        for (const w of ['Summary of deficiencies', 'Inspected', 'Not inspected', 'Not present', 'Maintenance', 'Repair or replace', 'Major defect', 'not written by the AI', 'Use of AI in this report', 'US and Canadian companies get the ten-system Home inspection format by default (you can change it in Settings)']) assert.ok(all.includes(w), `${cc} (ISOP_ENABLED=1) mentions ${w}`);
         assert.ok(!c.screen, `${cc} (ISOP_ENABLED=1): no phone figure (the screen shows the general report words)`);
         assert.equal(c.sample, null, `${cc}: no sample link`);
         assert.ok(!/Minor, Serious|Very serious|condition rating/i.test(all), `${cc} (ISOP_ENABLED=1) uses the isop rating words`);
         assert.ok(!/AI-generated|compliant/i.test(all));
-        assert.ok(/^the Home inspection format, chosen in Settings, has ten systems/.test(c.llms), `${cc}: llms line says it is a choice`);
+        assert.ok(/^the Home inspection format, the default for US and Canadian companies \(changeable in Settings\), has ten systems/.test(c.llms), `${cc}: llms line says it is the default`);
+        assert.ok(!/Choose the Home inspection format|If you choose the Home inspection|chosen in Settings/.test(all), `${cc}: no 'choose it in Settings' wording left`);
       }
       assert.ok(onBy.ca.formatLine.includes('Reports are in English only.'), 'CA (ISOP_ENABLED=1): English only');
       // Bannorð gilda líka um isop-textann (hann er í gagnaeiningunni sem er skönnuð í c.).

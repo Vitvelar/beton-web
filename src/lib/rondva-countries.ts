@@ -148,9 +148,9 @@ const CONDITION_RATING_ITEM: CountryItem = {
 // ── US og CA: `isop`-sniðið ──────────────────────────────────────────────────────────────────
 // ATH: Allur US/CA-sniðstextinn er í þessum eina hlut og lýsir `isop`-skýrslusniðinu
 // (plan/rondva/ISOP-SNID-HONNUN.md §1–§2; vefur: src/lib/report/isop.ts). Hann birtist AÐEINS þegar
-// isopEnabled() er satt við bygginguna (sjá ISOP_ON hér neðar) og þá sem val í stillingum
-// („Home inspection“), aldrei sem sjálfgefið. Engin staðalnöfn (InterNACHI, ASHI, TREC, CSA) og
-// engin „compliant“.
+// isopEnabled() er satt við bygginguna (sjá ISOP_ON hér neðar). Frá 2026-10-26 (beton-app #68, flutningur
+// 20261026221653) fá ný US/CA-fyrirtæki sniðið SJÁLFGEFIÐ (register_company / set_company_country) og geta
+// breytt því í stillingum. Engin staðalnöfn (InterNACHI, ASHI, TREC, CSA) og engin „compliant“.
 export const ISOP_SYSTEMS = [
   "Roof",
   "Exterior",
@@ -168,7 +168,7 @@ export const ISOP_COPY = {
   systems: ISOP_SYSTEMS,
   lead: "Rondva is an iPhone app that drafts home inspection reports from the inspector's photos, notes and ratings. Its Home inspection format organizes the findings by system: roof, exterior, structure, heating, cooling, plumbing, electrical and more. The inspector reviews and issues the report under their own company name.",
   formatLine:
-    "Choose the Home inspection format in Settings and the report has ten systems in a fixed order, a status for each system, and a summary of deficiencies at the front, built from your ratings.",
+    "US and Canadian companies get the ten-system Home inspection format by default (you can change it in Settings). The report has ten systems in a fixed order, a status for each system, and a summary of deficiencies at the front, built from your ratings.",
   notReplace: {
     us: "It does not replace any state-required form.",
     ca: "It does not replace any form your province requires.",
@@ -204,9 +204,9 @@ export const ISOP_COPY = {
   note: "Your company logo and your own terms go in the report. A Rondva report is your professional inspection, written up; you are responsible for its content before you issue it.",
   formatFaq: {
     q: "What does the report look like?",
-    a: "If you choose the Home inspection format in Settings, it has ten systems in a fixed order, a status for each system (Inspected, Not inspected with your reason, or Not present), and a summary of deficiencies at the front, built from your ratings without AI. Findings are then rated Maintenance, Repair or replace, or Major defect.",
+    a: "US and Canadian companies get the Home inspection format by default (you can change it in Settings). It has ten systems in a fixed order, a status for each system (Inspected, Not inspected with your reason, or Not present), and a summary of deficiencies at the front, built from your ratings without AI. Findings are rated Maintenance, Repair or replace, or Major defect.",
   },
-  llms: "the Home inspection format, chosen in Settings, has ten systems in a fixed order with a status for each and a summary of deficiencies built from the inspector's ratings, and findings rated Maintenance, Repair or replace, or Major defect",
+  llms: "the Home inspection format, the default for US and Canadian companies (changeable in Settings), has ten systems in a fixed order with a status for each and a summary of deficiencies built from the inspector's ratings, and findings rated Maintenance, Repair or replace, or Major defect",
 };
 
 // US og CA velja sniðtexta við BYGGINGU úr isopEnabled() (ISOP_ENABLED=1 á þjóninum): síðurnar eru
