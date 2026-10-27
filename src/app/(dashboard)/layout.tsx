@@ -11,6 +11,7 @@ import { btn } from "@/lib/ui";
 import { checkDashboardAccess } from "@/lib/access";
 import { getDashboardLocale, getRequestBrand, getRequestUser } from "@/lib/request-brand";
 import { BRANDS } from "@/lib/brand";
+import { isGrowthAdmin } from "@/lib/ops/growth-access";
 
 // Sama stjórnborð þjónar tveimur vörumerkjum eftir hýsli (src/lib/brand.ts):
 // admin.beton.is → Beton (íslenska, óbreytt), app.rondva.com → Rondva-útlit.
@@ -104,7 +105,7 @@ export default async function DashboardLayout({
         {shellCopy(locale).skipToContent}
       </a>
       <DashboardRealtimeRefresh />
-      <DashboardHeader email={user.email ?? ""} brand={brand} locale={locale} />
+      <DashboardHeader email={user.email ?? ""} brand={brand} locale={locale} showStatus={brand === "rondva" && isGrowthAdmin(user.email)} />
       <main id="content" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 focus:outline-none sm:px-6">
         {children}
       </main>

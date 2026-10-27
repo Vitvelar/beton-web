@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/dashboard/SignOutButton";
 import type { Brand } from "@/lib/brand";
 import { dashboardCopy, type DashboardLocale } from "@/lib/i18n/dashboard";
 import { shellCopy } from "@/lib/i18n/dashboard-shell";
+import { stadaCopy } from "@/lib/i18n/stada";
 
 // Snertiflötur ≥44px, aldrei línuskipting („Sign out“ á 320px), núverandi síða merkt
 // með aria-current + áherslustriki.
@@ -20,15 +21,19 @@ export function DashboardHeader({
   email,
   brand,
   locale,
+  showStatus = false,
 }: {
   email: string;
   brand: Brand;
   locale: DashboardLocale;
+  /** Staðutengill (/dashboard/stada): aðeins eigendur á app.rondva.com; Beton-hausinn breytist ekki. */
+  showStatus?: boolean;
 }) {
   const t = dashboardCopy(locale).header;
   const shell = shellCopy(locale);
   const pathname = usePathname();
   const onSettings = pathname.startsWith("/dashboard/settings");
+  const onStatus = pathname.startsWith("/dashboard/stada");
 
   return (
     <header className="border-b border-concrete bg-surface print:hidden">
@@ -58,6 +63,11 @@ export function DashboardHeader({
         </Link>
 
         <nav aria-label={shell.header.nav} className="flex shrink-0 items-center gap-1 sm:gap-3">
+          {showStatus ? (
+            <Link href="/dashboard/stada" aria-current={onStatus ? "page" : undefined} className={navItem}>
+              {stadaCopy(locale).navLabel}
+            </Link>
+          ) : null}
           <Link
             href="/dashboard/settings"
             aria-current={onSettings ? "page" : undefined}
