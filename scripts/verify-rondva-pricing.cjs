@@ -245,7 +245,10 @@ const landingCode = stripComments(landing);
 assert.equal(links.APP_STORE_URL, 'https://apps.apple.com/app/id6817769506');
 assert.match(landingCode, /<AppStoreBadge \/>/);
 assert.match(landingCode, /Inspection app for iPhone · On the App Store/);
-assert.match(landingCode, /Rondva is built for/);
+assert.match(landingCode, /field app for independent property inspectors/);
+// Frá glósu til skýrslu (impeccable-yfirferð 2026-10-29): raunveruleg athugasemd úr sýnisskýrslunni, strax á eftir hetjunni.
+assert.ok(landingCode.indexOf('<NoteToReport />') > landingCode.indexOf('id="hero-title"') && landingCode.indexOf('<NoteToReport />') < landingCode.indexOf('<WhereAiStops />'), 'note-to-report sits between hero and Where the AI stops');
+assert.match(read('src/components/rondva/NoteToReport.tsx'), /fictional property/);
 assert.match(landingCode, /nothing can\s+be bought on this page/i);
 assert.ok(!/href="#waitlist"|<WaitlistForm|id="waitlist"/.test(landingCode), 'landing has no waitlist anchor or form');
 assert.match(landingCode, /Not on iPhone\? Email/);

@@ -258,10 +258,10 @@ function usCaFormat(region: Region) {
 const OFFLINE_BODY =
   "Everything is saved on your phone as you go and syncs when you are back online. Record the rooms and areas you walk, your ratings, photos, thermal images and a note for every finding. Creating the AI draft is the one step that needs a connection.";
 
-const OFFLINE_ANSWER =
+export const OFFLINE_ANSWER =
   "Yes. Everything you record is saved on your phone as you go, so you can keep inspecting with no signal. It syncs when you are back online.";
 
-const RESPONSIBLE_ANSWER =
+export const RESPONSIBLE_ANSWER =
   "You are. Rondva drafts the report text from your photos, notes and ratings, you review every word, and you issue the PDF under your company name.";
 
 function priceAnswer(c: Pick<Country, "currency" | "prices" | "taxLine">): string {
