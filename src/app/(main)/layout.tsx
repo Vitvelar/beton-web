@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { BetonHtml } from "@/components/BetonHtml";
+import { CookieBanner } from "@/components/CookieBanner";
 import { betonMetadata, betonLocalBusinessJsonLd } from "@/lib/beton-metadata";
 import { BRANDS } from "@/lib/brand";
 
@@ -18,7 +19,7 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <BetonHtml gtmId={GTM_ID}>
+    <BetonHtml gtmId={GTM_ID} consentMode>
       <a
         href="#content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:rounded-full focus:bg-ink focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-paper focus-visible:outline-accent-on-inverse"
@@ -30,6 +31,8 @@ export default function MainLayout({
         {children}
       </main>
       <Footer />
+      {/* Vafrakökuborði: aðeins beton.is (þetta útlit), ekki admin.beton.is né rondva.com. */}
+      <CookieBanner />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

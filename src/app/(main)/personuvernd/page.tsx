@@ -112,6 +112,14 @@ const sections: Section[] = [
       "Ef þú telur að vinnsla Beton samræmist ekki lögum um persónuvernd getur þú beint kvörtun til Persónuverndar (personuvernd.is).",
     ],
   },
+  {
+    n: "10",
+    title: "Vafrakökur á beton.is",
+    body: [
+      "Vefsíðan beton.is notar vafrakökur frá Google Tag Manager, Meta (Facebook) og Google Ads til að mæla árangur auglýsinga og greina notkun síðunnar. Þær eru ekki settar fyrr en þú samþykkir þær í vafrakökuborðanum. Veljir þú „Hafna“ er aðeins vistuð ein nauðsynleg kaka sem man valið þitt.",
+      "Valið gildir í 12 mánuði og því má breyta hvenær sem er með tenglinum „Vafrakökur“ neðst á síðunni. Stjórnborðið admin.beton.is og skoðunarappið nota engar markaðs- eða greiningarkökur.",
+    ],
+  },
 ];
 
 export default function Personuvernd() {
@@ -137,7 +145,7 @@ export default function Personuvernd() {
                 .
               </p>
               <p className={`${metaLabel} mt-6`}>
-                Síðast uppfært: 21. september 2026
+                Síðast uppfært: 21. október 2026
               </p>
             </div>
           </div>
