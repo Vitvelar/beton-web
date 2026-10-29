@@ -48,7 +48,10 @@ function fixtureClient(record) {
   };
   return {
     from: () => query,
-    storage: { from: () => ({ async createSignedUrl(p) { return { data: { signedUrl: `/fixture-photos/${p}` }, error: null }; } }) },
+    storage: { from: () => ({
+      async createSignedUrl(p) { return { data: { signedUrl: `/fixture-photos/${p}` }, error: null }; },
+      async createSignedUrls(ps) { return { data: ps.map((p) => ({ path: p, signedUrl: `/fixture-photos/${p}`, error: null })), error: null }; },
+    }) },
   };
 }
 
