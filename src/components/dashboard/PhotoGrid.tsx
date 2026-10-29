@@ -9,6 +9,59 @@ type PhotoCopy = DashboardCopy["photos"];
 
 type SignedUrlState = { path: string; url: string | null; failed: boolean };
 
+// Allar myndir sem birtast í sömu umferð eru undirritaðar í EINNI Storage-beiðni og slóðin
+// geymd á meðan hún gildir, svo endurnýjun síðunnar (DashboardRealtimeRefresh) eða ný heimsókn
+// notar sömu slóð og vafrinn tekur myndina úr skyndiminni. Áður: ein undirritun + eitt niðurhal
+// á mynd í hvert sinn (~300 beiðnir á 10 s fyrir 99 myndir), sem tæmdi tengipott Storage
+// (429 SlowDown) og felldi skýrslugerð 2026-10-29.
+const SIGNED_URL_TTL_SECONDS = 3600;
+const REUSE_MARGIN_MS = 10 * 60 * 1000;
+const SIGN_BATCH_MAX = 100;
+
+const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+let signQueue = new Map<string, Array<(url: string | null) => void>>();
+let signFlushScheduled = false;
+
+function signPhotoPath(path: string): Promise<string | null> {
+  const cached = signedUrlCache.get(path);
+  if (cached && cached.expiresAt - Date.now() > REUSE_MARGIN_MS) return Promise.resolve(cached.url);
+  return new Promise((resolve) => {
+    const waiters = signQueue.get(path);
+    if (waiters) waiters.push(resolve);
+    else signQueue.set(path, [resolve]);
+    if (!signFlushScheduled) {
+      signFlushScheduled = true;
+      setTimeout(flushSignQueue, 0);
+    }
+  });
+}
+
+async function flushSignQueue() {
+  const queue = signQueue;
+  signQueue = new Map();
+  signFlushScheduled = false;
+  const paths = [...queue.keys()];
+  const bucket = createClient().storage.from("inspection-photos");
+  for (let i = 0; i < paths.length; i += SIGN_BATCH_MAX) {
+    const chunk = paths.slice(i, i + SIGN_BATCH_MAX);
+    const expiresAt = Date.now() + SIGNED_URL_TTL_SECONDS * 1000;
+    const urls = new Map<string, string>();
+    try {
+      const { data } = await bucket.createSignedUrls(chunk, SIGNED_URL_TTL_SECONDS);
+      for (const entry of data ?? []) {
+        if (entry.path && entry.signedUrl) urls.set(entry.path, entry.signedUrl);
+      }
+    } catch {
+      // Myndir án slóðar sýna „ekki tiltæk“.
+    }
+    for (const path of chunk) {
+      const url = urls.get(path) ?? null;
+      if (url) signedUrlCache.set(path, { url, expiresAt });
+      for (const resolve of queue.get(path) ?? []) resolve(url);
+    }
+  }
+}
+
 // Undirritað slóð fyrir myndina. Ástandið geymir slóðina sem það á við, svo breyting á
 // storage_path (næsta mynd í skoðaranum) sýnir aldrei fyrri mynd eða fyrri villu.
 function useSignedUrl(storagePath: string | null): { url: string | null; failed: boolean } {
@@ -17,17 +70,9 @@ function useSignedUrl(storagePath: string | null): { url: string | null; failed:
   useEffect(() => {
     if (!storagePath) return;
     let cancelled = false;
-    createClient()
-      .storage.from("inspection-photos")
-      .createSignedUrl(storagePath, 3600)
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error || !data?.signedUrl) setState({ path: storagePath, url: null, failed: true });
-        else setState({ path: storagePath, url: data.signedUrl, failed: false });
-      })
-      .catch(() => {
-        if (!cancelled) setState({ path: storagePath, url: null, failed: true });
-      });
+    signPhotoPath(storagePath).then((url) => {
+      if (!cancelled) setState({ path: storagePath, url, failed: !url });
+    });
     return () => {
       cancelled = true;
     };
@@ -66,6 +111,8 @@ function PhotoThumbnail({
         <img
           src={url}
           alt={photo.caption || format(t.photoAlt, { n: index + 1, total })}
+          loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover"
         />
       ) : failed ? (

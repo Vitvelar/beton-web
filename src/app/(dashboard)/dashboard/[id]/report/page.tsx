@@ -329,22 +329,24 @@ export default async function ReportPage({
     return [...byId.values()];
   })();
 
+  // Engin transform — myndir eru þegar web-stærð (minnkaðar við upphal), svo þær eru
+  // undirritaðar í einni Storage-beiðni á hverjar 100 (ekki ein á mynd: Storage svarar
+  // 429 SlowDown þegar tengipottur þess tæmist, sjá PhotoGrid).
   const signedUrls = new Map<string, string>();
-  const batchSize = 20;
-  for (let i = 0; i < allDbPhotos.length; i += batchSize) {
-    const batch = allDbPhotos.slice(i, i + batchSize);
-    const results = await Promise.all(
-      batch.map(async (p) => {
-        // Engin transform — myndir eru þegar web-stærð (minnkaðar við upphal).
-        const { data } = await supabase.storage
-          .from("inspection-photos")
-          .createSignedUrl(p.storage_path!, 3600);
-        return { id: p.id, url: data?.signedUrl ?? null };
-      })
-    );
-    for (const r of results) {
-      if (r.url) signedUrls.set(r.id, r.url);
+  const paths = [...new Set(allDbPhotos.map((p) => p.storage_path!))];
+  const urlByPath = new Map<string, string>();
+  const batchSize = 100;
+  for (let i = 0; i < paths.length; i += batchSize) {
+    const { data } = await supabase.storage
+      .from("inspection-photos")
+      .createSignedUrls(paths.slice(i, i + batchSize), 3600);
+    for (const entry of data ?? []) {
+      if (entry.path && entry.signedUrl) urlByPath.set(entry.path, entry.signedUrl);
     }
+  }
+  for (const p of allDbPhotos) {
+    const url = urlByPath.get(p.storage_path!);
+    if (url) signedUrls.set(p.id, url);
   }
 
   const photosWithUrls: PhotoWithUrl[] = allDbPhotos
