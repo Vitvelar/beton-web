@@ -31,7 +31,8 @@ check("route: idempotency-lykill á dag", /status-email-\$\{day\}/.test(route));
 check("route: skráir sendingu með ops_record_event (score/info/status-email)", /ops_record_event/.test(route) && /"status-email"/.test(route));
 
 const vercel = JSON.parse(read("vercel.json"));
-check("vercel.json cron á /api/ops/status-email 09:00 UTC", vercel.crons.some((c) => c.path === "/api/ops/status-email" && c.schedule === "0 9 * * *"));
+// Daglegi stöðupósturinn er óvirkur (Hjalti 2026-11-23): ekkert cron má kalla á slóðina. Slóðin sjálf lifir fyrir handvirka keyrslu/forskoðun.
+check("vercel.json: ekkert cron á /api/ops/status-email (slökkt 2026-11-23)", !(vercel.crons || []).some((c) => c.path === "/api/ops/status-email"));
 
 const email = read("src/lib/ops/status-email.ts");
 check("póstur: engar myndir, engin skripta", !/<img\b/i.test(email) && !/<script\b/i.test(email));

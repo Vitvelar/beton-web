@@ -1,5 +1,3 @@
 {
-  "crons": [
-    { "path": "/api/ops/status-email", "schedule": "0 9 * * *" }
-  ]
+  "crons": []
 }
