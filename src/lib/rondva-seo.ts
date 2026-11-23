@@ -16,6 +16,44 @@ const SITE = R.marketingUrl;
 export const ORGANIZATION_ID = `${SITE}/#organization`;
 export const APPLICATION_ID = `${SITE}/#app`;
 
+/**
+ * Leitarvélastaðfesting og IndexNow. Staðgenglar (tómir strengir) = ekkert birtist: engin tóm meta-tög
+ * og IndexNow-lykilsleiðin skilar 404. Hjalti setur raunveruleg gildi hér (sjá PR-lýsingu).
+ *  - google: innihald `content` úr „HTML tag“ staðfestingu í Search Console
+ *  - bing:   `msvalidate.01` gildi úr Bing Webmaster Tools (eða flytja inn úr Search Console)
+ *  - indexNowKey: 32 hex-stafir (a-f0-9); skráin https://rondva.com/<key>.txt inniheldur lykilinn
+ * ATH: Google hætti stuðningi við sitemap-ping (`/ping?sitemap=`) 2023, svo ekkert slíkt er sent;
+ * sitemap er send inn í Search Console. Bing tekur við slóðum gegnum IndexNow.
+ */
+export const RONDVA_SEO = {
+  verification: { google: "", bing: "" },
+  indexNowKey: "",
+  // Aðeins raunverulegar skráningar; tómt = síað út úr sameAs.
+  profiles: {
+    linkedin: "",
+    capterra: "",
+    getapp: "",
+    softwareAdvice: "",
+  },
+};
+
+/** Metadata `verification`, eða undefined ef ekkert gildi er sett (engin tóm tög). */
+export function rondvaVerification(): { google?: string; other?: Record<string, string> } | undefined {
+  const google = RONDVA_SEO.verification.google.trim();
+  const bing = RONDVA_SEO.verification.bing.trim();
+  if (!google && !bing) return undefined;
+  return {
+    ...(google ? { google } : {}),
+    ...(bing ? { other: { "msvalidate.01": bing } } : {}),
+  };
+}
+
+/** Lykill fyrir IndexNow ef hann er gildur (32 hex), annars null. */
+export function rondvaIndexNowKey(): string | null {
+  const key = RONDVA_SEO.indexNowKey.trim();
+  return /^[a-f0-9]{32}$/i.test(key) ? key : null;
+}
+
 export type FaqItem = { q: string; a: string };
 
 type JsonLdNode = Record<string, unknown>;
@@ -35,8 +73,10 @@ export function organizationLd(): JsonLdNode {
       addressLocality: "Reykjavík",
       addressCountry: "IS",
     },
-    // Fleiri skráningar (LinkedIn, Capterra) bætast við þegar þær eru til.
-    sameAs: [APP_STORE_URL],
+    // Tóm sæti (LinkedIn, Capterra, GetApp, Software Advice) eru síuð út þar til skráningin er til.
+    sameAs: [APP_STORE_URL, ...Object.values(RONDVA_SEO.profiles)].filter(
+      (url) => url.trim().length > 0,
+    ),
   };
 }
 
