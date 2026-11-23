@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { COMPANY } from "@/lib/constants";
+import { CookieChoicesLink } from "@/components/CookieBanner";
 
 function InstagramIcon() {
   return (
@@ -90,6 +91,7 @@ export function Footer() {
             <FLink href="/verdskra">Verðskrá</FLink>
             <FLink href="/skilmalar">Skilmálar</FLink>
             <FLink href="/personuvernd">Persónuvernd</FLink>
+            <CookieChoicesLink className={`${footerLink} cursor-pointer`} />
             <FLink href="/samband">Hafa samband</FLink>
           </FCol>
           <FCol title="Hafðu samband">

@@ -1,4 +1,5 @@
 import { betonFontClassName } from "@/lib/fonts/beton";
+import { consentDefaultScript } from "@/lib/beton-consent";
 import "@/app/globals.css";
 
 // Sameiginleg <html>/<body>-skel allra Beton-rótarútlita. Áður lá þetta í
@@ -9,24 +10,40 @@ import "@/app/globals.css";
 // <head> og <noscript>-ramminn strax eftir opnun <body>, eins og GTM mælir
 // með. Við notum hrá <script>-tög (ekki next/script) svo skriftan lendi örugglega
 // í <head> í vefþjónsútgáfunni; gámurinn hleður sjálfur gtm.js async.
+//
+// consentMode: Google Consent Mode v2 (src/lib/beton-consent.ts). Setur
+// gtag('consent','default', denied…) á undan GTM-ræsiskriftunni svo engin
+// markaðs-/greiningartögg fire-i fyrr en gestur samþykkir í CookieBanner.
+// Gefið á markaðssíðunni líka utan framleiðslu (án GTM) svo borðinn og
+// dataLayer-uppfærslan séu prófanleg á preview/localhost.
 export function BetonHtml({
   children,
   gtmId,
+  consentMode = false,
 }: {
   children: React.ReactNode;
   gtmId?: string;
+  consentMode?: boolean;
 }) {
   return (
     <html lang="is" className={`${betonFontClassName} h-full antialiased`}>
-      {gtmId && (
+      {(consentMode || gtmId) && (
         // App Router: <head> í rótarútliti er leyft og Next sameinar metadata
         // inn í það. Lint-reglan á við pages/-leiðina (next/head).
         // eslint-disable-next-line @next/next/no-head-element
         <head>
-          <script
-            id="gtm-init"
-            dangerouslySetInnerHTML={{ __html: gtmInitScript(gtmId) }}
-          />
+          {consentMode && (
+            <script
+              id="consent-default"
+              dangerouslySetInnerHTML={{ __html: consentDefaultScript() }}
+            />
+          )}
+          {gtmId && (
+            <script
+              id="gtm-init"
+              dangerouslySetInnerHTML={{ __html: gtmInitScript(gtmId) }}
+            />
+          )}
         </head>
       )}
       <body className="min-h-full flex flex-col font-sans bg-paper text-ink">
